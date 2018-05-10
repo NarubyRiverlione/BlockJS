@@ -1,0 +1,26 @@
+{
+  "name": "blockjs",
+  "version": "1.0.0",
+  "description": "simple blockchain with nodejs",
+  "main": "app.js",
+  "scripts": {
+    "run": "node app.js",
+    "test": "mocha"
+  },
+  "keywords": [
+    "blockchain",
+    "nodejs",
+    "javascript"
+  ],
+  "author": "Naruby",
+  "license": "ISC",
+  "dependencies": {
+    "crypto-js": "^3.1.9-1"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "debug": "^3.1.0",
+    "eslint-plugin-import": "^2.11.0",
+    "mocha": "^5.1.1"
+  }
+}
