@@ -1,5 +1,6 @@
 const Transaction = require('./transaction.js')
 const Block = require('./block.js')
+const Wallet = require('./wallet.js')
 const Cst = require('./const.js')
 const Debug = require('debug')('blockjs:blockchain')
 
@@ -7,18 +8,18 @@ const Chainblock = ((height, hash, block) => ({ height, hash, block }))
 
 const AddBlock = ((block, blockchain) => {
   if (block instanceof Block === false) {
-    Debug('AddBlock: argument is not a Block')
+    Debug('ERROR AddBlock: argument is not a Block')
     return null
   }
   if (!block.IsValid()) {
-    Debug('AddBlock: block is not valid')
+    Debug('ERROR AddBlock: block is not valid')
     return null
   }
   if (block.PrevHash !== blockchain.GetHash()) {
-    Debug('AddBlock: previous hash of block is not lastest hash in blockchain')
+    Debug('ERROR AddBlock: previous hash of block is not lastest hash in blockchain')
     return null
   }
-  Debug('AddBlock: add now')
+
   const blockhash = block.Blockhash()
   const newHeight = blockchain.Height + 1
   const newChainBlock = Chainblock(newHeight, blockhash, block)
@@ -26,9 +27,9 @@ const AddBlock = ((block, blockchain) => {
   return newChainblocks
 })
 
-
 const CreateGenesisBlock = (() => {
-  const GenesisTX = new Transaction(null, Cst.GenesisRewardAddress, Cst.GenesisReward)
+  const GenesisWallet = new Wallet(Cst.GenesisRewardWallet, Cst.GenesisAddress)
+  const GenesisTX = new Transaction(null, GenesisWallet, Cst.GenesisReward, true)
   return new Block(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
 })
 
@@ -108,22 +109,22 @@ class Blockchain {
       const { block } = chainblock
       // each block should be valid
       if (!block.IsValid()) {
-        Debug(`Invalid block found: ${block}`)
-        Debug(`Block: ${block}`)
+        Debug(`ERROR Invalid block found: ${block}`)
+        Debug(`ERROR Block: ${block}`)
         ok = false
         return
       }
       // has of block should be same as stored hash
       if (block.Blockhash() !== chainblock.hash) {
-        Debug(`Blockhash is not same as stored (${chainblock.hash})`)
-        Debug(`Block: ${block}`)
+        Debug(`ERROR Blockhash is not same as stored (${chainblock.hash})`)
+        Debug(`ERROR Block: ${block}`)
         ok = false
         return
       }
       // previous hash must be in blockchain (expect genesis block with height 0)
       if (chainblock.height !== 0 && !allHashs.includes(block.PrevHash)) {
-        Debug(`Previous hash ${block.PrevHash} of block is not in blockchain`)
-        Debug(`Block: ${block}`)
+        Debug(`ERROR Previous hash ${block.PrevHash} of block is not in blockchain`)
+        Debug(`ERROR Block: ${block}`)
         ok = false
       }
     })
@@ -132,6 +133,15 @@ class Blockchain {
 
   toString() {
     return JSON.stringify(this)
+  }
+
+  static CreateWallet(name) {
+    return new Wallet(name)
+  }
+
+  GetBalance(wallet) {
+    if (!Wallet.CheckIsWallet(wallet)) return 'ERROR: argument must be a Wallet'
+    return wallet.GetBalance(this.Chainblocks)
   }
 }
 

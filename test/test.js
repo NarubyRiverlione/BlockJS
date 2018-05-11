@@ -5,6 +5,7 @@ const expect = require('chai').expect // eslint-disable-line
 const Blockchain = require('../src/blockchain.js')
 const Block = require('../src/block.js')
 const Transaction = require('../src/transaction.js')
+// const Wallet = require('../src/wallet.js')
 const Cst = require('../src/const.js')
 
 const TestCoin = new Blockchain()
@@ -19,7 +20,6 @@ describe('Blockchain creation', () => {
 })
 
 describe('Genesis tests', () => {
-  const GenesisHash = '54270b3f032dfd5d5100def15439355986cdeff212f7240165b63ae38266d65f'
   const GenesisBlock = TestCoin.GetBlock()
 
   it('(GetBlock) Last block should exist', () => {
@@ -30,7 +30,7 @@ describe('Genesis tests', () => {
     expect(TestCoin.Height).to.equal(0)
   })
   it('(GetHash) Check hash', () => {
-    expect(TestCoin.GetHash()).is.equal(GenesisHash)
+    expect(TestCoin.GetHash()).is.equal(Cst.GenesisHash)
   })
   it('(Diff) Check start diff', () => {
     expect(TestCoin.Diff).is.equal(Cst.StartDiff)
@@ -50,7 +50,7 @@ describe('Genesis tests', () => {
   it('Check reward address', () => {
     const [tx] = GenesisBlock.Transactions
     expect(tx).not.null
-    expect(tx.ToAddress).is.equal(Cst.GenesisRewardAddress)
+    expect(tx.ToAddress).is.equal(Cst.GenesisAddress)
   })
 })
 
@@ -107,8 +107,10 @@ describe('Transaction', () => {
 
 describe('Add transaction to blockchain & mine new block', () => {
   expect(TestCoin.AmountOfPendingTX, 'no pending TX before add tests').is.equal(0)
-
-  const tx = new Transaction('Me', 'You', 123)
+  const MeWallet = Blockchain.CreateWallet('Me')
+  const YouWallet = Blockchain.CreateWallet('You')
+  const SendAmount = 123.4567
+  const tx = new Transaction(MeWallet, YouWallet, SendAmount)
   TestCoin.SendTX(tx)
 
   it('Add tx -> amount of pending tx = 1', () => {
@@ -123,6 +125,14 @@ describe('Add transaction to blockchain & mine new block', () => {
   })
   it('Is blockchain valid', () => {
     expect(TestCoin.IsValid()).is.true
+  })
+  it('Check balance sender.', () => {
+    const MeBalance = TestCoin.GetBalance(MeWallet)
+    expect(MeBalance).is.equal(-SendAmount)
+  })
+  it('Check balance reciever.', () => {
+    const RecieverBalance = TestCoin.GetBalance(YouWallet)
+    expect(RecieverBalance).is.equal(SendAmount)
   })
 })
 
