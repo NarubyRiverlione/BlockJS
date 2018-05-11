@@ -13,6 +13,10 @@ class Transaction {
       Debug('toWallet is not a Wallet')
       return null
     }
+    if (typeof (amount) !== 'number') {
+      Debug('Ampint is not a number')
+      return null
+    }
     this.FromAddress = isCoinBaseTX ? null : fromWallet.Address
     this.ToAddress = toWallet.Address
     this.Amount = amount

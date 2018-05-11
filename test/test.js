@@ -2,13 +2,13 @@
 
 const expect = require('chai').expect // eslint-disable-line 
 
-const Blockchain = require('../src/blockchain.js')
+const Coin = require('../src/coin.js')
 const Block = require('../src/block.js')
-const Transaction = require('../src/transaction.js')
+// const Transaction = require('../src/transaction.js')
 // const Wallet = require('../src/wallet.js')
 const Cst = require('../src/const.js')
 
-const TestCoin = new Blockchain()
+const TestCoin = new Coin()
 
 describe('Blockchain creation', () => {
   it('construction', () => {
@@ -74,7 +74,7 @@ describe('Create block', () => {
     expect(BlockChangedPrevHash.Blockhash()).not.equal(blockhash)
   })
   it('Transaction cannot be changed', () => {
-    const tx = new Transaction('fromMe', 'toYou', 321)
+    const tx = Coin.CreateTX('fromMe', 'toYou', 321)
     const block = new Block(null, 0, 2, [tx], Date.now())
     // const savedBlockhash = block.Blockhash()
     const savedTXhash = Block.TXhash
@@ -92,25 +92,25 @@ describe('Create block', () => {
 
 describe('Transaction', () => {
   it('Invalid tx: no sender', () => {
-    const tx = new Transaction(null, 'toYou', 666)
+    const tx = Coin.CreateTX(null, 'toYou', 666)
     expect(tx.IsValid()).is.false
   })
   it('Invalid tx: no reciever', () => {
-    const tx = new Transaction('me', null, 666)
+    const tx = Coin.CreateTX('me', null, 666)
     expect(tx.IsValid()).is.false
   })
   it('Invalid tx: no amount', () => {
-    const tx = new Transaction('me', 'toYou', null)
+    const tx = Coin.CreateTX('me', 'toYou', null)
     expect(tx.IsValid()).is.false
   })
 })
 
 describe('Add transaction to blockchain & mine new block', () => {
   expect(TestCoin.AmountOfPendingTX, 'no pending TX before add tests').is.equal(0)
-  const MeWallet = Blockchain.CreateWallet('Me')
-  const YouWallet = Blockchain.CreateWallet('You')
+  const MeWallet = Coin.CreateWallet('Me')
+  const YouWallet = Coin.CreateWallet('You')
   const SendAmount = 123.4567
-  const tx = new Transaction(MeWallet, YouWallet, SendAmount)
+  const tx = Coin.CreateTX(MeWallet, YouWallet, SendAmount)
   TestCoin.SendTX(tx)
 
   it('Add tx -> amount of pending tx = 1', () => {

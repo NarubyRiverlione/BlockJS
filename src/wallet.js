@@ -11,23 +11,23 @@ const RelativeTransactionInBlock = ((block, address) => {
 
 const MaxRelativeHeight = RelativeBlockHeights => Math.max(...RelativeBlockHeights)
 
-const FindRelativeTX = ((chainblocks, wallet) => {
+const FindRelativeTX = ((links, wallet) => {
   const { RelativeBlockHeights, Address } = wallet
   const myTX = [] // tx in blockchain that contains this wallet address
 
   // default scan complet blockchain
-  let needsScanning = chainblocks
+  let needsScanning = links
   if (RelativeBlockHeights.length > 0) {
     // only sync missing part of blockchain
     const syncToHeight = MaxRelativeHeight()
-    needsScanning = chainblocks.filter(chainblock => chainblock.height > syncToHeight)
+    needsScanning = links.filter(link => link.Height > syncToHeight)
   }
 
   // find relative transactions for this wallet
-  needsScanning.forEach((chainblock) => {
-    const { height, block } = chainblock
-    myTX.push(...RelativeTransactionInBlock(block, Address))
-    RelativeBlockHeights.push(height)
+  needsScanning.forEach((link) => {
+    const { Height, Block } = link
+    myTX.push(...RelativeTransactionInBlock(Block, Address))
+    RelativeBlockHeights.push(Height)
   })
 
   return myTX
@@ -52,9 +52,9 @@ class Wallet {
   }
 
   // scan blockchain to calculate balance for this walllet
-  GetBalance(chainblocks) {
+  GetBalance(links) {
     let balance = 0
-    const myTX = FindRelativeTX(chainblocks, this)
+    const myTX = FindRelativeTX(links, this)
 
     myTX.forEach((tx) => {
       balance += this.DeltaBalanceFromTX(tx)

@@ -1,10 +1,10 @@
 const Transaction = require('./transaction.js')
 const Block = require('./block.js')
 const Wallet = require('./wallet.js')
+const ChainLink = require('./chainlink.js')
 const Cst = require('./const.js')
 const Debug = require('debug')('blockjs:blockchain')
 
-const Chainblock = ((height, hash, block) => ({ height, hash, block }))
 
 const AddBlock = ((block, blockchain) => {
   if (block instanceof Block === false) {
@@ -22,9 +22,9 @@ const AddBlock = ((block, blockchain) => {
 
   const blockhash = block.Blockhash()
   const newHeight = blockchain.Height + 1
-  const newChainBlock = Chainblock(newHeight, blockhash, block)
-  const newChainblocks = [].concat(...blockchain.Chainblocks, newChainBlock)
-  return newChainblocks
+  const newChainLink = new ChainLink(newHeight, blockhash, block)
+  const newBlockchain = [].concat(...blockchain.Blockchain, newChainLink)
+  return newBlockchain
 })
 
 const CreateGenesisBlock = (() => {
@@ -34,7 +34,7 @@ const CreateGenesisBlock = (() => {
 })
 
 
-class Blockchain {
+class Coin {
   constructor(version = 1) {
     this.Version = version
     this.BlockReward = Cst.StartBlockReward
@@ -42,13 +42,13 @@ class Blockchain {
 
     const genesis = CreateGenesisBlock()
 
-    this.Chainblocks = [Chainblock(0, genesis.Blockhash(), genesis)]
+    this.Blockchain = [new ChainLink(0, genesis.Blockhash(), genesis)]
     /* [
-      {height, blockhask, block}
+      {height, block hash, block}
     ] */
   }
   get Height() {
-    const allHeights = this.Chainblocks.map(chainblock => chainblock.height)
+    const allHeights = this.Blockchain.map(link => link.Height)
     const maxHeight = Math.max(...allHeights)
     return maxHeight
   }
@@ -64,8 +64,8 @@ class Blockchain {
   // get block at height, defaults to blockchain height = last block
   GetBlock(atHeight = this.Height) {
     // const blockchainHeight = this.GetHeight()
-    const higestChainblock = this.Chainblocks.find(chainblock => chainblock.height === atHeight)
-    return higestChainblock.block
+    const higestlink = this.Blockchain.find(link => link.Height === atHeight)
+    return higestlink.Block
   }
 
   GetHash() {
@@ -96,35 +96,35 @@ class Blockchain {
     )
 
     // add block (if valid) to blockchain
-    this.Chainblocks = AddBlock(newBlock, this) || this.Chainblocks
+    this.Blockchain = AddBlock(newBlock, this) || this.Blockchain
 
     // clear pending transactions
     this.PendingTransactions = []
   }
 
   IsValid() {
-    const allHashs = this.Chainblocks.map(chainblock => chainblock.hash)
+    const allHashs = this.Blockchain.map(link => link.Hash)
     let ok = true
-    this.Chainblocks.forEach((chainblock) => {
-      const { block } = chainblock
+    this.Blockchain.forEach((link) => {
+      const { Block: blockInLink } = link
       // each block should be valid
-      if (!block.IsValid()) {
-        Debug(`ERROR Invalid block found: ${block}`)
-        Debug(`ERROR Block: ${block}`)
+      if (!blockInLink.IsValid()) {
+        Debug(`ERROR Invalid block found: ${blockInLink}`)
+        Debug(`ERROR Block: ${blockInLink}`)
         ok = false
         return
       }
       // has of block should be same as stored hash
-      if (block.Blockhash() !== chainblock.hash) {
-        Debug(`ERROR Blockhash is not same as stored (${chainblock.hash})`)
-        Debug(`ERROR Block: ${block}`)
+      if (blockInLink.Blockhash() !== link.Hash) {
+        Debug(`ERROR Blockhash is not same as stored (${link.Hash})`)
+        Debug(`ERROR Block: ${blockInLink}`)
         ok = false
         return
       }
       // previous hash must be in blockchain (expect genesis block with height 0)
-      if (chainblock.height !== 0 && !allHashs.includes(block.PrevHash)) {
-        Debug(`ERROR Previous hash ${block.PrevHash} of block is not in blockchain`)
-        Debug(`ERROR Block: ${block}`)
+      if (link.Height !== 0 && !allHashs.includes(blockInLink.PrevHash)) {
+        Debug(`ERROR Previous hash ${blockInLink.PrevHash} of block is not in blockchain`)
+        Debug(`ERROR Block: ${blockInLink}`)
         ok = false
       }
     })
@@ -135,14 +135,19 @@ class Blockchain {
     return JSON.stringify(this)
   }
 
+  GetBalance(wallet) {
+    if (!Wallet.CheckIsWallet(wallet)) return 'ERROR: argument must be a Wallet'
+    return wallet.GetBalance(this.Blockchain)
+  }
+
+
   static CreateWallet(name) {
     return new Wallet(name)
   }
 
-  GetBalance(wallet) {
-    if (!Wallet.CheckIsWallet(wallet)) return 'ERROR: argument must be a Wallet'
-    return wallet.GetBalance(this.Chainblocks)
+  static CreateTX(senderWallet, recieverWallet, amount) {
+    return new Transaction(senderWallet, recieverWallet, amount)
   }
 }
 
-module.exports = Blockchain
+module.exports = Coin
