@@ -3,63 +3,73 @@ const Block = require('./block.js')
 const Cst = require('./const.js')
 const Debug = require('debug')('blockjs:blockchain')
 
-AddBlock = ((block, blockchain) => {
+const Chainblock = ((height, hash, block) => ({ height, hash, block }))
+
+const AddBlock = ((block, blockchain) => {
   if (block instanceof Block === false) {
     Debug('AddBlock: argument is not a Block')
-    return
+    return null
   }
   if (!block.IsValid()) {
     Debug('AddBlock: block is not valid')
-    return
+    return null
   }
   if (block.PrevHash !== blockchain.GetHash()) {
     Debug('AddBlock: previous hash of block is not lastest hash in blockchain')
-    return
+    return null
   }
-  if (block.Height !== blockchain.GetHeight() + 1) {
-    Debug('AddBlock: height of block is not next height in blockchain')
-    return
-  }
-  Debug('AddBlock: Succes')
-  return [].concat(...blockchain.Chainblocks, block)
+  Debug('AddBlock: add now')
+  const blockhash = block.Blockhash()
+  const newHeight = blockchain.Height + 1
+  const newChainBlock = Chainblock(newHeight, blockhash, block)
+  const newChainblocks = [].concat(...blockchain.Chainblocks, newChainBlock)
+  return newChainblocks
 })
 
 
-CreateGenesisBlock = (() => {
+const CreateGenesisBlock = (() => {
   const GenesisTX = new Transaction(null, Cst.GenesisRewardAddress, Cst.GenesisReward)
-  return new Block(0, null, null, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
+  return new Block(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
 })
+
 
 class Blockchain {
   constructor(version = 1) {
     this.Version = version
-    this.Chainblocks = [CreateGenesisBlock()]
     this.BlockReward = Cst.StartBlockReward
     this.PendingTransactions = []
+
+    const genesis = CreateGenesisBlock()
+
+    this.Chainblocks = [Chainblock(0, genesis.Blockhash(), genesis)]
+    /* [
+      {height, blockhask, block}
+    ] */
+  }
+  get Height() {
+    const allHeights = this.Chainblocks.map(chainblock => chainblock.height)
+    const maxHeight = Math.max(...allHeights)
+    return maxHeight
+  }
+  get Diff() {
+    const lastBlock = this.GetBlock()
+    return lastBlock.Diff
+  }
+  get AmountOfPendingTX() {
+    return this.PendingTransactions.length
   }
 
 
-  GetHeight() {
-    return this.Chainblocks.length
-  }
-
-  GetBlock() {
-    const latestBlock = this.Chainblocks[this.GetHeight() - 1]
-    return latestBlock
+  // get block at height, defaults to blockchain height = last block
+  GetBlock(atHeight = this.Height) {
+    // const blockchainHeight = this.GetHeight()
+    const higestChainblock = this.Chainblocks.find(chainblock => chainblock.height === atHeight)
+    return higestChainblock.block
   }
 
   GetHash() {
     const lastBlock = this.GetBlock()
-    return lastBlock.Hash
-  }
-
-  GetDiff() {
-    const lastBlock = this.GetBlock()
-    return lastBlock.Diff
-  }
-
-  GetCountPendingTX() {
-    return this.PendingTransactions.length
+    return lastBlock.Blockhash()
   }
 
   SendTX(tx) {
@@ -74,32 +84,50 @@ class Blockchain {
     this.PendingTransactions.push(tx)
   }
 
-  MineBlock(height = this.GetHeight() + 1, prevHash = this.GetHash(), timestamp = Date.now()) {
+  MineBlock(prevHash = this.GetHash(), timestamp = Date.now()) {
     // create new block with all pending transactions
     const newBlock = new Block(
-      height,
       prevHash,
-      null,
+      0,
       Cst.StartDiff,
       this.PendingTransactions,
-      timestamp
+      timestamp,
     )
-    // add block to blockchain
-    this.Chainblocks = AddBlock(newBlock, this)
+
+    // add block (if valid) to blockchain
+    this.Chainblocks = AddBlock(newBlock, this) || this.Chainblocks
+
     // clear pending transactions
     this.PendingTransactions = []
   }
 
   IsValid() {
-    let rememberPrevHash = null
-    this.Chainblocks.forEach(block => {
-      // each block should be valid on it own
-      if (!block.IsValid()) return false
-      // block prevHash should be previous hash (genesis has null)
-      if (block.PrevHash !== rememberPrevHash) return false
-      rememberPrevHash = block.Hash
+    const allHashs = this.Chainblocks.map(chainblock => chainblock.hash)
+    let ok = true
+    this.Chainblocks.forEach((chainblock) => {
+      const { block } = chainblock
+      // each block should be valid
+      if (!block.IsValid()) {
+        Debug(`Invalid block found: ${block}`)
+        Debug(`Block: ${block}`)
+        ok = false
+        return
+      }
+      // has of block should be same as stored hash
+      if (block.Blockhash() !== chainblock.hash) {
+        Debug(`Blockhash is not same as stored (${chainblock.hash})`)
+        Debug(`Block: ${block}`)
+        ok = false
+        return
+      }
+      // previous hash must be in blockchain (expect genesis block with height 0)
+      if (chainblock.height !== 0 && !allHashs.includes(block.PrevHash)) {
+        Debug(`Previous hash ${block.PrevHash} of block is not in blockchain`)
+        Debug(`Block: ${block}`)
+        ok = false
+      }
     })
-    return true
+    return ok
   }
 
   toString() {
