@@ -4,8 +4,10 @@
   "description": "simple blockchain with nodejs",
   "main": "app.js",
   "scripts": {
-    "run": "node app.js",
-    "test": "mocha"
+    "startdb": "mongod --config ./mongod.conf",
+    "run": "node --inspect app.js",
+    "test": "mocha",
+    "stopdb": "mongo admin --eval 'db.shutdownServer()'"
   },
   "keywords": [
     "blockchain",
@@ -16,7 +18,8 @@
   "license": "ISC",
   "dependencies": {
     "crypto-js": "^3.1.9-1",
-    "debug": "^3.1.0"
+    "debug": "^3.1.0",
+    "mongodb": "^3.1.0-beta4"
   },
   "devDependencies": {
     "chai": "^4.1.2",

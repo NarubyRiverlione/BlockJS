@@ -9,6 +9,16 @@ const Const = {
   StartBlockReward: 10,
   StartDiff: 2,
   PrivateKeySize: 10,
+
+  Db: {
+    Name: 'BlockJS',
+    Docs: {
+      PendingTransactions: 'PendingTransactions',
+      Blockchain: 'Blockchain',
+      Wallet: 'Wallet',
+      OwnTx: 'OwnTx',
+    },
+  },
 }
 
 module.exports = Const

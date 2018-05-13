@@ -1,10 +1,12 @@
+const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:transaction')
+const Cst = require('./const.js')
 const Wallet = require('./wallet.js')
 
 
 class Transaction {
   constructor(fromWallet, toWallet, amount, isCoinBaseTX = false) {
-    // CoinBaseTX has no from
+    // CoinBaseTX has no fromWallet
     if (!Wallet.CheckIsWallet(fromWallet) && !isCoinBaseTX) {
       Debug('fromWallet is not a Wallet')
       return null
@@ -17,9 +19,16 @@ class Transaction {
       Debug('Ampint is not a number')
       return null
     }
+    // TODO balance check
+
     this.FromAddress = isCoinBaseTX ? null : fromWallet.Address
     this.ToAddress = toWallet.Address
     this.Amount = amount
+    this.Hash = this.Hash()
+  }
+  Hash() {
+    const hash = SHA256(this.FromAddress + this.ToAddress + this.Amount)
+    return hash.toString()
   }
 
   IsValid() {

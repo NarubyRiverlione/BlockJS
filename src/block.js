@@ -26,13 +26,27 @@ class Block {
     this.Timestamp = timestamp
     this.Transactions = transactions
   }
-  get TXhash() {
+  get HashTransactions() {
     return SHA256(JSON.stringify(this.Transactions)).toString()
+  }
+
+  // create instance of Block with db data
+  static ParseFromDb(DBblock) {
+    const block = new Block(
+      DBblock.PrevHash,
+      DBblock.Nonce,
+      DBblock.Diff,
+      DBblock.Transactions,
+      DBblock.Timestamp,
+      DBblock.Version,
+    )
+    // all Block function now availible
+    return block
   }
 
   Blockhash() {
     const Content = this.PrevHash + this.Nonce + this.Diff + this.Timestamp + this.Version
-    return SHA256(Content + this.TXhash).toString()
+    return SHA256(Content + this.HashTransactions).toString()
   }
 
   IsValid() {
