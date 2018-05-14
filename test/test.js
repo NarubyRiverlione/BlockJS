@@ -33,7 +33,7 @@ it('Blockchain creation', async () => {
     // it('(Height) Block height = 0', () => {
     //   expect(TestCoin.H()).to.equal(0)
     // })
-    it('(GetHash) Check hash', () => {
+    it('(GetBestHash) Check hash', () => {
       expect(GenesisBlock.Blockhash()).is.equal(Cst.GenesisHash)
     })
     it('(Diff) Check start diff', () => {

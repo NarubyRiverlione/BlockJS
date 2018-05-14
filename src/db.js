@@ -1,3 +1,4 @@
+
 const MongoClient = require('mongodb').MongoClient // eslint-disable-line
 const Debug = require('debug')('blockjs:DB')
 
@@ -8,19 +9,19 @@ class Db {
     this.client = null
   }
 
-  Connect() {
+  Connect(DbPort) {
     return new Promise((resolve, reject) => {
       // Connection URL
-      const url = 'mongodb://localhost:27017'
+      const url = `mongodb://localhost:${DbPort}`
       // Use connect method to connect to the server
       MongoClient.connect(url)
         .then((client) => {
-          Debug('Connected successfully to DB server')
+          Debug(`Connected successfully to DB server on port ${DbPort}`)
           this.client = client
           this.db = (client.db(CstDB.Name))
           resolve()
         })
-        .catch(error => reject(new Error(`Cannot connect to DB: ${error}`)))
+        .catch(error => reject(new Error(`Cannot connect to DB on port ${DbPort}: ${error}`)))
     })
   }
 
@@ -31,7 +32,7 @@ class Db {
   async Add(col, data) {
     try {
       const result = await this.db.collection(col).insertOne(data)
-      Debug('Saved to db')
+      Debug(`Added ${col} in db`)
       return result
     } catch (err) {
       const error = `ERROR saving to db: ${err} to this collection "${col}"  with  data "${data}"`
@@ -44,7 +45,7 @@ class Db {
     try {
       const collection = this.db.collection(col)
       const result = await collection.updateOne(filter, { $set: update })
-      Debug('Update indb')
+      Debug(`Update ${col} in db`)
       return result
     } catch (err) {
       const error = `ERROR updating: ${err} to this collection "${col}", filter: ${filter}  and update "${update}"`
@@ -121,6 +122,17 @@ class Db {
           reject(error)
         })
         .then(result => resolve(result))
+    })
+  }
+  RemoveOne(col, filter) {
+    return new Promise((resolve, reject) => {
+      const collection = this.db.collection(col)
+      collection.deleteOne(filter)
+        .catch((err) => {
+          const error = new Error(`ERROR removing one document with filter "${filter}" from db the collection "${col}": ${err}" `)
+          reject(error)
+        })
+        .then(doc => resolve(doc))
     })
   }
 }

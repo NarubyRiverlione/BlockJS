@@ -28,6 +28,7 @@ Coin.Start(ServerPort, DbPort)
     Debug(info)
     return SpiceCoin.GetLastBlock()
   })
+<<<<<<< HEAD
   .then((GenesisBlock) => {
     Debug(`Genesis block: ${JSON.stringify(GenesisBlock)}`)
 
@@ -42,6 +43,22 @@ Coin.Start(ServerPort, DbPort)
     //   Debug('Send tx1')
     //   return SpiceCoin.SendTX(tx1)
     // })
+=======
+  .then((lastBlock) => {
+    Debug(`last block: ${JSON.stringify(lastBlock)}`)
+    Debug(`My balance is ${SpiceCoin.Balance}`)
+    SpiceCoin.ConnectPeer('192.168.1.142')
+  })
+
+
+  //   Debug('Create TX 1:  -> you 22')
+  //   return SpiceCoin.CreateTX(You, 22)
+  // })
+  // .then((tx1) => {
+  //   Debug('Send tx1')
+  //   return SpiceCoin.SendTX(tx1)
+  // })
+>>>>>>> 1716879... peer 2
 
     // .then(() => {
     //   Debug('Create  TX 2: -> Dude 42')
@@ -64,7 +81,6 @@ Coin.Start(ServerPort, DbPort)
     // })
     // .then(() => {
     Debug(`My balance is ${SpiceCoin.Balance}`)
-    SpiceCoin.ConnectPeer('192.168.1.142')
   })
 
   .catch(err => console.error(err))

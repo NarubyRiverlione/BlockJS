@@ -1,6 +1,7 @@
 
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
+const Transactions = require('./transaction.js')
 
 const IsHeaderComplete = (block =>
   block.PrevHash !== undefined
@@ -9,16 +10,20 @@ const IsHeaderComplete = (block =>
   && block.Timestamp !== undefined)
 
 class Block {
-  constructor(prevHash, nonce, diff, transactions, timestamp, version = 1) {
-    if (
-      prevHash === undefined
-      || nonce === undefined
-      || diff === undefined
-      || timestamp === undefined) {
-      Debug('ERROR Block header incomplete !')
-      return
-    }
+  static Create(prevHash, nonce, diff, transactions, timestamp, version = 1) {
+    return new Promise((resolve, reject) => {
+      if (
+        prevHash === undefined
+        || nonce === undefined
+        || diff === undefined
+        || timestamp === undefined) {
+        return reject(new Error('ERROR Block header incomplete !'))
+      }
+      return resolve(new Block(prevHash, nonce, diff, transactions, timestamp, version))
+    })
+  }
 
+  constructor(prevHash, nonce, diff, transactions, timestamp, version) {
     this.PrevHash = prevHash
     this.Nonce = nonce
     this.Diff = diff
@@ -40,7 +45,7 @@ class Block {
       DBblock.Timestamp,
       DBblock.Version,
     )
-    // all Block function now availible
+    // all Block function now available
     return block
   }
 
@@ -49,11 +54,18 @@ class Block {
     return SHA256(Content + this.HashTransactions).toString()
   }
 
-  IsValid() {
+  static IsValid(block) {
     // header complete ?
-    if (!IsHeaderComplete(this)) {
-      Debug('ERROR Isvalid header incomplete')
+    if (!IsHeaderComplete(block)) {
+      Debug('ERROR block is not valid: header incomplete')
       return false
+    }
+    // are all transaction valid ?
+    if (block.Transactions && block.Transactions.length > 0) {
+      block.Transactions.forEach((tx) => {
+        if (!Transactions.IsValid(tx)) return false
+        return true
+      })
     }
     return true
   }

@@ -1,0 +1,553 @@
+const Transaction = require('./transaction.js')
+const Block = require('./block.js')
+const Wallet = require('./wallet.js')
+const ChainLink = require('./chainlink.js')
+const Cst = require('./const.js')
+const DB = require('./db.js')
+const P2P = require('./p2p.js')
+
+const Debug = require('debug')('blockjs:blockchain')
+
+const CstDocs = Cst.Db.Docs
+
+const CreateGenesisBlock = () => {
+  const GenesisWallet = new Wallet(Cst.GenesisRewardWallet, Cst.GenesisAddress)
+  // coinBase TX = true
+  const GenesisTX = new Transaction(null, GenesisWallet, Cst.GenesisReward, true)
+  return Block.Create(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
+}
+
+const GenesisBlockExistInDb = Db =>
+  new Promise((resolve, reject) => {
+    Db.Find(CstDocs.Blockchain, { Height: 0 })
+      .catch(err => reject(err))
+      .then(firstLink =>
+        resolve(firstLink.length !== 0))
+  })
+
+
+const CreateFirstLink = () =>
+  new Promise((resolve, reject) => {
+    CreateGenesisBlock()
+      .then(GenesisBlock => resolve(ChainLink.Create(GenesisBlock, 0)))
+      .catch(err => reject(err))
+  })
+
+const ClearPendingTX = Db => Db.RemoveAllDocs(CstDocs.PendingTransactions)
+const AllPendingTX = Db => Db.Find(CstDocs.PendingTransactions, {})
+
+const CreateBlockchain = Db =>
+  new Promise((resolve, reject) => {
+    let FirstLink
+    // no links in database = no genesis block (first run?)
+    // create blockchain by adding genesis block
+    CreateFirstLink()
+      .then((link) => {
+        FirstLink = link
+        Debug('Save genesis in Db')
+        return Db.Add(CstDocs.Blockchain, FirstLink)
+      })
+      .then(() => resolve(FirstLink))
+      .catch(err => reject(new Error(`ERROR cannot create/save genesis block: ${err}`)))
+  })
+
+
+class Coin {
+  /* start coin, if new add genesis
+    load wallet from db
+  */
+  static Start(serverPort = Cst.DefaultPort, DbPort = Cst.DbPort) {
+    return new Promise((resolve, reject) => {
+      const database = new DB()
+      let coin
+
+      database.Connect(DbPort)
+        // load wallet
+        .then(() => Wallet.Load(database))
+        // check if genesis block exists
+        .then((wallet) => {
+          coin = new Coin(database, wallet)
+          return GenesisBlockExistInDb(database)
+        })
+        // create genesis if needed
+        .then((GenesesExist) => {
+          if (GenesesExist) {
+            Debug('Found genesis block in Db')
+            return null // resolve(coin)
+          }
+          Debug('No blockchain in Db, create blockchain by adding Genesis Block')
+          return CreateBlockchain(database)
+            .then((FirstLink) => {
+              // save to ownTX is wallet = Genesis address
+              if (coin.Wallet.Address === Cst.GenesisAddress) {
+                const GenesisTxHash = FirstLink.Block.Transactions[0].Hash
+                Wallet.SaveOwnTX(GenesisTxHash, coin.Db)
+                  // set genesis wallet balance
+                  .then(() => coin.Wallet.CalcBalance(coin.Db))
+              }
+              return null
+            })
+        })
+        // get Height of blockchain in db
+        .then(() => coin.GetHeight())
+        // start P2P
+        .then(() => {
+          coin.p2p = new P2P(serverPort, coin, this.version)
+          return null
+        })
+        .then(() => resolve(coin))
+        .catch(err => reject(err))
+    })
+  }
+
+  // close Db connection
+  End() {
+    this.Db.Close()
+  }
+  constructor(Db, wallet, version = 1) {
+    this.Db = Db
+    this.Version = version
+    this.BlockReward = Cst.StartBlockReward
+    this.Wallet = wallet
+    this.p2p = null // p2p started when local blockchain is loaded or created
+    this.NeededHashes = []
+  }
+  get Balance() {
+    return this.Wallet.Balance
+  }
+  // get info text with Height, Diff, hash, amount pending transactions
+  GetInfo() {
+    return new Promise((resolve, reject) => {
+      const info = {}
+      this.GetHeight()
+        .then((height) => {
+          info.height = height
+          return this.GetDiff()
+        })
+        .then((diff) => {
+          info.diff = diff
+          return this.GetBestHash()
+        })
+        .then((hash) => {
+          info.hash = hash
+          return this.GetAmountOfPendingTX()
+        })
+        .then((amount) => {
+          info.amount = amount
+        })
+        .then(() => {
+          const infoText = `
+          Height: ${info.height}
+          Diff: ${info.diff}
+          Last hash: ${info.hash}
+          Amount of pending TX: ${info.amount}`
+          return resolve(infoText)
+        })
+        .catch(err => reject(err))
+    })
+  }
+  // max height of blockchain
+  GetHeight() {
+    return new Promise((resolve, reject) => {
+      this.Db.FindMax(CstDocs.Blockchain, 'Height')
+        .catch(err => reject(err))
+        .then(linkWithMaxHeight =>
+          resolve(linkWithMaxHeight.Height))
+    })
+  }
+  // current diff = diff of last block
+  GetDiff() {
+    return new Promise((resolve, reject) => {
+      this.GetLastBlock()
+        .catch(err =>
+          reject(err))
+        .then(lastBlock =>
+          resolve(lastBlock.Diff))
+    })
+  }
+  // hash of last block
+  GetBestHash() {
+    return new Promise((resolve, reject) => {
+      this.GetLastBlock()
+        .catch(err => reject(err))
+        .then((lastblockInDB) => {
+          const lastBlock = Block.ParseFromDb(lastblockInDB)
+          // Block hash function now available
+          return resolve(lastBlock.Blockhash())
+        })
+    })
+  }
+  // get amount of pending transactions
+  GetAmountOfPendingTX() {
+    return this.Db.CountDocs(CstDocs.Blockchain)
+  }
+  // get last block
+  GetLastBlock() {
+    return new Promise((resolve, reject) => {
+      this.GetHeight()
+        .catch(err =>
+          reject(err))
+        .then(maxHeigth =>
+          this.Db.Find(CstDocs.Blockchain, { Height: maxHeigth }))
+        .then(foundLinks =>
+          Block.ParseFromDb(foundLinks[0].Block))
+        .then(block =>
+          resolve(block))
+    })
+  }
+  // get block at specific height
+  GetBlockAtHeight(atHeight) {
+    return new Promise((resolve, reject) => {
+      this.Db.Find(CstDocs.Blockchain, { Height: atHeight })
+        .catch(err => reject(err))
+        .then((foundLink) => {
+          if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with height ${atHeight}`))
+          if (foundLink.length === 0) return resolve(null)
+          Debug(`Loaded block with hash ${foundLink[0].Hash} for height ${atHeight}`)
+          const block = Block.ParseFromDb(foundLink[0].Block)
+          return resolve(block)
+        })
+    })
+  }
+  // get block with specific block hash
+  GetBlockWithHash(blockhash) {
+    return new Promise((resolve, reject) => {
+      this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
+        .catch(err => reject(err))
+        .then((foundLink) => {
+          if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${blockhash}`))
+          if (foundLink.length === 0) return resolve(null)
+          const block = Block.ParseFromDb(foundLink[0].Block)
+          return resolve(block)
+        })
+    })
+  }
+  GetPrevBlock(block) {
+    return this.GetBlockWithHash(block.PrevHash)
+  }
+  // get all hashes between best hash and specified hash
+  async GetHashsFromBestTo(toHash) {
+    const betweenHashs = []
+
+<<<<<<< HEAD
+    let prevHash = await this.GetBestHash()
+    // betweenHashs.push(bestHash)
+    // let prevHash = bestHash
+
+=======
+    const bestHash = await this.GetBestHash()
+    betweenHashs.push(bestHash)
+
+    let prevHash = bestHash
+>>>>>>> 1716879... peer 2
+    while (prevHash !== toHash) {
+      const prevBlock = await this.GetBlockWithHash(prevHash)
+      // add hash to between array
+      betweenHashs.push(prevBlock.Blockhash())
+      prevHash = prevBlock.PrevHash
+    }
+    return betweenHashs
+  }
+
+
+  // transaction is alway sending from own wallet to receiver
+  CreateTX(recieverWallet, amount) {
+    // return new Promise((resolve, reject) => {
+    return Transaction.Create(this.Wallet, recieverWallet, amount)
+    //     .catch(err => reject(err))
+    //     .then(tx => resolve(tx))
+    // })
+  }
+
+  // add a TX to the pending TX
+  SendTX(tx) {
+    return new Promise((resolve, reject) => {
+      // is tx a Transaction object ?
+      if (tx instanceof Transaction === false) { return reject(new Error('SendTX: argument is not a transaction')) }
+      // is the Transaction object not empty ?
+      if (Object.keys(tx).length === 0) { return reject(new Error('SendTX: Empty transaction supplied')) }
+      // is the Transaction complete ?
+      if (!Transaction.IsValid(tx)) { return reject(new Error('SendTX: transaction is not valid')) }
+
+      // FIXME balance needs always up-to-date in db
+      // also to easy to cheat? Each other node will check this tx before adding in a block
+
+      if (tx.Amount > this.Wallet.Balance) { return reject(new Error('Not enough balance !')) }
+
+      // add TX to pending pool
+      this.Db.Add(CstDocs.PendingTransactions, tx)
+        // save tx.hash in wallet for fast lookup (get balance)
+        .then(() => Wallet.SaveOwnTX(tx.Hash, this.Db))
+        .then(result => resolve(result))
+        .catch(err => reject(err))
+    })
+  }
+  // create new block with all pending transactions
+  // TODO POW
+  MineBlock() {
+    return new Promise((resolve, reject) => {
+      let newBlock
+      let PendingTransactions
+      const { Db } = this
+
+      AllPendingTX(Db)
+        .then((pending) => {
+          // TODO before adding check each tx: valid ? balance ?
+          PendingTransactions = pending
+          return this.GetBestHash()
+        })
+        // create block
+        .then(prevHash =>
+          // TODO set Max of TX in block
+          // FIXME timestamp in POW needs constant
+          Block.Create(prevHash, 0, Cst.StartDiff, PendingTransactions, Date.now()))
+        .then((createdBlock) => {
+          newBlock = createdBlock
+          return this.GetHeight()
+        })
+        .then(height =>
+          // create new link with block
+          ChainLink.Create(newBlock, height + 1))
+        .then(newLink =>
+          // save link to blockchain
+          this.Db.Add(CstDocs.Blockchain, newLink))
+        .then(() =>
+          // clear pending transactions
+          // TODO instead of removing, mark as 'processed' so there available in case of forks
+          ClearPendingTX(Db))
+
+        .then(() => resolve(newBlock))
+
+        .catch(err => reject(err))
+    })
+  }
+
+  RenameWallet(newName) {
+    this.Wallet.ChangeName(newName, this.Db)
+  }
+
+  /* CAN BE VERY COSTLY */
+  SyncWallet() {
+    return this.Wallet.CalcBalance(this.Db)
+  }
+
+  GetHeightOfBlock(block) {
+    return new Promise((resolve, reject) => {
+      this.Db.Find(CstDocs.Blockchain, { Hash: block.Blockchain() })
+        .catch(err => reject(err))
+        .then((foundLink) => {
+          if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
+          if (foundLink.length === 0) return resolve(null)
+          return resolve(foundLink[0].Height)
+        })
+    })
+  }
+<<<<<<< HEAD
+
+  ConnectPeer(remoteIP, remotePort = Cst.DefaultPort) {
+    this.p2p.Connect(remoteIP, remotePort)
+  }
+
+  IncomingHash(inboundHash) {
+    return new Promise((resolve, reject) => {
+      this.GetBlockWithHash(inboundHash)
+        .then((block) => {
+          if (!block) {
+            Debug('This node needs syncing ! Wait for incoming inv message')
+            return resolve()
+          }
+          Debug('Incoming hash is known, create inv message for peer')
+          this.GetHashsFromBestTo(inboundHash)
+            .then(peerNeededHashs => resolve(peerNeededHashs))
+            .catch(err => reject(err))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
+  // Store incoming block until all requests are fulfilled, the process block
+  IncomingBlock(inboundBlock) {
+    const newBlock = Block.ParseFromDb(inboundBlock)
+
+    return new Promise((resolve, reject) => {
+      if (!Block.IsValid(newBlock)) {
+        return reject(new Error('Incoming p2p block is not valid'))
+      }
+      this.Db.Add(CstDocs.IncomingBlocks, newBlock)
+        .then(() => {
+          const newHash = newBlock.Blockhash()
+          this.NeededHashes = this.NeededHashes.filter(needed => needed !== newHash)
+          Debug(`Still need  ${this.NeededHashes.length} blocks`)
+          // needed list empty =  process stored blocks
+          if (this.NeededHashes.length === 0) {
+            return this.ProcessRecievedBlocks()
+          }
+          return resolve()
+        })
+        .catch(err => reject(err))
+    })
+  }
+
+  // all needed block are stored, now process them (check prevHash,..)
+  ProcessRecievedBlocks() {
+    this.Db.Find(CstDocs.inboundBlock, {})
+      .then((inboundBlocks) => {
+        inboundBlocks.forEach(inboundBlock => this.EvaluateRecievedBlock(inboundBlock))
+      })
+  }
+
+  EvaluateRecievedBlock(inboundBlock) {
+    const newBlock = Block.ParseFromDb(inboundBlock)
+    const { Db } = this
+
+    return new Promise((resolve, reject) => {
+      // check if block is already in blockchain
+      this.GetBlockWithHash(newBlock.Blockhash())
+        .then((foundBlock) => {
+          if (foundBlock) {
+            return reject('Incoming block already in blockchain, don\'t need to process')
+          }
+          // check if this is a new block in the chain
+          return this.GetBestHash()
+        })
+        // check if this is a new block in the chain
+        .then((bestHash) => {
+          // no syncing : incoming block needed to be the next block in the blockchain
+          if (this.NeededHashes.length === 0 && newBlock.PrevHash !== bestHash) {
+            return reject('Incoming block is not next block in non-sync mode --> ignore block')
+          }
+          // try get previous block
+          return this.GetBlockAtHeight(newBlock.PrevHash)
+        })
+        // is previous block known in the blockchain?
+        .then((prevBlock) => {
+          if (prevBlock === null) {
+            Debug('Previous block is not in the blockchain, check stored incoming blocks storage ')
+            return Db.Find(CstDocs.IncomingBlocks, { Hash: inboundBlock.prevBlock })
+          }
+          // previous block is known, determine his height via previous block height
+          return this.GetHeightOfBlock(prevBlock)
+        })
+        // determine new height
+        .then((result) => {
+          if (typeof result === 'object') {
+            return resolve()
+          }
+          const prevHeight = result
+          const newHeight = prevHeight + 1
+          Debug(`Height if Incoming block will be ${newHeight}`)
+          // create new link with block
+          return ChainLink.Create(newBlock, newHeight)
+        })
+        // add link to the blockchain
+        .then(newLink => this.Db.Add(CstDocs.Blockchain, newLink))
+        // in sync mode: remove hash from needed list
+        .then(() => {
+          Debug(`Block ${newBlock.Blockhash()} added in blockchain`)
+        })
+
+=======
+
+  ConnectPeer(remoteIP, remotePort = Cst.DefaultPort) {
+    this.p2p.Connect(remoteIP, remotePort)
+  }
+
+  IncomingHash(inboundHash) {
+    return new Promise((resolve, reject) => {
+      this.GetBlockWithHash(inboundHash)
+        .then((block) => {
+          if (!block) {
+            Debug('This node needs syncing ! Wait for incoming inv message')
+            return resolve()
+          }
+          Debug('Incoming hash is known, create inv message for peer')
+          this.GetHashsFromBestTo(inboundHash)
+            .then(peerNeededHashs => resolve(peerNeededHashs))
+            .catch(err => reject(err))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
+  IncomingBlock(inboundBlock) {
+    const newBlock = Block.ParseFromDb(inboundBlock)
+    // let { NeededHashes } = this
+    const { Db } = this
+
+    return new Promise((resolve, reject) => {
+      if (!Block.IsValid(newBlock)) {
+        return reject('Incoming p2p block is not valid')
+      }
+      // check if block is already in blockchain
+      this.GetBlockWithHash(newBlock.Blockhash())
+        .then((foundBlock) => {
+          if (foundBlock) {
+            return reject('Incoming block already in blockchain, don\'t need to process')
+          }
+          // check if this is a new block in the chain
+          return this.GetBestHash()
+        })
+        // check if this is a new block in the chain
+        .then((bestHash) => {
+          // no syncing : incoming block needed to be the next block in the blockchain
+          if (this.NeededHashes.length === 0 && newBlock.PrevHash !== bestHash) {
+            return reject('Incoming block is not next block in non-sync mode --> ignore block')
+          }
+          // try get previous block
+          return this.GetBlockAtHeight(newBlock.PrevHash)
+        })
+        // is previous block known in the blockchain?
+        .then((prevBlock) => {
+          if (prevBlock === null) {
+            Debug('Previous block is (still) unknown, store block temporary as orphan ')
+            return Db.Add(CstDocs.OrphanBlocks, inboundBlock)
+          }
+          // previous block is known, determine his height via previous block height
+          return this.GetHeightOfBlock(prevBlock)
+        })
+        // determine new height
+        .then((result) => {
+          if (typeof result === 'object') {
+            return resolve()
+          }
+          const prevHeight = result
+          const newHeight = prevHeight + 1
+          Debug(`Height if Incoming block will be ${newHeight}`)
+          // create new link with block
+          return ChainLink.Create(newBlock, newHeight)
+        })
+        // add link to the blockchain
+        .then(newLink => this.Db.Add(CstDocs.Blockchain, newLink))
+        // in sync mode: remove hash from needed list
+        .then(() => {
+          Debug(`Block ${newBlock.Blockhash()} added in blockchain`)
+          if (this.NeededHashes.length !== 0) {
+            const newHash = newBlock.Blockhash()
+            this.NeededHashes = this.NeededHashes.filter(needed => needed !== newHash)
+            Debug(`Still needed hashes: ${this.NeededHashes.length}`)
+            // needed list empty =   check if orphan block are waiting for reevaluation
+            if (this.NeededHashes.length === 0) {
+              this.Db.Find(CstDocs.OrphanBlocks, {})
+                .then((orphanBlocks) => {
+                  if (orphanBlocks.lenght === 0) {
+                    return resolve(newBlock)
+                  }
+                  // reevaluate orphan blocks
+                  const reevalutePromises = []
+                  orphanBlocks.forEach((orphan) => {
+                    reevalutePromises.push(this.IncomingBlock(orphan))
+                  })
+                  return Promise.all(reevalutePromises)
+
+                })
+            }
+          }
+        })
+
+>>>>>>> 1716879... peer 2
+        .catch(err => reject(err))
+    })
+  }
+}
+
+module.exports = Coin
