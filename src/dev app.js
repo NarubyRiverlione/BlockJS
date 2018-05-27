@@ -1,9 +1,9 @@
 
 const Debug = require('debug')('blockjs:app')
-const Cst = require('./src/const.js')
-const Coin = require('./src/coin.js')
+const Cst = require('./blockchain/const.js')
+const Coin = require('./blockchain/coin.js')
 
-const Wallet = require('./src/wallet.js')
+const Wallet = require('./blockchain/wallet.js')
 
 const ServerPort = parseInt(process.env.port, 10) || Cst.DefaultPort
 const DbPort = parseInt(process.env.dbport, 10) || Cst.DbPort

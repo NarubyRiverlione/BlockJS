@@ -11,11 +11,12 @@ const Const = {
   StartDiff: 2,
   PrivateKeySize: 10,
 
-  DefaultPort: 2000,
-  DefaultDataDir: './data',
-  DbPort: 27017,
+  DefaultServerPort: 2000,
+
 
   Db: {
+    DefaultDataDir: './data',
+    DefaultPort: 27017,
     Name: 'BlockJS',
     Docs: {
       PendingTransactions: 'PendingTransactions',
@@ -39,6 +40,11 @@ const Const = {
     GETBLOCK: 'GETBLOCK',
   },
 
+  API: {
+    Root: '/api',
+    IP: '0.0.0.0',
+    DefaultPort: 9000,
+  },
 }
 
 module.exports = Const

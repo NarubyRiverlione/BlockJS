@@ -1,7 +1,7 @@
 
 const Debug = require('debug')('blockjs:app')
-const Cst = require('./src/const.js')
-const Coin = require('./src/coin.js')
+const Cst = require('./blockchain/const.js')
+const Coin = require('./blockchain/coin.js')
 
 
 const ServerPort = parseInt(process.env.port, 10) || Cst.DefaultPort

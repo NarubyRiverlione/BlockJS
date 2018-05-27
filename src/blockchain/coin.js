@@ -5,10 +5,15 @@ const ChainLink = require('./chainlink.js')
 const Cst = require('./const.js')
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
+const API = require('../api/express.js')
 
-const Debug = require('debug')('blockjs:blockchain')
+// const http = require('http')
+const https = require('https')
+const fs = require('fs')
+const Debug = require('debug')('blockjs:coin')
 
 const CstDocs = Cst.Db.Docs
+const CstAPI = Cst.API
 
 const CreateGenesisBlock = () => {
   const GenesisWallet = new Wallet(Cst.GenesisRewardWallet, Cst.GenesisAddress)
@@ -75,7 +80,7 @@ class Coin {
   - add genesis block if it doesn't exist
   - start peer 2 peer server
   */
-  static async Start(serverPort = Cst.DefaultPort, DbPort = Cst.DbPort) {
+  static async Start(serverPort = Cst.DefaultServerPort, DbPort = Cst.Db.DefaultPort) {
     const database = new DB()
     await database.Connect(DbPort)
 
@@ -103,6 +108,19 @@ class Coin {
     // start P2P
     coin.p2p = new P2P(serverPort, coin, this.version)
 
+    // start API server
+    coin.api = API(coin)
+    // const server = http.createServer(App)
+    // setImmediate(() => {
+    //   server.listen(CstAPI.DefaultPort, CstAPI.IP, () => {
+    //     Debug(`Express server listening on http://${CstAPI.IP}:${CstAPI.DefaultPort}`)
+    //   })
+    // })
+
+    const secureServer = https.createServer(coin.SSL_OPTIONS, coin.api)
+    secureServer.listen(CstAPI.DefaultPort, CstAPI.IP, () => {
+      Debug(`API server listening on https:/${CstAPI.IP}:${CstAPI.DefaultPort}`)
+    })
     return (coin)
   }
 
@@ -122,6 +140,12 @@ class Coin {
     this.Wallet = wallet
     this.p2p = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = []
+
+    this.SSL_OPTIONS = {
+      key: fs.readFileSync('./src/keys/ssl.key'),
+      cert: fs.readFileSync('./src/keys/ssl.crt'),
+      // ca: fs.readFileSync('./keys/intermediate.crt'),
+    }
   }
   get Balance() {
     return this.Wallet.Balance
