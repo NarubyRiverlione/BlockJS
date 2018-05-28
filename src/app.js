@@ -12,18 +12,6 @@ Coin.Start(ServerPort, DbPort)
   .then((coin) => {
     SpiceCoin = coin
     Debug('Coin started !')
-    // const App = API(CstAPI.Root, apiRoutes)
-    // const server = http.createServer(App)
-    // setImmediate(() => {
-    //   server.listen(CstAPI.DefaultPort, CstAPI.IP, () => {
-    //     Debug(`Express server listening on http://${CstAPI.IP}:${CstAPI.DefaultPort}`)
-    //   })
-    // })
-
-    // const secureServer = https.createServer(SSL_OPTIONS, App)
-    // secureServer.listen(CstAPI.DefaultPort, CstAPI.IP, () => {
-    //   Debug(`Express server listening on https:/${CstAPI.IP}:${CstAPI.DefaultPort}`)
-    // })
   })
   .catch(err => console.error(err))
 

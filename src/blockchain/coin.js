@@ -66,7 +66,7 @@ const CheckSyncingNeeded = (Db, NeededHashes) =>
     Db.CountDocs(CstDocs.IncomingBlocks)
       .then((amountBlockNeedEvaluation) => {
         if (amountBlockNeedEvaluation > 0) return resolve(true)
-        if (NeededHashes.length === 0) return resolve(true)
+        if (NeededHashes.length > 0) return resolve(true)
         return resolve(false)
       })
       .catch(err => reject(err))
@@ -150,6 +150,10 @@ class Coin {
   get Balance() {
     return this.Wallet.Balance
   }
+  // get name, address and balance of wallet
+  get WalletInfo() {
+    return this.Wallet
+  }
   // get info text with Height, Diff, hash, amount pending transactions
   GetInfo() {
     return new Promise((resolve, reject) => {
@@ -214,7 +218,7 @@ class Coin {
   }
   // get amount of pending transactions
   GetAmountOfPendingTX() {
-    return this.Db.CountDocs(CstDocs.Blockchain)
+    return this.Db.CountDocs(CstDocs.PendingTransactions)
   }
   // get last block
   GetLastBlock() {
@@ -279,12 +283,8 @@ class Coin {
 
 
   // transaction is alway sending from own wallet to receiver
-  CreateTX(recieverWallet, amount) {
-    // return new Promise((resolve, reject) => {
-    return Transaction.Create(this.Wallet, recieverWallet, amount)
-    //     .catch(err => reject(err))
-    //     .then(tx => resolve(tx))
-    // })
+  CreateTX(recieverAddress, amount) {
+    return Transaction.Create(this.Wallet, recieverAddress, amount)
   }
 
   // add a TX to the pending transactions
@@ -306,7 +306,7 @@ class Coin {
     await this.Db.Add(CstDocs.PendingTransactions, tx)
     // save tx.hash in wallet for fast lookup (get balance)
     const resultSaveTX = await Wallet.SaveOwnTX(tx.Hash, this.Db)
-    return resultSaveTX
+    return resultSaveTX.result
   }
 
   // create new block with all pending transactions
@@ -343,7 +343,8 @@ class Coin {
   }
 
   RenameWallet(newName) {
-    this.Wallet.ChangeName(newName, this.Db)
+    if (!newName) { return Promise.reject(new Error('No new name')) }
+    return this.Wallet.ChangeName(newName, this.Db)
   }
 
   /* CAN BE VERY COSTLY */

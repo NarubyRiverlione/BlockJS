@@ -5,22 +5,26 @@ const Wallet = require('./wallet.js')
 
 
 class Transaction {
-  static Create(fromWallet, toWallet, amount, isCoinBaseTX = false) {
+  static Create(fromWallet, receiverAddress, amount, isCoinBaseTX = false) {
     return new Promise((resolve, reject) => {
       // CoinBaseTX has no fromWallet
       if (!Wallet.CheckIsWallet(fromWallet) && !isCoinBaseTX) { return reject(new Error('fromWallet is not a Wallet')) }
-
-      if (!Wallet.CheckIsWallet(toWallet)) { return reject(new Error('toWallet is not a Wallet')) }
+      // TODO check if address is valid
+      if (!(receiverAddress)) { return reject(new Error('Receiver address is not valid')) }
 
       if (typeof (amount) !== 'number') { return reject(new Error('Amount is not a number')) }
 
-      return resolve(new Transaction(fromWallet, toWallet, amount, isCoinBaseTX))
+      return resolve(new Transaction(fromWallet, receiverAddress, amount, isCoinBaseTX))
     })
   }
 
-  constructor(fromWallet, toWallet, amount, isCoinBaseTX) {
-    this.FromAddress = isCoinBaseTX ? null : fromWallet.Address
-    this.ToAddress = toWallet.Address
+  constructor(fromWallet, receiverAddress, amount, isCoinBaseTX) {
+    if (fromWallet) {
+      this.FromAddress = isCoinBaseTX ? null : fromWallet.Address
+    } else {
+      this.FromAddress = null
+    }
+    this.ToAddress = receiverAddress
     this.Amount = amount
     this.CoinBaseTX = isCoinBaseTX
     this.Hash = this.Hash()
@@ -30,7 +34,16 @@ class Transaction {
     const hash = SHA256(this.FromAddress + this.ToAddress + this.Amount)
     return hash.toString()
   }
-
+  static ParseFromDb(txDb) {
+    const tx = new Transaction(
+      null, null,
+      txDb.Amount,
+      txDb.CoinBaseTX,
+    )
+    tx.FromAddress = txDb.FromAddress
+    tx.ToAddress = txDb.FromAddress
+    return tx
+  }
   static IsValid(tx) {
     if (!tx.FromAddress && !tx.CoinBaseTX) {
       Debug('ERROR transaction is not valid: no from address in a not coinbased transaction')

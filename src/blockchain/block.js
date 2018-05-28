@@ -37,11 +37,13 @@ class Block {
 
   // create instance of Block with db data
   static ParseFromDb(DBblock) {
+    const transactions = DBblock.Transactions.map(tx =>
+      Transactions.ParseFromDb(tx))
     const block = new Block(
       DBblock.PrevHash,
       DBblock.Nonce,
       DBblock.Diff,
-      DBblock.Transactions,
+      transactions,
       DBblock.Timestamp,
       DBblock.Version,
     )
