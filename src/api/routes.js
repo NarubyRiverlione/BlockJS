@@ -13,7 +13,11 @@ class Routes {
     })
 
     this.router.get('/Balance', (req, res) => {
-      res.status(200).json({ balance: coin.Balance })
+      coin.GetBalance()
+        .then((balance) => {
+          res.status(200).json({ balance })
+        })
+        .catch(error => res.status(400).json({ error }))
     })
     this.router.get('/Height', (req, res) => {
       coin.GetHeight()
@@ -93,6 +97,13 @@ class Routes {
       coin.MineBlock()
         .then((block) => {
           res.status(200).send({ block })
+        })
+        .catch(error => res.status(400).json({ error }))
+    })
+    this.router.get('/SyncWallet', (req, res) => {
+      coin.SyncWallet()
+        .then((balance) => {
+          res.status(200).send({ balance })
         })
         .catch(error => res.status(400).json({ error }))
     })

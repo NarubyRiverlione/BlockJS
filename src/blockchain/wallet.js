@@ -41,7 +41,7 @@ class Wallet {
 
           if (walletDb.length === 0) {
             Debug('No wallet in database, create one now')
-            const newWallet = new Wallet('New Wallet', null, 0)
+            const newWallet = new Wallet('New Wallet', null)
             db.Add(CstDocs.Wallet, newWallet)
               .catch(err => reject(err))
               .then(() => resolve(newWallet))
@@ -49,10 +49,9 @@ class Wallet {
         })
     })
   }
-  constructor(name, address, balance) {
+  constructor(name, address) {
     this.Name = name
     this.Address = address || crypto.randomBytes(PrivateKeySize).toString('hex')
-    this.Balance = balance
   }
 
   static CheckIsWallet(check) {
@@ -63,8 +62,17 @@ class Wallet {
     return new Wallet(
       walletDb.Name,
       walletDb.Address,
-      walletDb.Balance,
+      // walletDb.Balance,
     )
+  }
+
+  GetBalance(Db) {
+    const filter = { Address: this.Address }
+    return new Promise((resolve, reject) => {
+      Db.FindOne(CstDocs.Wallet, filter)
+        .then(wallet => resolve(wallet.Balance))
+        .catch(err => reject(err))
+    })
   }
 
   ChangeName(newName, db) {
@@ -87,20 +95,25 @@ class Wallet {
   // calculate the balance based on own transactions
   // send = debit, receive = credit
   UpdateBalanceFromTxs(myTX, db) {
+    let balance = 0
     myTX.forEach((tx) => {
-      this.Balance += this.DeltaBalanceFromTX(tx)
+      balance += this.DeltaBalanceFromTX(tx)
     })
     // save calculated balance to Db
     const filter = { Address: this.Address }
-    const update = { Balance: this.Balance }
-    return db.Update(CstDocs.Wallet, filter, update)
+    const update = { Balance: balance }
+
+    return new Promise((resolve, reject) => {
+      db.Update(CstDocs.Wallet, filter, update)
+        .then(() => resolve(balance))
+        .catch(err => reject(err))
+    })
   }
 
   //  calculate balance from all saved transactions
   // Warning: could be costly
   CalcBalance(db) {
-    this.Balance = 0
-    const myTX = []
+    const myTXs = []
 
     return new Promise((resolve, reject) => {
       const promisesFindTXs = []
@@ -115,7 +128,7 @@ class Wallet {
               FindInBlockchain(txhash, db)
                 .catch(err => reject(err))
                 .then((ownTX) => {
-                  myTX.push(ownTX)
+                  myTXs.push(ownTX)
                   // return Wallet.SaveOwnTX(ownTX.Hash, db)
                 })
 
@@ -124,8 +137,8 @@ class Wallet {
           // get all relative transactions from db
           return Promise.all(promisesFindTXs)
         })
-        .then(() => this.UpdateBalanceFromTxs(myTX, db))
-        .then(result => resolve(result))
+        .then(() => this.UpdateBalanceFromTxs(myTXs, db))
+        .then(balance => resolve(balance))
         .catch(err => reject(err))
     })
   }
@@ -134,11 +147,11 @@ class Wallet {
   // --> update balance and save tx in db
   IncommingBlock(block, db) {
     return new Promise((resolve, reject) => {
-      const incommingTXs = this.FindIncommingTX(block)
-      incommingTXs.forEach((tx) => {
+      const ownTXs = this.FindIncommingTX(block)
+      ownTXs.forEach((tx) => {
         Wallet.SaveOwnTX(tx)
           .then(() => this.UpdateBalanceFromTxs(tx, db))
-          .then(() => resolve('Balance updated'))
+          .then(balance => resolve(balance))
           .catch(err => reject(err))
       })
     })

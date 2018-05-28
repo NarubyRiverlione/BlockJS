@@ -147,8 +147,8 @@ class Coin {
       // ca: fs.readFileSync('./keys/intermediate.crt'),
     }
   }
-  get Balance() {
-    return this.Wallet.Balance
+  GetBalance() {
+    return this.Wallet.GetBalance(this.Db)
   }
   // get name, address and balance of wallet
   get WalletInfo() {
@@ -198,10 +198,8 @@ class Coin {
   GetDiff() {
     return new Promise((resolve, reject) => {
       this.GetLastBlock()
-        .catch(err =>
-          reject(err))
-        .then(lastBlock =>
-          resolve(lastBlock.Diff))
+        .catch(err => reject(err))
+        .then(lastBlock => resolve(lastBlock.Diff))
     })
   }
   // hash of last block
@@ -288,7 +286,6 @@ class Coin {
   }
 
   // add a TX to the pending transactions
-  // TODO: broadcast new pending TX to peers
   async SendTX(tx) {
     // is tx a Transaction object ?
     if (tx instanceof Transaction === false) { return (new Error('SendTX: argument is not a transaction')) }
@@ -297,21 +294,20 @@ class Coin {
     // is the Transaction complete ?
     if (!Transaction.IsValid(tx)) { return (new Error('SendTX: transaction is not valid')) }
 
-    // FIXME balance needs always up-to-date in db
-    // also to easy to cheat? Each other node will check this tx before adding in a block
-
-    if (tx.Amount > this.Wallet.Balance) { return (new Error('Not enough balance !')) }
+    // TODO: also to easy to cheat? Each other node will check this tx before adding in a block
+    const balance = await this.Wallet.GetBalance(this.Db)
+    if (tx.Amount > balance) { return (new Error('Not enough balance !')) }
 
     // add TX to pending pool
     await this.Db.Add(CstDocs.PendingTransactions, tx)
-    // save tx.hash in wallet for fast lookup (get balance)
+    // TODO: broadcast new pending TX to peers
+
+    // save tx.hash in wallet for fast lookup to get balance
     const resultSaveTX = await Wallet.SaveOwnTX(tx.Hash, this.Db)
     return resultSaveTX.result
   }
 
   // create new block with all pending transactions
-  // TODO POW / POS
-  // TODO broadcast new block
   async MineBlock() {
     const syncing = await CheckSyncingNeeded(this.Db, this.NeededHashes)
     if (syncing) return ('Cannot mine a block, this node needs syncing')
@@ -319,12 +315,13 @@ class Coin {
     const { Db } = this
 
     const PendingTransactions = await AllPendingTX(Db)
-    // TODO before adding check each tx: valid ? balance ?
+    // TODO: before adding check each tx: valid ? balance ?
 
     const prevHash = await this.GetBestHash()
     // create block
 
-    // TODO set Max of TX in block
+    // TODO: POW / POS
+    // TODO: set Max of TX in block
     const createdBlock = await Block.Create(prevHash, 0, Cst.StartDiff, PendingTransactions, Date.now()) // eslint-disable-line max-len
 
     const height = await this.GetHeight()
@@ -334,9 +331,11 @@ class Coin {
     // save link to blockchain
     await this.Db.Add(CstDocs.Blockchain, newLink)
 
+    // TODO: broadcast new block
+
     // clear pending transactions
-    // TODO only remove tx's that are added in this block (once Max of TX are set)
-    // TODO instead of removing, mark as 'processed' so there available in case of forks
+    // TODO: only remove tx's that are added in this block (once Max of TX are set)
+    // TODO: instead of removing, mark as 'processed' so there available in case of forks
     await ClearPendingTX(Db)
 
     return (createdBlock)
@@ -469,9 +468,10 @@ class Coin {
     // add link to the blockchain
     await Db.Add(CstDocs.Blockchain, newLink)
 
-    /* TODO check if block contains receiving transactions for this wallet */
-    // save tx to OwnTX
-    // update balance
+    /*  check if block contains receiving transactions for this wallet */
+    // save tx to OwnTX & update balance
+    const balance = await this.Wallet.IncomingBlock(newBlock, this.Db)
+    Debug(`Updated balance: ${balance}`)
 
     /* remove block from incoming list */
     const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`Block ${blockhash} added in blockchain`))
