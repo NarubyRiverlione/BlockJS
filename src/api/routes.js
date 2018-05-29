@@ -107,6 +107,7 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error }))
     })
+    // body: newName
     this.router.post('/RenameWallet/', (req, res) => {
       const { newName } = req.body
       coin.RenameWallet(newName)
@@ -115,6 +116,7 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error }))
     })
+    // body:  toAddress, amount
     this.router.post('/SendTX/', (req, res) => {
       const { toAddress, amount } = req.body
       let tx
@@ -131,6 +133,12 @@ class Routes {
           }
         })
         .catch(error => res.status(400).json({ error }))
+    })
+    // body: remoteIP, remotePort
+    this.router.post('/ConnectPeer', (req, res) => {
+      const { remoteIP, remotePort } = req.body
+      const result = this.coin.ConnectPeer(remoteIP, remotePort)
+      res.status(200).send(result)
     })
   }
 }

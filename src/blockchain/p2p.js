@@ -74,7 +74,7 @@ class P2P {
       peer.send(VersionMsg(this.Coin.Version))
       // send hash of this blockchain
       this.Coin.GetBestHash()
-        .then(hash => HashMsg(peer, hash))
+        .then((hash) => { peer.send(HashMsg(hash)) })
         .catch(err => console.error(err))
     })
   }
@@ -146,20 +146,27 @@ class P2P {
 
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
-    Debug(`Connecting to peer ${remoteIP} on port ${remotePort}`)
+    if (!remotePort) {
+      return new Error('No remote IP')
+    }
+    if (!remotePort) {
+      return new Error('No remote port')
+    }
+
     const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
 
-    // prepare to get info from connection
+    // setup message handler from this connection
     connection.on('message', (message) => { this.MessageHandle(message, connection) })
 
     // send own  info
     connection.on('open', () => {
-      connection.send(VersionMsg(this.Version))
+      connection.send(VersionMsg(this.Coin.Version))
       // send hash of this blockchain
       this.Coin.GetBestHash()
         .then(hash => connection.send(HashMsg(hash)))
         .catch(err => console.error(err))
     })
+    return (`Connecting to peer ${remoteIP} on port ${remotePort}`)
   }
 
   Close() {

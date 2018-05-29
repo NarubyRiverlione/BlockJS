@@ -16,11 +16,8 @@ const FindInBlockchain = (TXhash, db) =>
       })
   })
 
-// this.balance should be up-to-date
-
 // document 'OwnTransactionHashes" should be up-to-date
 //  --> update when sending TX
-// TODO:  update when receiving block
 
 
 class Wallet {
@@ -51,7 +48,7 @@ class Wallet {
   }
   constructor(name, address) {
     this.Name = name
-    this.Address = address || crypto.randomBytes(PrivateKeySize).toString('hex')
+    this.Address = address || Cst.AddressPrefix.concat(crypto.randomBytes(PrivateKeySize).toString('hex'))
   }
 
   static CheckIsWallet(check) {

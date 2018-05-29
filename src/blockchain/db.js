@@ -9,19 +9,19 @@ class Db {
     this.client = null
   }
 
-  Connect(DbPort) {
+  Connect(DbServer, DbPort) {
     return new Promise((resolve, reject) => {
       // Connection URL
-      const url = `mongodb://localhost:${DbPort}`
+      const url = `mongodb://${DbServer}:${DbPort}`
       // Use connect method to connect to the server
       MongoClient.connect(url)
         .then((client) => {
-          Debug(`Connected successfully to DB server on port ${DbPort}`)
+          Debug(`Connected successfully to DB server ${DbServer} port ${DbPort}`)
           this.client = client
           this.db = (client.db(CstDB.Name))
           resolve()
         })
-        .catch(error => reject(new Error(`Cannot connect to DB on port ${DbPort}: ${error}`)))
+        .catch(error => reject(new Error(`Cannot connect to DB ${DbServer} port ${DbPort}: ${error}`)))
     })
   }
 

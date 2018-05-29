@@ -1,18 +1,17 @@
 
 const Const = {
-  GenesisReward: 1000,
+  GenesisReward: 10000,
   GenesisTimestamp: 1525962288078,
   GenesisRewardWallet: 'Genesis Reward Wallet',
-  GenesisAddress: '707d6653b0b81d679313',
-  GenesisHash: '0af6077fb5bb48b99a17b7309372efaac21e9a10c26b47454dac19312b7c88ac',
-  GenesisTxHash: 'cae87f517fb0d3226258e896048e77b9114fe41fe7ef1f57fe310ed0ca14d478',
+  GenesisAddress: 'SPICE_707d6653b0b81d679313',
+  GenesisHash: '7b4735604f33b769ce76e8c4e2d243296ee57e7f968c54c6002037c5b4f0f23b',
+  GenesisTxHash: '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e',
 
   StartBlockReward: 10,
   StartDiff: 2,
   PrivateKeySize: 10,
-
   DefaultServerPort: 2000,
-
+  AddressPrefix: 'SPICE_',
 
   Db: {
     DefaultDataDir: './data',

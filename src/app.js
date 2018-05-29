@@ -4,11 +4,13 @@ const Cst = require('./blockchain/const.js')
 const Coin = require('./blockchain/coin.js')
 const Wallet = require('./blockchain/wallet.js')
 
-const ServerPort = parseInt(process.env.port, 10) || Cst.DefaultPort
-const DbPort = parseInt(process.env.dbport, 10) || Cst.DbPort
+const DbServer = process.env.dbServer
+const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort
+const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
+const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 let SpiceCoin
-Coin.Start(ServerPort, DbPort)
+Coin.Start(ServerPort, DbServer, DbPort, APIPort)
   .then((coin) => {
     SpiceCoin = coin
     Debug('Coin started !')

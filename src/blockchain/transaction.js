@@ -9,8 +9,10 @@ class Transaction {
     return new Promise((resolve, reject) => {
       // CoinBaseTX has no fromWallet
       if (!Wallet.CheckIsWallet(fromWallet) && !isCoinBaseTX) { return reject(new Error('fromWallet is not a Wallet')) }
+
       // TODO check if address is valid
       if (!(receiverAddress)) { return reject(new Error('Receiver address is not valid')) }
+      if (receiverAddress instanceof Wallet) { return reject(new Error('Receiver is a Wallet instead of an address')) }
 
       if (typeof (amount) !== 'number') { return reject(new Error('Amount is not a number')) }
 
@@ -46,7 +48,7 @@ class Transaction {
   }
   static IsValid(tx) {
     if (!tx.FromAddress && !tx.CoinBaseTX) {
-      Debug('ERROR transaction is not valid: no from address in a not coinbased transaction')
+      Debug('ERROR transaction is not valid: no from address in a non-coinbased transaction')
       return false
     }
     if (!tx.ToAddress) {

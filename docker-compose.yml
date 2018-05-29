@@ -1,0 +1,27 @@
+version: "3"
+services:
+ server:
+  build: 
+     context: .
+  networks:
+    - DbNet
+    - default
+  ports:
+    - "2000:2000"
+    - "9000:9000"
+  environment:
+    dbServer: database
+  depends_on: 
+      - database
+    
+ database:
+  image: mongo
+  restart: always
+  networks:
+    - DbNet
+
+
+networks: 
+  DbNet:
+    internal: true
+ 

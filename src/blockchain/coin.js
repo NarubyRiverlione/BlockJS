@@ -16,9 +16,8 @@ const CstDocs = Cst.Db.Docs
 const CstAPI = Cst.API
 
 const CreateGenesisBlock = () => {
-  const GenesisWallet = new Wallet(Cst.GenesisRewardWallet, Cst.GenesisAddress)
   // coinBase TX = true
-  const GenesisTX = new Transaction(null, GenesisWallet, Cst.GenesisReward, true)
+  const GenesisTX = new Transaction(null, Cst.GenesisAddress, Cst.GenesisReward, true)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
 }
 const GenesisBlockExistInDb = Db =>
@@ -80,9 +79,14 @@ class Coin {
   - add genesis block if it doesn't exist
   - start peer 2 peer server
   */
-  static async Start(serverPort = Cst.DefaultServerPort, DbPort = Cst.Db.DefaultPort) {
+  static async Start(
+    serverPort = Cst.DefaultServerPort,
+    DbServer = '127.0.0.1',
+    DbPort = Cst.Db.DefaultPort,
+    APIPort = Cst.API.DefaultPort,
+  ) {
     const database = new DB()
-    await database.Connect(DbPort)
+    await database.Connect(DbServer, DbPort)
 
     // load wallet
     const wallet = await Wallet.Load(database)
@@ -118,8 +122,8 @@ class Coin {
     // })
 
     const secureServer = https.createServer(coin.SSL_OPTIONS, coin.api)
-    secureServer.listen(CstAPI.DefaultPort, CstAPI.IP, () => {
-      Debug(`API server listening on https:/${CstAPI.IP}:${CstAPI.DefaultPort}`)
+    secureServer.listen(APIPort, CstAPI.IP, () => {
+      Debug(`API server listening on https:/${CstAPI.IP}:${APIPort}`)
     })
     return (coin)
   }
@@ -363,7 +367,7 @@ class Coin {
     })
   }
 
-  ConnectPeer(remoteIP, remotePort = Cst.DefaultPort) {
+  ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
     this.p2p.Connect(remoteIP, remotePort)
   }
 
