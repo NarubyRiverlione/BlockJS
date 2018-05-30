@@ -29,7 +29,7 @@ class Transaction {
     this.ToAddress = receiverAddress
     this.Amount = amount
     this.CoinBaseTX = isCoinBaseTX
-    this.Hash = this.Hash()
+    this.TXhash = this.Hash()
   }
 
   Hash() {
@@ -38,12 +38,12 @@ class Transaction {
   }
   static ParseFromDb(txDb) {
     const tx = new Transaction(
-      null, null,
+      null, // Db stores from address, not the wallet
+      txDb.ToAddress,
       txDb.Amount,
       txDb.CoinBaseTX,
     )
     tx.FromAddress = txDb.FromAddress
-    tx.ToAddress = txDb.FromAddress
     return tx
   }
   static IsValid(tx) {

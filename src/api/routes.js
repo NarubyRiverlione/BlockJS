@@ -27,8 +27,12 @@ class Routes {
         .catch(error => res.status(400).json({ error }))
     })
     this.router.get('/Info', (req, res) => {
-      const walletInfo = coin.WalletInfo
-      coin.GetInfo()
+      let walletInfo
+      coin.GetWalletInfo()
+        .then((wallet) => {
+          walletInfo = wallet
+          return coin.GetInfo()
+        })
         .then((info) => {
           const showInfo = `${info}
           Wallet address: ${walletInfo.Address} 

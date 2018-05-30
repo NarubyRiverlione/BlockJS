@@ -155,8 +155,15 @@ class Coin {
     return this.Wallet.GetBalance(this.Db)
   }
   // get name, address and balance of wallet
-  get WalletInfo() {
-    return this.Wallet
+  GetWalletInfo() {
+    return new Promise((resolve, reject) => {
+      this.GetBalance()
+        .then((balance) => {
+          const walletInfo = Object.assign({ Balance: balance }, this.Wallet)
+          return resolve(walletInfo)
+        })
+        .catch(err => reject(err))
+    })
   }
   // get info text with Height, Diff, hash, amount pending transactions
   GetInfo() {
@@ -346,8 +353,13 @@ class Coin {
   }
 
   RenameWallet(newName) {
-    if (!newName) { return Promise.reject(new Error('No new name')) }
-    return this.Wallet.ChangeName(newName, this.Db)
+    return new Promise((resolve, reject) => {
+      if (!newName) { return reject(new Error('No new name')) }
+      this.Wallet.ChangeName(newName, this.Db)
+        .then(() => this.GetWalletInfo())
+        .then(walletInfo => resolve(walletInfo))
+        .catch(err => reject(err))
+    })
   }
 
   /* CAN BE VERY COSTLY */

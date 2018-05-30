@@ -13,8 +13,8 @@ let SpiceCoin
 // const Me = Coin.CreateWallet('Me')
 
 // dummy wallets for testing
-const You = new Wallet('You').Address
-const Dude = new Wallet('Dude').Address
+const DockerAddress = 'SPICE_602d0abb8df465117a22'
+
 
 Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   .then((coin) => {
@@ -36,21 +36,21 @@ Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
     // return SpiceCoin.RenameWallet('Genesis Wallet')
     // })
     // .then(() => {
-    Debug('Create TX 1:  -> you 22')
-    return SpiceCoin.CreateTX(You, 20)
+    Debug('Create TX 1:  -> docker 22')
+    return SpiceCoin.CreateTX(DockerAddress, 20)
   })
   .then((tx1) => {
     Debug('Send tx1')
     return SpiceCoin.SendTX(tx1)
-  })
+    // })
 
-  .then(() => {
-    Debug('Create  TX 2: -> Dude 42')
-    return SpiceCoin.CreateTX(Dude, 30)
-  })
-  .then((tx2) => {
-    Debug('Sent tx2')
-    return SpiceCoin.SendTX(tx2)
+    // .then(() => {
+    //   Debug('Create  TX 2: -> Dude 42')
+    //   return SpiceCoin.CreateTX(DockerAddress, 30)
+    // })
+    // .then((tx2) => {
+    //   Debug('Sent tx2')
+    //   return SpiceCoin.SendTX(tx2)
   })
 
   .then(() => {

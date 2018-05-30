@@ -30,8 +30,10 @@ class Block {
     this.Version = version
     this.Timestamp = timestamp
     this.Transactions = transactions
+    this.TransactionHash = this.HashTransactions()
   }
-  get HashTransactions() {
+
+  HashTransactions() {
     return SHA256(JSON.stringify(this.Transactions)).toString()
   }
 
@@ -46,6 +48,7 @@ class Block {
       transactions,
       DBblock.Timestamp,
       DBblock.Version,
+      DBblock.TransactionHash,
     )
     // all Block function now available
     return block

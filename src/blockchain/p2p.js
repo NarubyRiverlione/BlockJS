@@ -56,7 +56,7 @@ class P2P {
     // handle a connection disconnect
     this.server.on('close', () => { Debug('peer has disconnected') })
     // handle error
-    this.server.on('error', () => { Debug('error') })
+    this.server.on('error', (error) => { Debug(`Error: ${error}`) })
   }
 
   // peer connects = send ACK + send Version msg and BestHash msg
@@ -154,7 +154,10 @@ class P2P {
     }
 
     const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
-
+    // handle a connection disconnect
+    connection.on('close', () => { Debug('connection has disconnected') })
+    // handle error
+    connection.on('error', (error) => { Debug(`connection error: ${error}`) })
     // setup message handler from this connection
     connection.on('message', (message) => { this.MessageHandle(message, connection) })
 

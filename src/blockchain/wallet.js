@@ -59,7 +59,6 @@ class Wallet {
     return new Wallet(
       walletDb.Name,
       walletDb.Address,
-      // walletDb.Balance,
     )
   }
 
@@ -76,7 +75,7 @@ class Wallet {
     this.Name = newName
     const filter = { Address: this.Address }
     const update = { Name: newName }
-    db.Update(CstDocs.Wallet, filter, update)
+    return db.Update(CstDocs.Wallet, filter, update)
   }
 
   static SaveOwnTX(txhash, db) {
@@ -142,7 +141,7 @@ class Wallet {
 
   // check if there's a relevant transaction for this wallet
   // --> update balance and save tx in db
-  IncommingBlock(block, db) {
+  IncomingBlock(block, db) {
     return new Promise((resolve, reject) => {
       const ownTXs = this.FindIncommingTX(block)
       ownTXs.forEach((tx) => {
