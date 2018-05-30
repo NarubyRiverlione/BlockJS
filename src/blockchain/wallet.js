@@ -39,6 +39,9 @@ class Wallet {
           if (walletDb.length === 0) {
             Debug('No wallet in database, create one now')
             const newWallet = new Wallet('New Wallet', null)
+            const DebugMode = process.env.NODE_ENV === 'development'
+            Debug(`In debug mode, start with ${Cst.DebugStartWalletAmount}`)
+            newWallet.Balance = DebugMode ? Cst.DebugStartWalletAmount : 0
             db.Add(CstDocs.Wallet, newWallet)
               .catch(err => reject(err))
               .then(() => resolve(newWallet))
@@ -90,18 +93,21 @@ class Wallet {
 
   // calculate the balance based on own transactions
   // send = debit, receive = credit
-  UpdateBalanceFromTxs(myTX, db) {
-    let balance = 0
-    myTX.forEach((tx) => {
-      balance += this.DeltaBalanceFromTX(tx)
+  UpdateBalanceFromTxs(myTXs, db) {
+    let newBalance = 0
+    myTXs.forEach((tx) => {
+      newBalance += this.DeltaBalanceFromTX(tx)
     })
-    // save calculated balance to Db
-    const filter = { Address: this.Address }
-    const update = { Balance: balance }
+    return this.UpdateBalance(newBalance, db)
+  }
 
+  // save calculated balance to Db
+  UpdateBalance(newBalance, db) {
+    const filter = { Address: this.Address }
+    const update = { Balance: newBalance }
     return new Promise((resolve, reject) => {
       db.Update(CstDocs.Wallet, filter, update)
-        .then(() => resolve(balance))
+        .then(() => resolve(newBalance))
         .catch(err => reject(err))
     })
   }

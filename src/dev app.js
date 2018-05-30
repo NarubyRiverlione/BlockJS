@@ -36,12 +36,12 @@ Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
     // return SpiceCoin.RenameWallet('Genesis Wallet')
     // })
     // .then(() => {
-    Debug('Create TX 1:  -> docker 22')
-    return SpiceCoin.CreateTX(DockerAddress, 20)
-  })
-  .then((tx1) => {
-    Debug('Send tx1')
-    return SpiceCoin.SendTX(tx1)
+    //   Debug('Create TX 1:  -> docker 22')
+    //   return SpiceCoin.CreateTX(DockerAddress, 20)
+    // })
+    // .then((tx1) => {
+    //   Debug('Send tx1')
+    //   return SpiceCoin.SendTX(tx1)
     // })
 
     // .then(() => {
@@ -51,21 +51,21 @@ Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
     // .then((tx2) => {
     //   Debug('Sent tx2')
     //   return SpiceCoin.SendTX(tx2)
-  })
+    // })
 
-  .then(() => {
-    Debug('Mine block with all pending transactions')
-    return SpiceCoin.MineBlock()
-  })
-  .then((resultMining) => {
-    const block = JSON.stringify(resultMining)
-    Debug(`New block : ${block}`)
+    // .then(() => {
+    //   Debug('Mine block with all pending transactions')
+    //   return SpiceCoin.MineBlock()
+    // })
+    // .then((resultMining) => {
+    //   const block = JSON.stringify(resultMining)
+    //   Debug(`New block : ${block}`)
 
-    return SpiceCoin.SyncWallet()
-  })
-  .then(() => SpiceCoin.GetBalance())
-  .then((balance) => {
-    Debug(`My balance is ${balance}`)
+    //   return SpiceCoin.SyncWallet()
+    // })
+    // .then(() => SpiceCoin.GetBalance())
+    // .then((balance) => {
+    //   Debug(`My balance is ${balance}`)
     SpiceCoin.ConnectPeer('127.0.0.1')
   })
 

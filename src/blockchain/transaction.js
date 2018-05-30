@@ -11,7 +11,7 @@ class Transaction {
       if (!Wallet.CheckIsWallet(fromWallet) && !isCoinBaseTX) { return reject(new Error('fromWallet is not a Wallet')) }
 
       // TODO check if address is valid
-      if (!(receiverAddress)) { return reject(new Error('Receiver address is not valid')) }
+      if (!receiverAddress) { return reject(new Error('Receiver address is not valid')) }
       if (receiverAddress instanceof Wallet) { return reject(new Error('Receiver is a Wallet instead of an address')) }
 
       if (typeof (amount) !== 'number') { return reject(new Error('Amount is not a number')) }

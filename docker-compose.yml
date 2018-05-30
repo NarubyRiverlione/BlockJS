@@ -7,8 +7,9 @@ services:
     - DbNet
     - default
   ports:
-    - "2000:2000"
-    - "9000:9000"
+    - "2000:2000"   # P2P
+    - "9000:9000"   # API
+    - "9229:9229"   # NodeJS Debug
   environment:
     dbServer: database
   depends_on: 

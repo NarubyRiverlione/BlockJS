@@ -307,14 +307,19 @@ class Coin {
 
     // TODO: also to easy to cheat? Each other node will check this tx before adding in a block
     const balance = await this.Wallet.GetBalance(this.Db)
-    if (tx.Amount > balance) { return (new Error('Not enough balance !')) }
+    if (tx.Amount > balance) { return (new Error('SendTX: Not enough balance !')) }
 
+    // credit balance
+    const newBalance = balance - tx.Amount
+    // save new balance
+    await this.Wallet.UpdateBalance(newBalance, this.Db)
     // add TX to pending pool
     await this.Db.Add(CstDocs.PendingTransactions, tx)
     // TODO: broadcast new pending TX to peers
 
     // save tx.hash in wallet for fast lookup to get balance
     const resultSaveTX = await Wallet.SaveOwnTX(tx.Hash, this.Db)
+
     return resultSaveTX.result
   }
 
@@ -486,8 +491,8 @@ class Coin {
 
     /*  check if block contains receiving transactions for this wallet */
     // save tx to OwnTX & update balance
-    const balance = await this.Wallet.IncomingBlock(newBlock, this.Db)
-    Debug(`Updated balance: ${balance}`)
+    // const balance = await this.Wallet.IncomingBlock(newBlock, this.Db)
+    // Debug(`Updated balance: ${balance}`)
 
     /* remove block from incoming list */
     const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`Block ${blockhash} added in blockchain`))

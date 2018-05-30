@@ -7,6 +7,7 @@ const Const = {
   GenesisHash: '2a6da0913f4d01a3233c9452346b042243f5e3c8b431a124aed9d787a9bb6ef8',
   GenesisTxHash: 'a172cf1b97af949009b589822c86b72f5f09cdd5a3448048b754329734733b4a',
 
+  DebugStartWalletAmount: 100,
   StartBlockReward: 10,
   StartDiff: 2,
   PrivateKeySize: 10,
