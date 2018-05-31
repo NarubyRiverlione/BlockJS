@@ -93,16 +93,16 @@ class Wallet {
 
   // calculate the balance based on own transactions
   // send = debit, receive = credit
-  UpdateBalanceFromTxs(myTXs, db) {
-    let newBalance = 0
+  UpdateBalanceFromTxs(myTXs, db, oldBalance = 0) {
+    let newBalance = oldBalance
     myTXs.forEach((tx) => {
       newBalance += this.DeltaBalanceFromTX(tx)
     })
-    return this.UpdateBalance(newBalance, db)
+    return newBalance
   }
 
   // save calculated balance to Db
-  UpdateBalance(newBalance, db) {
+  SaveBalanceToDb(newBalance, db) {
     const filter = { Address: this.Address }
     const update = { Balance: newBalance }
     return new Promise((resolve, reject) => {
@@ -140,22 +140,32 @@ class Wallet {
           return Promise.all(promisesFindTXs)
         })
         .then(() => this.UpdateBalanceFromTxs(myTXs, db))
+        .then(balance => this.SaveBalanceToDb(balance))
         .then(balance => resolve(balance))
         .catch(err => reject(err))
     })
   }
 
-  // check if there's a relevant transaction for this wallet
+  // check if there are relevant transactions for this wallet in the
   // --> update balance and save tx in db
   IncomingBlock(block, db) {
     return new Promise((resolve, reject) => {
       const ownTXs = this.FindOwnTXinBlock(block)
-      ownTXs.forEach((tx) => {
-        Wallet.SaveOwnTX(tx)
-          .then(() => this.UpdateBalanceFromTxs(tx, db))
-          .then(balance => resolve(balance))
-          .catch(err => reject(err))
-      })
+      if (ownTXs.length === 0) { return resolve() }
+      Debug(`Found ${ownTXs.length} transactions for this wallet in incoming block`)
+      const newOwnTXpromises = []
+      // save any tx for this wallet to OwnTX
+      ownTXs.forEach(tx => newOwnTXpromises.push(Wallet.SaveOwnTX(tx.TXhash, db)))
+      Promise.all(newOwnTXpromises)
+        // get current balance
+        .then(() => this.GetBalance(db))
+        // update balance with found own tx's
+        .then(oldBalance => this.UpdateBalanceFromTxs(ownTXs, db, oldBalance))
+        // save updated balance
+        .then(balance => this.SaveBalanceToDb(balance, db))
+        // return updated balance
+        .then(newBalance => resolve(newBalance))
+        .catch(err => reject(err))
     })
   }
 

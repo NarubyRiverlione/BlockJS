@@ -488,8 +488,8 @@ class Coin {
 
     /*  check if block contains receiving transactions for this wallet */
     // save tx to OwnTX & update balance
-    // const balance = await this.Wallet.IncomingBlock(newBlock, this.Db)
-    // Debug(`Updated balance: ${balance}`)
+    const balance = await this.Wallet.IncomingBlock(newBlock, this.Db)
+    if (balance) Debug(`Updated balance: ${balance}`)
 
     /* remove block from incoming list */
     const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`Block ${blockhash} added in blockchain`))
