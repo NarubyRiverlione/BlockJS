@@ -276,16 +276,13 @@ class Coin {
   // get all hashes between best hash and specified hash
   async GetHashsFromBestTo(toHash) {
     const betweenHashs = []
+    let getHash = await this.GetBestHash()
 
-    const bestHash = await this.GetBestHash()
-    betweenHashs.push(bestHash)
-
-    let prevHash = bestHash
-    while (prevHash !== toHash) {
-      const prevBlock = await this.GetBlockWithHash(prevHash) // eslint-disable-line
+    while (getHash !== toHash) {
+      const prevBlock = await this.GetBlockWithHash(getHash) // eslint-disable-line
       // add hash to between array
       betweenHashs.push(prevBlock.Blockhash())
-      prevHash = prevBlock.PrevHash
+      getHash = prevBlock.PrevHash
     }
     return betweenHashs
   }
@@ -368,7 +365,7 @@ class Coin {
   }
 
   /* CAN BE VERY COSTLY */
-  SyncWallet() {
+  CalcWalletAmountFromSavedOwnTXs() {
     return this.Wallet.CalcBalance(this.Db)
   }
 

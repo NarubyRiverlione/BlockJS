@@ -108,8 +108,8 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    this.router.get('/SyncWallet', (req, res) => {
-      coin.SyncWallet()
+    this.router.get('/CalcWalletAmount', (req, res) => {
+      coin.CalcWalletAmountFromSavedOwnTXs()
         .then((balance) => {
           res.status(200).send({ balance })
         })

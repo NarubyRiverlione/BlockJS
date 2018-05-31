@@ -121,9 +121,9 @@ class Wallet {
       const promisesFindTXs = []
       // get all TX hashes of own transactions from db
       db.Find(CstDocs.OwnTx, {})
-        .then((TxHashs) => {
+        .then((ownTXhashes) => {
           // make promise(s) to get each TX based on the tx hash
-          TxHashs.forEach((ownTXhashDoc) => {
+          ownTXhashes.forEach((ownTXhashDoc) => {
             const { txhash } = ownTXhashDoc
             const findPromise =
               // create array of promises to each find the TX in the blockchain with the TX has
@@ -149,7 +149,7 @@ class Wallet {
   // --> update balance and save tx in db
   IncomingBlock(block, db) {
     return new Promise((resolve, reject) => {
-      const ownTXs = this.FindIncommingTX(block)
+      const ownTXs = this.FindOwnTXinBlock(block)
       ownTXs.forEach((tx) => {
         Wallet.SaveOwnTX(tx)
           .then(() => this.UpdateBalanceFromTxs(tx, db))
@@ -159,7 +159,7 @@ class Wallet {
     })
   }
 
-  FindIncommingTX(block) {
+  FindOwnTXinBlock(block) {
     const incommingTXs = []
     block.Transactions.forEach((tx) => {
       if (tx.ToAddress === this.Address) { incommingTXs.push(tx) }
