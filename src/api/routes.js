@@ -58,6 +58,13 @@ class Routes {
     })
     this.router.get('/AmountOfPendingTX', (req, res) => {
       coin.GetAmountOfPendingTX()
+        .then((amount) => {
+          res.status(200).send({ AmountOfPendingTX: amount })
+        })
+        .catch(error => res.status(400).json({ error: error.message }))
+    })
+    this.router.get('/AllPendingTx', (req, res) => {
+      coin.GetAllPendingTX()
         .then((pending) => {
           res.status(200).send({ pending })
         })

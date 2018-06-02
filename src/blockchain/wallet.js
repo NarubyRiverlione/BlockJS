@@ -8,7 +8,7 @@ const CstDocs = Cst.Db.Docs
 const FindInBlockchain = (TXhash, db) =>
   new Promise((resolve, reject) => {
     const filter = { 'Block.Transactions.TXhash': TXhash }
-    db.FindOne(Cst.Db.Docs.Blockchain, filter)
+    db.FindOne(CstDocs.Blockchain, filter)
       .catch(err => reject(err))
       .then((foundLink) => {
         if (!foundLink) { return reject(new Error(`Could not find tx ${TXhash} in the blockchain`)) }

@@ -5,6 +5,8 @@
   "main": "app.js",
   "scripts": {
     "startdb": "mongod --config ./mongod.conf",
+    "startTestDb": "mongod --config ./mongod.conf --port 27817",
+    "stopTestDb": "mongo --port 27817 admin --eval 'db.shutdownServer()'",
     "start": "node --inspect ./src/app.js",
     "dev": "node --inspect ./src/dev app.js",
     "test": "mocha",

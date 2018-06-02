@@ -2,17 +2,20 @@
 
 const expect = require('chai').expect // eslint-disable-line 
 
-const Coin = require('../src/coin.js')
-const Block = require('../src/block.js')
+const Coin = require('../src/blockchain/coin.js')
+const Block = require('../src/blockchain/block.js')
 // const Transaction = require('../src/transaction.js')
 // const Wallet = require('../src/wallet.js')
-const Cst = require('../src/const.js')
+const Cst = require('../src/blockchain/const.js')
 
 let TestCoin
+const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort
+const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
+const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 
 it('Blockchain creation', async () => {
-  TestCoin = await Coin.Start()
+  TestCoin = await Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   expect(TestCoin, 'creation failed').not.null
 
   describe('Genesis tests', () => {
@@ -21,18 +24,9 @@ it('Blockchain creation', async () => {
 
     it('Load genesis from db', async () => {
       GenesisBlockInDB = await TestCoin.GetBlockAtHeight(0)
-    })
-    it('(GetBlockAtHeight(0))  block with height 0 should exist in DB ', () => {
+      expect(GenesisBlock.IsValid()).to.be.true
       expect(GenesisBlockInDB).not.null
     })
-    it('Cast DB info to block should work', () => {
-      GenesisBlock = Block.ParseFromDb(GenesisBlockInDB)
-      expect(GenesisBlock).is.not.null
-      expect(GenesisBlock.IsValid()).to.be.true
-    })
-    // it('(Height) Block height = 0', () => {
-    //   expect(TestCoin.H()).to.equal(0)
-    // })
     it('(GetBestHash) Check hash', () => {
       expect(GenesisBlock.Blockhash()).is.equal(Cst.GenesisHash)
     })
@@ -59,42 +53,43 @@ it('Blockchain creation', async () => {
   })
 
   describe('Create block', () => {
+    const tx = TestCoin.CreateTX(`${Cst.AddressPrefix}toAnAddressYou`, 321)
+    const ValidBlock = Block.Create(null, 0, 2, [tx], Date.now())
+    const savedTXhash = ValidBlock.HashTransactions
+    const savedTX = ValidBlock.Transaction
+    const blockhash = ValidBlock.Blockhash()
+
+    it('Valid block creation', () => {
+      expect(Block.IsValid(ValidBlock)).is.true
+    })
+
     it('Invalid block detection: no headers', () => {
       const BlockWithoutHeaders = new Block()
-      expect(BlockWithoutHeaders.IsValid()).is.false
+      expect(Block.IsValid(BlockWithoutHeaders)).is.false
     })
     it('Invalid block detection: changed timestamp', () => {
-      const BlockChangedTimestamp = new Block(null, 0, 2, [], Date.now())
-      const blockhash = BlockChangedTimestamp.Blockhash()
+      const BlockChangedTimestamp = ValidBlock
 
       BlockChangedTimestamp.Timestamp = Date.now() + 1
       expect(BlockChangedTimestamp.Blockhash()).not.equal(blockhash)
     })
     it('Invalid block detection: changed PrevHash', () => {
-      const BlockChangedPrevHash = new Block(null, 0, 2, [], Date.now())
-      const blockhash = BlockChangedPrevHash.Blockhash()
-
+      const BlockChangedPrevHash = ValidBlock
       BlockChangedPrevHash.PrevHash = 'SHA256'
       expect(BlockChangedPrevHash.Blockhash()).not.equal(blockhash)
     })
+
     it('Transaction cannot be changed', () => {
-      const tx = Coin.CreateTX('fromMe', 'toYou', 321)
-      const block = new Block(null, 0, 2, [tx], Date.now())
-      // const savedBlockhash = block.Blockhash()
-      const savedTXhash = Block.HashTransactions
-      const savedTX = Block.Transaction
-      expect(block.IsValid()).is.true
+      const changedTX = Object.assign({ Amount: 123 }, tx) // instead of 321
+      ValidBlock.Transactions = [changedTX]
 
-      tx.Amount = 123 // instead of 321
-      block.Transactions = [tx]
-
-      expect(block.Blockhash(), 'blockhash must  be changed').not.equal(savedTXhash)
-      expect(block.HashTransactions, 'tx hash must  be changed').not.equal(savedTXhash)
-      expect(block.Transactions, 'transaction in block must not be changed').not.equal(savedTX)
+      expect(ValidBlock.Blockhash(), 'blockhash must  be changed').not.equal(savedTXhash)
+      expect(ValidBlock.HashTransactions, 'transactions hash must be changed').not.equal(savedTXhash)
+      expect(ValidBlock.Transactions, 'transaction in block must be changed').not.equal(savedTX)
     })
   })
 
-  describe('Transaction', () => {
+  xdescribe('Transaction', () => {
     it('Invalid tx: no sender', () => {
       const tx = Coin.CreateTX(null, 'toYou', 666)
       expect(tx.IsValid()).is.false

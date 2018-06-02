@@ -172,7 +172,7 @@ const Tx = (txMsg, coin) => {
     return Promise.reject(new Error('SendTX: transaction is not valid'))
   }
   // save to local db for mining later
-  return coin.SavePendingTx(tx)
+  return tx.Save(coin.Db)
 }
 
 module.exports = { Hash, Block, Tx }

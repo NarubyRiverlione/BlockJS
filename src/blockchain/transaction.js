@@ -2,7 +2,7 @@ const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:transaction')
 // const Cst = require('./const.js')
 const Wallet = require('./wallet.js')
-
+const CstDocs = require('./const').Db.Docs
 
 class Transaction {
   static Create(fromWallet, receiverAddress, amount, isCoinBaseTX = false) {
@@ -61,6 +61,11 @@ class Transaction {
     }
     // todo check amount <= balance of fromAddress ?
     return true
+  }
+
+  // save to db
+  Save(db) {
+    return db.Add(CstDocs.PendingTransactions, this)
   }
 }
 

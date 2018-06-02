@@ -256,7 +256,7 @@ class Coin {
     // save new balance
     await this.Wallet.SaveBalanceToDb(newBalance, this.Db)
     // add TX to pending pool
-    await this.SavePendingTx(tx)
+    await tx.Save(this.Db)
     // broadcast new pending TX to peers
     this.p2p.Broadcast(Cst.P2P.TRANSACTION, tx)
     // save tx.hash in wallet for fast lookup to get balance
@@ -265,14 +265,13 @@ class Coin {
     return resultSaveTX.result
   }
 
-  // save an pending tx
-  SavePendingTx(tx) {
-    return this.Db.Add(CstDocs.PendingTransactions, tx)
-  }
-
   // create new block with all pending transactions
   async MineBlock() {
     await Mining.MineBlock(this)
+  }
+
+  GetAllPendingTX() {
+    return this.Db.Find(CstDocs.PendingTransactions, {})
   }
 
   RenameWallet(newName) {

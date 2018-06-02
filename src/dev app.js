@@ -18,19 +18,16 @@ const DockerAddress = 'SPICE_602d0abb8df465117a22'
 
 Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   .then((coin) => {
-    // Debug(`Blockchain is valid: ${Spic(eCoin.IsValid()}`)
-    // Debug(`Genesis Height : ${SpiceCoin.GetHeight()}`)
-    // Debug(`Genesis Hash : ${SpiceCoin.GetBestHash()}`)
-    // Debug(`Genesis Diff : ${SpiceCoin.GetDiff()}`)
     SpiceCoin = coin
     return SpiceCoin.GetInfo()
   })
   .then((info) => {
     Debug(info)
-    return SpiceCoin.GetLastBlock()
-  })
-  .then((GenesisBlock) => {
-    Debug(`Genesis block: ${JSON.stringify(GenesisBlock)}`)
+    //   return SpiceCoin.GetHeight()
+    // })
+    // .then((height) => {
+    //   Debug(`Blockchain loaded with height ${height}`)
+    // Debug(`Genesis block: ${JSON.stringify(GenesisBlock)}`)
 
     // Debug('Renaming wallet')
     // return SpiceCoin.RenameWallet('Genesis Wallet')
@@ -66,7 +63,7 @@ Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
     // .then(() => SpiceCoin.GetBalance())
     // .then((balance) => {
     //   Debug(`My balance is ${balance}`)
-    SpiceCoin.ConnectPeer('127.0.0.1')
+    // SpiceCoin.ConnectPeer('127.0.0.1')
   })
 
   .catch(err => console.error(err))
