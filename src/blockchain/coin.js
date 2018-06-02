@@ -1,11 +1,12 @@
 const Transaction = require('./transaction.js')
 const Block = require('./block.js')
 const Wallet = require('./wallet.js')
-const ChainLink = require('./chainlink.js')
 const Cst = require('./const.js')
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
 const API = require('../api/express.js')
+const Genesis = require('./genesis.js')
+const Mining = require('./mining.js')
 
 // const http = require('http')
 const https = require('https')
@@ -14,43 +15,6 @@ const Debug = require('debug')('blockjs:coin')
 
 const CstDocs = Cst.Db.Docs
 const CstAPI = Cst.API
-
-const CreateGenesisBlock = () => {
-  // coinBase TX = true
-  const GenesisTX = new Transaction(null, Cst.GenesisAddress, Cst.GenesisReward, true)
-  return Block.Create(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
-}
-const GenesisBlockExistInDb = Db =>
-  new Promise((resolve, reject) => {
-    Db.Find(CstDocs.Blockchain, { Height: 0 })
-      .catch(err => reject(err))
-      .then(firstLink =>
-        resolve(firstLink.length !== 0))
-  })
-const CreateFirstLink = () =>
-  new Promise((resolve, reject) => {
-    CreateGenesisBlock()
-      .then(GenesisBlock => resolve(ChainLink.Create(GenesisBlock, 0)))
-      .catch(err => reject(err))
-  })
-const CreateBlockchain = Db =>
-  new Promise((resolve, reject) => {
-    let FirstLink
-    // no links in database = no genesis block (first run?)
-    // create blockchain by adding genesis block
-    CreateFirstLink()
-      .then((link) => {
-        FirstLink = link
-        Debug('Save genesis in Db')
-        return Db.Add(CstDocs.Blockchain, FirstLink)
-      })
-      .then(() => resolve(FirstLink))
-      .catch(err => reject(new Error(`ERROR cannot create/save genesis block: ${err}`)))
-  })
-
-
-const AllPendingTX = Db => Db.Find(CstDocs.PendingTransactions, {})
-
 
 class Coin {
   /* start coin :
@@ -75,11 +39,11 @@ class Coin {
     const coin = new Coin(database, wallet)
 
     // check if genesis block exists
-    const GenesesExist = await GenesisBlockExistInDb(database)
+    const GenesesExist = await Genesis.BlockExistInDb(database)
     // create genesis if needed
     if (!GenesesExist) {
       Debug('No blockchain in Db, create blockchain by adding Genesis Block')
-      const FirstLink = await CreateBlockchain(database)
+      const FirstLink = await Genesis.CreateBlockchain(database)
       // save to ownTX is wallet = Genesis address
       if (coin.Wallet.Address === Cst.GenesisAddress) {
         const GenesisTxHash = FirstLink.Block.Transactions[0].Hash
@@ -107,7 +71,6 @@ class Coin {
     })
     return (coin)
   }
-
   /*
    End coin :
    - close Db connection
@@ -131,6 +94,7 @@ class Coin {
       // ca: fs.readFileSync('./keys/intermediate.crt'),
     }
   }
+
   GetBalance() {
     return this.Wallet.GetBalance(this.Db)
   }
@@ -250,9 +214,11 @@ class Coin {
         })
     })
   }
-  GetPrevBlock(block) {
-    return this.GetBlockWithHash(block.PrevHash)
-  }
+
+  // GetPrevBlock(block) {
+  //   return this.GetBlockWithHash(block.PrevHash)
+  // }
+
   // get all hashes between best hash and specified hash
   async GetHashesFromBestTo(toHash) {
     const betweenHashes = []
@@ -299,43 +265,14 @@ class Coin {
     return resultSaveTX.result
   }
 
-  // save an incoming tx
+  // save an pending tx
   SavePendingTx(tx) {
     return this.Db.Add(CstDocs.PendingTransactions, tx)
   }
 
   // create new block with all pending transactions
   async MineBlock() {
-    const syncing = await this.CheckSyncingNeeded()
-    if (syncing) return ('Cannot mine a block, this node needs syncing')
-
-    const { Db } = this
-
-    const PendingTransactions = await AllPendingTX(Db)
-    // TODO: before adding check each tx: valid ? balance ?
-
-    const prevHash = await this.GetBestHash()
-    // create block
-
-    // TODO: POW / POS
-    // TODO: set Max of TX in block
-    const createdBlock = await Block.Create(prevHash, 0, Cst.StartDiff, PendingTransactions, Date.now()) // eslint-disable-line max-len
-
-    const height = await this.GetHeight()
-    // create new link with block
-    const newLink = await ChainLink.Create(createdBlock, height + 1)
-
-    // save link to blockchain
-    await this.Db.Add(CstDocs.Blockchain, newLink)
-
-    // TODO: broadcast new block
-
-    // clear pending transactions
-    // TODO: only remove tx's that are added in this block (once Max of TX are set)
-    // TODO: instead of removing, mark as 'processed' so there available in case of forks
-    await this.Db.RemoveAllDocs(CstDocs.PendingTransactions)
-
-    return (createdBlock)
+    await Mining.MineBlock(this)
   }
 
   RenameWallet(newName) {
@@ -353,17 +290,6 @@ class Coin {
     return this.Wallet.CalcBalance(this.Db)
   }
 
-  GetHeightOfBlock(block) {
-    return new Promise((resolve, reject) => {
-      this.Db.Find(CstDocs.Blockchain, { Hash: block.Blockhash() })
-        .catch(err => reject(err))
-        .then((foundLink) => {
-          if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
-          if (foundLink.length === 0) return resolve(null)
-          return resolve(foundLink[0].Height)
-        })
-    })
-  }
 
   ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
     this.p2p.Connect(remoteIP, remotePort)

@@ -4,6 +4,16 @@ const Transaction = require('./transaction.js')
 const Blocks = require('./block.js')
 const ChainLink = require('./chainlink.js')
 
+const GetHeightOfBlock = (block, db) =>
+  new Promise((resolve, reject) => {
+    db.Find(CstDocs.Blockchain, { Hash: block.Blockhash() })
+      .catch(err => reject(err))
+      .then((foundLink) => {
+        if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
+        if (foundLink.length === 0) return resolve(null)
+        return resolve(foundLink[0].Height)
+      })
+  })
 
 const RemoveIncomingBlock = (prevHash, db, resolveMsg) =>
   new Promise((resolve, reject) => {
@@ -27,8 +37,7 @@ const CheckIfNewTopBlock = async (newBlock, coin) => {
     // incoming block needed to be the next block in the blockchain
     const bestHash = await coin.GetBestHash()
     if (newBlock.PrevHash !== bestHash) {
-      const removeUnwantedBlockResult = await RemoveIncomingBlock(newBlock.PrevHash, coin.Db, 'Incoming block is not next block in non-sync mode --> ignore block')
-      // return removeUnwantedBlockResult
+      await RemoveIncomingBlock(newBlock.PrevHash, coin.Db, 'Incoming block is not next block in non-sync mode --> ignore block')
     }
   }
 }
@@ -57,7 +66,7 @@ const EvaluateBlock = async (inboundBlock, coin) => {
     return ('Previous block is not in the blockchain, keep block in stored incoming blocks, will need to evaluate again')
   }
   /* previous block is known, determine his height via previous block height */
-  const prevHeight = await coin.GetHeightOfBlock(prevBlock)
+  const prevHeight = await GetHeightOfBlock(prevBlock, db)
   // determine new height
   const newHeight = prevHeight + 1
   Debug(`Height if Incoming block will be ${newHeight}`)
@@ -123,7 +132,8 @@ const Block = async (inboundBlock, coin) => {
   }
 
   // check if incoming block is already stored
-  const alreadyStored = await coin.Db.FindOne(CstDocs.IncomingBlocks, { PrevHash: newBlock.PrevHash })
+  const filter = { PrevHash: newBlock.PrevHash }
+  const alreadyStored = await coin.Db.FindOne(CstDocs.IncomingBlocks, filter)
   if (alreadyStored) {
     Debug('Already received this needed block')
   } else {
