@@ -215,10 +215,6 @@ class Coin {
     })
   }
 
-  // GetPrevBlock(block) {
-  //   return this.GetBlockWithHash(block.PrevHash)
-  // }
-
   // get all hashes between best hash and specified hash
   async GetHashesFromBestTo(toHash) {
     const betweenHashes = []
@@ -250,24 +246,34 @@ class Coin {
     // TODO: also to easy to cheat? Each other node will check this tx before adding in a block
     const balance = await this.Wallet.GetBalance(this.Db)
     if (tx.Amount > balance) { return (new Error('SendTX: Not enough balance !')) }
-
-    // credit balance
-    const newBalance = balance - tx.Amount
-    // save new balance
-    await this.Wallet.SaveBalanceToDb(newBalance, this.Db)
+    // debit balance
+    await this.ChangeBalance(-tx.Amount)
     // add TX to pending pool
     await tx.Save(this.Db)
     // broadcast new pending TX to peers
     this.p2p.Broadcast(Cst.P2P.TRANSACTION, tx)
     // save tx.hash in wallet for fast lookup to get balance
-    const resultSaveTX = await Wallet.SaveOwnTX(tx.TXhash, this.Db)
+    await this.SaveOwnTx(tx)
+    return tx
+  }
 
+  // save tx.hash in wallet for fast lookup to get balance
+  async SaveOwnTx(tx) {
+    const resultSaveTX = await Wallet.SaveOwnTX(tx.TXhash, this.Db)
     return resultSaveTX.result
+  }
+  // debit / credit balance & save to Db
+  async ChangeBalance(delta) {
+    const balance = await this.Wallet.GetBalance(this.Db)
+    const newBalance = balance + delta
+    // save new balance
+    await this.Wallet.SaveBalanceToDb(newBalance, this.Db)
   }
 
   // create new block with all pending transactions
   async MineBlock() {
-    await Mining.MineBlock(this)
+    const newBlock = await Mining.MineBlock(this, Cst.StartBlockReward)
+    return newBlock
   }
 
   GetAllPendingTX() {
