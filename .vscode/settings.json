@@ -5,5 +5,17 @@
     "latex",
     "plaintext",
     "javascript"
+  ],
+  "cSpell.words": [
+    "Bblock",
+    "Blockhash",
+    "GETBLOCK",
+    "Xhash",
+    "blockjs",
+    "chainlink",
+    "coinbased",
+    "lastblock",
+    "tx's",
+    "txhash"
   ]
 }

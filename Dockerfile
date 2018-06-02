@@ -1,9 +1,6 @@
 FROM node:alpine
 LABEL version="1.0"
 
-RUN apk add --update \
-  git
-
 WORKDIR /app
 
 COPY package.json package.json

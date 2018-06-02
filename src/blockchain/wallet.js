@@ -7,11 +7,12 @@ const CstDocs = Cst.Db.Docs
 
 const FindInBlockchain = (TXhash, db) =>
   new Promise((resolve, reject) => {
-    const filter = { 'Block.Transactions.Hash': TXhash }
+    const filter = { 'Block.Transactions.TXhash': TXhash }
     db.FindOne(Cst.Db.Docs.Blockchain, filter)
       .catch(err => reject(err))
       .then((foundLink) => {
-        const TX = foundLink.Block.Transactions.find(tx => tx.Hash === TXhash)
+        if (!foundLink) { return reject(new Error(`Could not find tx ${TXhash} in the blockchain`)) }
+        const TX = foundLink.Block.Transactions.find(tx => tx.TXhash === TXhash)
         return resolve(TX)
       })
   })
@@ -121,9 +122,9 @@ class Wallet {
       const promisesFindTXs = []
       // get all TX hashes of own transactions from db
       db.Find(CstDocs.OwnTx, {})
-        .then((ownTXhashes) => {
+        .then((ownTxHashes) => {
           // make promise(s) to get each TX based on the tx hash
-          ownTXhashes.forEach((ownTXhashDoc) => {
+          ownTxHashes.forEach((ownTXhashDoc) => {
             const { txhash } = ownTXhashDoc
             const findPromise =
               // create array of promises to each find the TX in the blockchain with the TX has
@@ -140,7 +141,7 @@ class Wallet {
           return Promise.all(promisesFindTXs)
         })
         .then(() => this.UpdateBalanceFromTxs(myTXs, db))
-        .then(balance => this.SaveBalanceToDb(balance))
+        .then(balance => this.SaveBalanceToDb(balance, db))
         .then(balance => resolve(balance))
         .catch(err => reject(err))
     })
@@ -153,10 +154,10 @@ class Wallet {
       const ownTXs = this.FindOwnTXinBlock(block)
       if (ownTXs.length === 0) { return resolve() }
       Debug(`Found ${ownTXs.length} transactions for this wallet in incoming block`)
-      const newOwnTXpromises = []
+      const newOwnTxPromises = []
       // save any tx for this wallet to OwnTX
-      ownTXs.forEach(tx => newOwnTXpromises.push(Wallet.SaveOwnTX(tx.TXhash, db)))
-      Promise.all(newOwnTXpromises)
+      ownTXs.forEach(tx => newOwnTxPromises.push(Wallet.SaveOwnTX(tx.TXhash, db)))
+      Promise.all(newOwnTxPromises)
         // get current balance
         .then(() => this.GetBalance(db))
         // update balance with found own tx's
@@ -170,11 +171,11 @@ class Wallet {
   }
 
   FindOwnTXinBlock(block) {
-    const incommingTXs = []
+    const incomingTXs = []
     block.Transactions.forEach((tx) => {
-      if (tx.ToAddress === this.Address) { incommingTXs.push(tx) }
+      if (tx.ToAddress === this.Address) { incomingTXs.push(tx) }
     })
-    return incommingTXs
+    return incomingTXs
   }
 }
 module.exports = Wallet

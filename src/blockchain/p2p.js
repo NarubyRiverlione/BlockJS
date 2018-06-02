@@ -2,6 +2,7 @@ const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
 const Cst = require('./const.js')
 const Block = require('./block.js')
+const Incoming = require('./incoming.js')
 
 /*
 inbound HashMsg -> send InvMsg([received Hash ... best hash])
@@ -11,7 +12,7 @@ inbound BlockMsg(block) ->IncomingBlock(block):  add to local blockchain
 */
 
 const AckMsg =
-  JSON.stringify({ type: Cst.P2PNACK, payload: null })
+  JSON.stringify({ type: Cst.P2P.NACK, payload: null })
 const NakMsg =
   JSON.stringify({ type: Cst.P2P.NACK, payload: null })
 
@@ -24,8 +25,8 @@ const VersionMsg = version =>
 const HashMsg = hash =>
   JSON.stringify({ type: Cst.P2P.HASH, payload: hash })
 
-const InvMsg = availableHashs =>
-  JSON.stringify({ type: Cst.P2P.INVENTORY, payload: availableHashs })
+const InvMsg = availableHashes =>
+  JSON.stringify({ type: Cst.P2P.INVENTORY, payload: availableHashes })
 
 const GetBlockMsg = hash =>
   JSON.stringify({ type: Cst.P2P.GETBLOCK, payload: hash })
@@ -35,8 +36,8 @@ const BlockMsg = block =>
   JSON.stringify({ type: Cst.P2P.BLOCK, payload: block })
 
 
-const AskNeededBlocks = (neededHashs, peer) => {
-  neededHashs.forEach((hash) => {
+const AskNeededBlocks = (neededHashes, peer) => {
+  neededHashes.forEach((hash) => {
     peer.send(GetBlockMsg(hash))
   })
 }
@@ -48,11 +49,12 @@ class P2P {
     })
 
     this.Coin = coin
+    this.OutgoingConnections = []
 
     // start listening
     this.server.on('listening', () => { Debug(`Listening on port ${port}`) })
     // incoming connections -> setup message handle + send info of own peer
-    this.IncommingConnectionHandle()
+    this.SetupIncomingConnectionHandle()
     // handle a connection disconnect
     this.server.on('close', () => { Debug('peer has disconnected') })
     // handle error
@@ -60,13 +62,13 @@ class P2P {
   }
 
   // peer connects = send ACK + send Version msg and BestHash msg
-  IncommingConnectionHandle() {
+  SetupIncomingConnectionHandle() {
     this.server.on('connection', (peer, req) => {
       // setup message handle
       peer.on('message', (message) => { this.MessageHandle(message, peer) })
 
       const { remoteAddress, remotePort } = req.connection
-      Debug(`Incomming connection from ${remoteAddress} on port ${remotePort}`)
+      Debug(`Incoming connection from ${remoteAddress} on port ${remotePort}`)
 
       // send Connected Msg
       peer.send(ConnectedMsg)
@@ -79,10 +81,14 @@ class P2P {
     })
   }
 
-  // send message to all connected peers
-  Broadcast(msg) {
+  // send message to all connected peers (incoming) and connections (outgoing)
+  Broadcast(type, payload) {
+    const msg = JSON.stringify({ type, payload })
     this.server.clients.forEach((peer) => {
       peer.send(msg)
+    })
+    this.OutgoingConnections.forEach((connection) => {
+      connection.send(msg)
     })
   }
 
@@ -93,7 +99,7 @@ class P2P {
     // Debug(JSON.stringify(msg.payload))
 
     switch (msg.type) {
-      case Cst.P2P.RECIEVED:
+      case Cst.P2P.RECEIVED:
       case Cst.P2P.ACK:
       case Cst.P2P.NACK:
       case Cst.P2P.CONNECTED:
@@ -104,7 +110,7 @@ class P2P {
         break
 
       case Cst.P2P.BLOCK:
-        this.Coin.IncomingBlock(msg.payload)
+        Incoming.Block(msg.payload, this.Coin)
           .then((result) => {
             if (result instanceof Block) {
               Debug('Incoming block successful evaluated')
@@ -117,11 +123,11 @@ class P2P {
 
       case Cst.P2P.HASH:
         Debug(`Connected peer best hash ${msg.payload}`)
-        this.Coin.IncomingHash(msg.payload)
+        Incoming.Hash(msg.payload, this.Coin)
           // send hashes that peers doesn't have
-          .then((peerNeededHashs) => {
-            Debug(`Send Inv with ${peerNeededHashs.length} hashs to peer`)
-            peer.send(InvMsg(peerNeededHashs))
+          .then((peerNeededHashes) => {
+            Debug(`Send Inv with ${peerNeededHashes.length} hashes to peer`)
+            peer.send(InvMsg(peerNeededHashes))
           })
           .catch(err => console.error(err))
         break
@@ -139,7 +145,12 @@ class P2P {
           .then(block => peer.send(BlockMsg(block)))
           .catch(err => console.error(err))
         break
-
+      case Cst.P2P.TRANSACTION:
+        Debug('Incoming transaction')
+        Incoming.Tx(msg.payload, this.Coin)
+          .then(() => Debug('Incoming transaction saved'))
+          .catch(err => console.error(err))
+        break
       default: peer.send(NakMsg)
     }
   }
@@ -155,7 +166,11 @@ class P2P {
 
     const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
     // handle a connection disconnect
-    connection.on('close', () => { Debug('connection has disconnected') })
+    connection.on('close', () => {
+      // remove outgoing connection from saved
+      this.OutgoingConnections = this.OutgoingConnections.filter(conn => conn !== connection)
+      Debug('connection has disconnected')
+    })
     // handle error
     connection.on('error', (error) => { Debug(`connection error: ${error}`) })
     // setup message handler from this connection
@@ -163,6 +178,9 @@ class P2P {
 
     // send own  info
     connection.on('open', () => {
+      // save Outgoing connection to broadcast later
+      this.OutgoingConnections.push(connection)
+
       connection.send(VersionMsg(this.Coin.Version))
       // send hash of this blockchain
       this.Coin.GetBestHash()

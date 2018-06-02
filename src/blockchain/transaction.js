@@ -38,7 +38,7 @@ class Transaction {
   }
   static ParseFromDb(txDb) {
     const tx = new Transaction(
-      null, // Db stores from address, not the wallet
+      null, // FIXME: Db stores from address, not the wallet
       txDb.ToAddress,
       txDb.Amount,
       txDb.CoinBaseTX,

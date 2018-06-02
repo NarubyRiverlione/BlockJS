@@ -49,27 +49,7 @@ const CreateBlockchain = Db =>
   })
 
 
-const ClearPendingTX = Db => Db.RemoveAllDocs(CstDocs.PendingTransactions)
 const AllPendingTX = Db => Db.Find(CstDocs.PendingTransactions, {})
-
-const RemoveIncomingBlock = (prevHash, db, resolveMsg) =>
-  new Promise((resolve, reject) => {
-    const filter = { PrevHash: prevHash }
-    db.RemoveOne(CstDocs.IncomingBlocks, filter)
-      .then(() => resolve(resolveMsg))
-      .catch(err => reject(err))
-  })
-
-const CheckSyncingNeeded = (Db, NeededHashes) =>
-  new Promise((resolve, reject) => {
-    Db.CountDocs(CstDocs.IncomingBlocks)
-      .then((amountBlockNeedEvaluation) => {
-        if (amountBlockNeedEvaluation > 0) return resolve(true)
-        if (NeededHashes.length > 0) return resolve(true)
-        return resolve(false)
-      })
-      .catch(err => reject(err))
-  })
 
 
 class Coin {
@@ -235,8 +215,8 @@ class Coin {
       this.GetHeight()
         .catch(err =>
           reject(err))
-        .then(maxHeigth =>
-          this.Db.Find(CstDocs.Blockchain, { Height: maxHeigth }))
+        .then(maxHeight =>
+          this.Db.Find(CstDocs.Blockchain, { Height: maxHeight }))
         .then(foundLinks =>
           Block.ParseFromDb(foundLinks[0].Block))
         .then(block =>
@@ -274,23 +254,22 @@ class Coin {
     return this.GetBlockWithHash(block.PrevHash)
   }
   // get all hashes between best hash and specified hash
-  async GetHashsFromBestTo(toHash) {
-    const betweenHashs = []
+  async GetHashesFromBestTo(toHash) {
+    const betweenHashes = []
     let getHash = await this.GetBestHash()
 
     while (getHash !== toHash) {
       const prevBlock = await this.GetBlockWithHash(getHash) // eslint-disable-line
       // add hash to between array
-      betweenHashs.push(prevBlock.Blockhash())
+      betweenHashes.push(prevBlock.Blockhash())
       getHash = prevBlock.PrevHash
     }
-    return betweenHashs
+    return betweenHashes
   }
 
-
   // transaction is alway sending from own wallet to receiver
-  CreateTX(recieverAddress, amount) {
-    return Transaction.Create(this.Wallet, recieverAddress, amount)
+  CreateTX(receiverAddress, amount) {
+    return Transaction.Create(this.Wallet, receiverAddress, amount)
   }
 
   // add a TX to the pending transactions
@@ -309,20 +288,25 @@ class Coin {
     // credit balance
     const newBalance = balance - tx.Amount
     // save new balance
-    await this.Wallet.UpdateBalance(newBalance, this.Db)
+    await this.Wallet.SaveBalanceToDb(newBalance, this.Db)
     // add TX to pending pool
-    await this.Db.Add(CstDocs.PendingTransactions, tx)
-    // TODO: broadcast new pending TX to peers
-
+    await this.SavePendingTx(tx)
+    // broadcast new pending TX to peers
+    this.p2p.Broadcast(Cst.P2P.TRANSACTION, tx)
     // save tx.hash in wallet for fast lookup to get balance
-    const resultSaveTX = await Wallet.SaveOwnTX(tx.Hash, this.Db)
+    const resultSaveTX = await Wallet.SaveOwnTX(tx.TXhash, this.Db)
 
     return resultSaveTX.result
   }
 
+  // save an incoming tx
+  SavePendingTx(tx) {
+    return this.Db.Add(CstDocs.PendingTransactions, tx)
+  }
+
   // create new block with all pending transactions
   async MineBlock() {
-    const syncing = await CheckSyncingNeeded(this.Db, this.NeededHashes)
+    const syncing = await this.CheckSyncingNeeded()
     if (syncing) return ('Cannot mine a block, this node needs syncing')
 
     const { Db } = this
@@ -349,7 +333,7 @@ class Coin {
     // clear pending transactions
     // TODO: only remove tx's that are added in this block (once Max of TX are set)
     // TODO: instead of removing, mark as 'processed' so there available in case of forks
-    await ClearPendingTX(Db)
+    await this.Db.RemoveAllDocs(CstDocs.PendingTransactions)
 
     return (createdBlock)
   }
@@ -385,115 +369,21 @@ class Coin {
     this.p2p.Connect(remoteIP, remotePort)
   }
 
-  async IncomingHash(inboundHash) {
-    const block = await this.GetBlockWithHash(inboundHash)
-    if (!block) {
-      Debug('This node needs syncing ! Wait for incoming inv message')
-      return []
-    }
-    Debug('Incoming hash is known, create inv message for peer')
-    const HashesNeededByPeer = await this.GetHashsFromBestTo(inboundHash)
-    return HashesNeededByPeer
+  UpdateNeededHashes(needed) {
+    this.NeededHashes = needed
   }
 
-  // Store incoming block until all requests are fulfilled, the process block
-  async IncomingBlock(inboundBlock) {
-    const newBlock = Block.ParseFromDb(inboundBlock)
-    if (!newBlock || !Block.IsValid(newBlock)) {
-      return (new Error('Incoming p2p block is not valid'))
-    }
-
-    await this.Db.Add(CstDocs.IncomingBlocks, newBlock)
-    const newHash = newBlock.Blockhash()
-    this.NeededHashes = this.NeededHashes.filter(needed => needed !== newHash)
-    Debug(`Still need  ${this.NeededHashes.length} blocks`)
-    // still need other block before they can be evaluated
-    if (this.NeededHashes.length !== 0) { return ('Incoming block stored') }
-
-    // needed list empty ->  process stored blocks
-    await this.ProcessRecievedBlocks()
-    return ('Incoming block stored and all stored blocks are evaluated')
-  }
-
-
-  // all needed block are stored, now process them (check prevHash,..)
-  // recursive until all blocks are evaluated
-  async ProcessRecievedBlocks() {
-    const processBlocksPromise = []
-    const { Db, NeededHashes } = this
-
-    const inboundBlocks = await Db.Find(CstDocs.IncomingBlocks, {})
-    inboundBlocks.forEach((inboundBlock) => {
-      processBlocksPromise.push(this.EvaluateRecievedBlock(inboundBlock))
+  CheckSyncingNeeded() {
+    const { NeededHashes } = this
+    return new Promise((resolve, reject) => {
+      this.Db.CountDocs(CstDocs.IncomingBlocks)
+        .then((amountBlockNeedEvaluation) => {
+          if (amountBlockNeedEvaluation > 0) return resolve(true)
+          if (NeededHashes.length > 0) return resolve(true)
+          return resolve(false)
+        })
+        .catch(err => reject(err))
     })
-
-    Promise.all(processBlocksPromise)
-      .then(async (result) => {
-        Debug(`Incoming block processed, results: ${result}`)
-        // check if syncing is done (all blocks are evaluated)
-        const syncing = await CheckSyncingNeeded(Db, NeededHashes)
-        if (syncing) {
-          Debug('Still needs evaluation')
-          this.ProcessRecievedBlocks()
-        } else {
-          Debug('All blocks are evaluated')
-        }
-      })
-      .catch(err => console.error(err))
-  }
-
-  async EvaluateRecievedBlock(inboundBlock) {
-    const newBlock = Block.ParseFromDb(inboundBlock)
-    if (!newBlock) return ('ERROR: could not parse block')
-    const blockhash = newBlock.Blockhash()
-    const { Db } = this
-
-    /*  check if block is already in blockchain */
-    const foundBlock = await this.GetBlockWithHash(blockhash)
-    if (foundBlock) {
-      const removeKnownBlockResult = RemoveIncomingBlock(newBlock.PrevHash, Db, 'Incoming block already in blockchain, don\'t need to process')
-      return removeKnownBlockResult
-    }
-
-    /* only 1 block needs evaluation --> this must be a new block on top of the blockchain */
-    // amount of blocks that need evaluation
-    const amountNeededEvaluation = await Db.CountDocs(CstDocs.IncomingBlocks)
-    // check if this is a new block in the chain
-    if (amountNeededEvaluation === 1) {
-      const bestHash = await this.GetBestHash()
-      // incoming block needed to be the next block in the blockchain
-      if (newBlock.PrevHash !== bestHash) {
-        const removeUnwantedBlockresult = await RemoveIncomingBlock(newBlock.PrevHash, Db, 'Incoming block is not next block in non-sync mode --> ignore block')
-        return removeUnwantedBlockresult
-      }
-    }
-
-    /* is previous block known in the blockchain?  */
-    // try get previous block
-    const prevBlock = await this.GetBlockWithHash(newBlock.PrevHash)
-    if (!prevBlock) {
-      return ('Previous block is not in the blockchain, keep block in stored incoming blocks, will need to evaluate again')
-    }
-
-    /* previous block is known, determine his height via previous block height */
-    const prevHeight = await this.GetHeightOfBlock(prevBlock)
-    // determine new height
-    const newHeight = prevHeight + 1
-    Debug(`Height if Incoming block will be ${newHeight}`)
-
-    /* create new link with block */
-    const newLink = await ChainLink.Create(newBlock, newHeight)
-    // add link to the blockchain
-    await Db.Add(CstDocs.Blockchain, newLink)
-
-    /*  check if block contains receiving transactions for this wallet */
-    // save tx to OwnTX & update balance
-    const balance = await this.Wallet.IncomingBlock(newBlock, this.Db)
-    if (balance) Debug(`Updated balance: ${balance}`)
-
-    /* remove block from incoming list */
-    const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`Block ${blockhash} added in blockchain`))
-    return removeResult
   }
 }
 

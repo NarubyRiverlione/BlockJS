@@ -3,6 +3,7 @@ const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
 const Transactions = require('./transaction.js')
 
+
 const IsHeaderComplete = (block =>
   block.PrevHash !== undefined
   && block.Nonce !== undefined

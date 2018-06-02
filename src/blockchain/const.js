@@ -30,7 +30,7 @@ const Const = {
 
   P2P: {
     CONNECTED: 'CONNECTED',
-    RECIEVED: 'RECEIVED',
+    RECEIVED: 'RECEIVED',
     BLOCK: 'BLOCK',
     VERSION: 'VERSION',
     ACK: 'ACK',
@@ -38,6 +38,7 @@ const Const = {
     HASH: 'HASH',
     INVENTORY: 'INVENTORY',
     GETBLOCK: 'GETBLOCK',
+    TRANSACTION: 'TRANSACTION',
   },
 
   API: {
