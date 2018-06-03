@@ -34,13 +34,20 @@ const MineBlock = async (coin, miningReward) => {
   // save link to blockchain
   await coin.Db.Add(CstDocs.Blockchain, newLink)
 
-  // add mining reward to wallet
-  await coin.ChangeBalance(miningReward)
-  // save coinbase tx as ownTX
-  await coin.SaveOwnTx(CoinbaseTX)
+  /*  check if block contains receiving transactions for this wallet */
+  // should be at least 1: the coinbase TX
+  // save tx(s) to OwnTX & update balance
+  const newBalance = await coin.Wallet.IncomingBlock(createdBlock, Db)
+  Debug(`Updated balance form this block: ${newBalance}`)
+
+  // // add mining reward to wallet
+  // await coin.ChangeBalance(miningReward)
+  // // save coinbase tx as ownTX
+  // await coin.SaveOwnTx(CoinbaseTX)
 
   // broadcast new block
   coin.p2p.Broadcast(Cst.P2P.BLOCK, createdBlock)
+
 
   // clear pending transactions
   // TODO: only remove tx's that are added in coin block (once Max of TX are set)

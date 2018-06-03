@@ -41,9 +41,14 @@ const AskNeededBlocks = (neededHashes, peer) => {
     peer.send(GetBlockMsg(hash))
   })
 }
+
+const BroadcastMsg = (type, payload) =>
+  JSON.stringify({ type, payload })
+
+
 class P2P {
   constructor(port, coin) {
-    this.server = new WebSocket.Server({
+    this.Server = new WebSocket.Server({
       port,
       clientTracking: true, // keep list of connected peers
     })
@@ -52,18 +57,31 @@ class P2P {
     this.OutgoingConnections = []
 
     // start listening
-    this.server.on('listening', () => { Debug(`Listening on port ${port}`) })
+    this.Server.on('listening', () => { Debug(`Listening on port ${port}`) })
     // incoming connections -> setup message handle + send info of own peer
     this.SetupIncomingConnectionHandle()
     // handle a connection disconnect
-    this.server.on('close', () => { Debug('peer has disconnected') })
+    this.Server.on('close', () => { Debug('peer has disconnected') })
     // handle error
-    this.server.on('error', (error) => { Debug(`Error: ${error}`) })
+    this.Server.on('error', (error) => { Debug(`Error: ${error}`) })
+  }
+
+  Amount() {
+    const incoming = this.Server.clients.size
+    const out = this.OutgoingConnections.length
+    return { peers: incoming + out }
+  }
+  IncomingDetails() {
+    // TODO clients has no information
+    return this.Server.clients
+  }
+  OutgoingDetails() {
+    return this.OutgoingConnections.map(out => out.url)
   }
 
   // peer connects = send ACK + send Version msg and BestHash msg
   SetupIncomingConnectionHandle() {
-    this.server.on('connection', (peer, req) => {
+    this.Server.on('connection', (peer, req) => {
       // setup message handle
       peer.on('message', (message) => { this.MessageHandle(message, peer) })
 
@@ -83,8 +101,9 @@ class P2P {
 
   // send message to all connected peers (incoming) and connections (outgoing)
   Broadcast(type, payload) {
-    const msg = JSON.stringify({ type, payload })
-    this.server.clients.forEach((peer) => {
+    Debug(`Broadcast a ${type} message`)
+    const msg = BroadcastMsg(type, payload)
+    this.Server.clients.forEach((peer) => {
       peer.send(msg)
     })
     this.OutgoingConnections.forEach((connection) => {
@@ -157,41 +176,60 @@ class P2P {
 
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
-    if (!remotePort) {
-      return new Error('No remote IP')
-    }
-    if (!remotePort) {
-      return new Error('No remote port')
-    }
+    return new Promise((resolve, reject) => {
+      if (!remotePort) {
+        return reject(new Error('No remote IP'))
+      }
+      if (!remotePort) {
+        return reject(new Error('No remote port'))
+      }
 
-    const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
-    // handle a connection disconnect
-    connection.on('close', () => {
-      // remove outgoing connection from saved
-      this.OutgoingConnections = this.OutgoingConnections.filter(conn => conn !== connection)
-      Debug('connection has disconnected')
+      Debug(`Connecting to peer ${remoteIP} on port ${remotePort}`)
+      const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
+
+      // handle a connection disconnect
+      connection.on('close', () => {
+        // remove outgoing connection from saved
+        this.OutgoingConnections = this.OutgoingConnections.filter(conn => conn !== connection)
+        Debug('connection has disconnected')
+      })
+      // handle error
+      connection.on('error', error =>
+        Debug(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
+
+      // setup message handler from this connection
+      connection.on('message', (message) => { this.MessageHandle(message, connection) })
+      // send handshake with own version and best hash
+      connection.on('open', () => {
+        this.SendHandshake(connection, remoteIP, remotePort)
+          .then(result => resolve(result))
+          .catch(err => reject(err))
+      })
     })
-    // handle error
-    connection.on('error', (error) => { Debug(`connection error: ${error}`) })
-    // setup message handler from this connection
-    connection.on('message', (message) => { this.MessageHandle(message, connection) })
+  }
 
-    // send own  info
-    connection.on('open', () => {
+  SendHandshake(connection, remoteIP, remotePort) {
+    return new Promise((resolve, reject) => {
+      Debug(`Connected to peer ${remoteIP}`)
+
       // save Outgoing connection to broadcast later
       this.OutgoingConnections.push(connection)
-
+      Debug('Sending Version message')
       connection.send(VersionMsg(this.Coin.Version))
+
       // send hash of this blockchain
       this.Coin.GetBestHash()
-        .then(hash => connection.send(HashMsg(hash)))
-        .catch(err => console.error(err))
+        .then((hash) => {
+          Debug('Sending best hash')
+          connection.send(HashMsg(hash))
+          return resolve(`P2P handshake done with ${remoteIP}:${remotePort}`)
+        })
+        .catch(err => reject(new Error(`ERROR sending best hash ${err}`)))
     })
-    return (`Connecting to peer ${remoteIP} on port ${remotePort}`)
   }
 
   Close() {
-    this.server.close()
+    this.Server.close()
   }
 }
 

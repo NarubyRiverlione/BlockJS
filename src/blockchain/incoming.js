@@ -66,7 +66,7 @@ const EvaluateBlock = async (inboundBlock, coin) => {
     return ('Previous block is not in the blockchain, keep block in stored incoming blocks, will need to evaluate again')
   }
   /* previous block is known, determine his height via previous block height */
-  const prevHeight = await GetHeightOfBlock(prevBlock, db)
+  const prevHeight = await GetHeightOfBlock(prevBlock, Db)
   // determine new height
   const newHeight = prevHeight + 1
   Debug(`Height if Incoming block will be ${newHeight}`)

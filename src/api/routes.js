@@ -28,16 +28,30 @@ class Routes {
     })
     this.router.get('/Info', (req, res) => {
       let walletInfo
+      let blockchainInfo
+
       coin.GetWalletInfo()
         .then((wallet) => {
           walletInfo = wallet
           return coin.GetInfo()
         })
         .then((info) => {
-          const showInfo = `${info}
+          blockchainInfo = info
+          return coin.ConnectedAmount()
+        })
+        .then((peerAmount) => {
+          const showInfo = `
+          BLOCKCHAIN INFO
+          ${blockchainInfo}
+
+          WALLET INFO
           Wallet address: ${walletInfo.Address} 
           Wallet name: '${walletInfo.Name}'
-          Wallet balance: ${walletInfo.Balance}`
+          Wallet balance: ${walletInfo.Balance}
+
+          PEER INFO
+          Connected peers: ${peerAmount.peers}`
+
           res.status(200).send(showInfo)
         })
         .catch(error => res.status(400).json({ error: error.message }))
@@ -122,6 +136,14 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
+    this.router.get('/AmountPeers', (req, res) => {
+      const amount = coin.ConnectedAmount()
+      res.status(200).json(amount)
+    })
+    this.router.get('/PeersDetails', (req, res) => {
+      const amount = coin.PeersDetail()
+      res.status(200).json(amount)
+    })
     // body: newName
     this.router.post('/RenameWallet/', (req, res) => {
       const { newName } = req.body
@@ -140,20 +162,19 @@ class Routes {
           tx = newTx
           return coin.SendTX(tx)
         })
-        .then((resultSend) => {
-          if (resultSend.n === 1 && resultSend.ok === 1) {
-            res.status(200).json({ tx })
-          } else {
-            res.status(400).json({ error: `Could not send TX: ${resultSend}` })
-          }
+        .then((sendTX) => {
+          res.status(200).json({ sendTX })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     // body: remoteIP, remotePort
     this.router.post('/ConnectPeer', (req, res) => {
       const { remoteIP, remotePort } = req.body
-      const result = this.coin.ConnectPeer(remoteIP, remotePort)
-      res.status(200).send(result)
+      coin.ConnectPeer(remoteIP, remotePort)
+        .then((connectionResult) => {
+          res.status(200).json({ connectionResult })
+        })
+        .catch(error => res.status(400).json({ error: error.message }))
     })
   }
 }

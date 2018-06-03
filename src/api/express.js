@@ -25,6 +25,16 @@ module.exports = (coin) => {
   app.use(compression())
   // logger
   app.use(morgan('dev'))
+  // body must be json
+  app.use(Cst.API.Root, (req, res, next) => {
+    if (req.body) {
+      const contentType = req.headers['content-type']
+      if (!contentType || contentType.indexOf('application/json') !== 0) {
+        return res.status(400).json({ error: `Body must be Json, not ${contentType}` })
+      }
+    }
+    next()
+  })
   // parse body as json
   app.use(bodyParser.urlencoded({ extended: false }))
   app.use(bodyParser.json())

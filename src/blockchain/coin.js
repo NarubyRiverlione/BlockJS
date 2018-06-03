@@ -130,8 +130,7 @@ class Coin {
           info.amount = amount
         })
         .then(() => {
-          const infoText = `
-          Height: ${info.height}
+          const infoText = `Height: ${info.height}
           Diff: ${info.diff}
           Last hash: ${info.hash}
           Amount of pending TX: ${info.amount}`
@@ -253,8 +252,9 @@ class Coin {
     // broadcast new pending TX to peers
     this.p2p.Broadcast(Cst.P2P.TRANSACTION, tx)
     // save tx.hash in wallet for fast lookup to get balance
-    await this.SaveOwnTx(tx)
-    return tx
+    const saveResult = await this.SaveOwnTx(tx)
+    if (saveResult.n === 1 && saveResult.ok === 1) { return tx }
+    return Promise.reject(new Error('ERROR saving to db'))
   }
 
   // save tx.hash in wallet for fast lookup to get balance
@@ -297,7 +297,18 @@ class Coin {
 
 
   ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
-    this.p2p.Connect(remoteIP, remotePort)
+    return this.p2p.Connect(remoteIP, remotePort)
+  }
+
+  ConnectedAmount() {
+    return this.p2p.Amount()
+  }
+  PeersDetail() {
+    const details = {
+      Incoming: this.p2p.IncomingDetails(),
+      Outgoing: this.p2p.OutgoingDetails(),
+    }
+    return details
   }
 
   UpdateNeededHashes(needed) {
