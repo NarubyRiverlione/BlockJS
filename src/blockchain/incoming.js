@@ -4,6 +4,7 @@ const Transaction = require('./transaction.js')
 const Blocks = require('./block.js')
 const ChainLink = require('./chainlink.js')
 
+// find the height of a block in the blockchain
 const GetHeightOfBlock = (block, db) =>
   new Promise((resolve, reject) => {
     db.Find(CstDocs.Blockchain, { Hash: block.Blockhash() })
@@ -14,7 +15,7 @@ const GetHeightOfBlock = (block, db) =>
         return resolve(foundLink[0].Height)
       })
   })
-
+// remove block in db form Incoming collection
 const RemoveIncomingBlock = (prevHash, db, resolveMsg) =>
   new Promise((resolve, reject) => {
     const filter = { PrevHash: prevHash }
@@ -24,14 +25,15 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) =>
   })
 
 
-/* only 1 block needs evaluation --> this must be a new block on top of the blockchain */
-// amount of blocks that need evaluation
+/* amount of blocks that need evaluation = only 1
+--> this must be a new block on top of the blockchain
+ */
 const CheckIfNewTopBlock = async (newBlock, coin) => {
   const amountNeededEvaluation = await coin.Db.CountDocs(CstDocs.IncomingBlocks)
   // check if this is a new block in the chain
   if (amountNeededEvaluation === 1) {
     // new incoming block --> remove all pendingTX
-    // TODO remove only pending TX that are in this block
+    // TODO: remove only pending TX that are in this block
     await coin.Db.RemoveAllDocs(CstDocs.PendingTransactions)
 
     // incoming block needed to be the next block in the blockchain
@@ -41,7 +43,11 @@ const CheckIfNewTopBlock = async (newBlock, coin) => {
     }
   }
 }
-
+/* if block is needed or new on top of blockchain
+--> add to blockchain
+--> check tx's for own address --> update wallet
+--> remove in db collection IncomingBlocks
+*/
 const EvaluateBlock = async (inboundBlock, coin) => {
   const newBlock = Blocks.ParseFromDb(inboundBlock)
   if (!newBlock) return ('ERROR: could not parse block')
@@ -85,7 +91,6 @@ const EvaluateBlock = async (inboundBlock, coin) => {
   const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`Block ${blockhash} added in blockchain`))
   return removeResult
 }
-
 // all needed block are stored, now process them (check prevHash,..)
 // recursive until all blocks are evaluated
 const ProcessReceivedBlocks = async (coin) => {
@@ -110,6 +115,7 @@ const ProcessReceivedBlocks = async (coin) => {
     })
     .catch(err => console.error(err))
 }
+
 
 // evaluate incoming best hash from peer
 // hash is known   --> make Inv message of hashes this node knowns
@@ -171,6 +177,8 @@ const Tx = (txMsg, coin) => {
   if (!Transaction.IsValid(tx)) {
     return Promise.reject(new Error('SendTX: transaction is not valid'))
   }
+  // TODO: before adding check each tx: valid balance ?
+
   // save to local db for mining later
   return tx.Save(coin.Db)
 }

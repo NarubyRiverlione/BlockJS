@@ -10,7 +10,7 @@ class Transaction {
       // CoinBaseTX has no fromWallet
       if (!Wallet.CheckIsWallet(fromWallet) && !isCoinBaseTX) { return reject(new Error('fromWallet is not a Wallet')) }
 
-      // TODO check if address is valid
+      // TODO: check if address is valid
       if (!receiverAddress) { return reject(new Error('Receiver address is not valid')) }
       if (receiverAddress instanceof Wallet) { return reject(new Error('Receiver is a Wallet instead of an address')) }
 
@@ -59,7 +59,7 @@ class Transaction {
       Debug('ERROR transaction is not valid: no amount')
       return false
     }
-    // todo check amount <= balance of fromAddress ?
+    // TODO: check amount <= balance of fromAddress ?
     return true
   }
 

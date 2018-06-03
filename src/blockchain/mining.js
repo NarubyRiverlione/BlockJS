@@ -15,7 +15,7 @@ const MineBlock = async (coin, miningReward) => {
   const { Db } = coin
   const minerAddress = coin.Wallet.Address
 
-  // TODO: before adding check each tx: valid ? balance ?
+
   const PendingTransactions = await Db.Find(CstDocs.PendingTransactions, {})
 
   // Coinbase transaction as mining reward
@@ -46,7 +46,7 @@ const MineBlock = async (coin, miningReward) => {
   // await coin.SaveOwnTx(CoinbaseTX)
 
   // broadcast new block
-  coin.p2p.Broadcast(Cst.P2P.BLOCK, createdBlock)
+  coin.P2P.Broadcast(Cst.P2P.BLOCK, createdBlock)
 
 
   // clear pending transactions

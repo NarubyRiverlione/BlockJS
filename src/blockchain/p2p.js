@@ -1,6 +1,6 @@
 const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
-const Cst = require('./const.js')
+const CstP2P = require('./const.js').P2P
 const Block = require('./block.js')
 const Incoming = require('./incoming.js')
 
@@ -11,40 +11,14 @@ inbound GetBlockMsg(hash) -> SendBlockMsg(hash)
 inbound BlockMsg(block) ->IncomingBlock(block):  add to local blockchain
 */
 
-const AckMsg =
-  JSON.stringify({ type: Cst.P2P.NACK, payload: null })
-const NakMsg =
-  JSON.stringify({ type: Cst.P2P.NACK, payload: null })
-
-const ConnectedMsg =
-  JSON.stringify({ type: Cst.P2P.CONNECTED, payload: null })
-
-const VersionMsg = version =>
-  JSON.stringify({ type: Cst.P2P.VERSION, payload: version })
-
-const HashMsg = hash =>
-  JSON.stringify({ type: Cst.P2P.HASH, payload: hash })
-
-const InvMsg = availableHashes =>
-  JSON.stringify({ type: Cst.P2P.INVENTORY, payload: availableHashes })
-
-const GetBlockMsg = hash =>
-  JSON.stringify({ type: Cst.P2P.GETBLOCK, payload: hash })
-
-// FIXME sends a Block object, icl __proto__
-const BlockMsg = block =>
-  JSON.stringify({ type: Cst.P2P.BLOCK, payload: block })
-
+const CreateMsg = (type, payload) =>
+  JSON.stringify({ type, payload })
 
 const AskNeededBlocks = (neededHashes, peer) => {
   neededHashes.forEach((hash) => {
-    peer.send(GetBlockMsg(hash))
+    peer.send(CreateMsg(CstP2P.GETBLOCK, hash))
   })
 }
-
-const BroadcastMsg = (type, payload) =>
-  JSON.stringify({ type, payload })
-
 
 class P2P {
   constructor(port, coin) {
@@ -65,14 +39,14 @@ class P2P {
     // handle error
     this.Server.on('error', (error) => { Debug(`Error: ${error}`) })
   }
-
+  // amount of incoming (peers) and outgoing (connection)
   Amount() {
     const incoming = this.Server.clients.size
     const out = this.OutgoingConnections.length
     return { peers: incoming + out }
   }
   IncomingDetails() {
-    // TODO clients has no information
+    // TODO: server.clients has no usefully information
     return this.Server.clients
   }
   OutgoingDetails() {
@@ -89,20 +63,19 @@ class P2P {
       Debug(`Incoming connection from ${remoteAddress} on port ${remotePort}`)
 
       // send Connected Msg
-      peer.send(ConnectedMsg)
+      peer.send(CreateMsg(CstP2P.CONNECTED, null))
       // send version of this peer
-      peer.send(VersionMsg(this.Coin.Version))
+      peer.send(CreateMsg(CstP2P.VERSION, this.Coin.Version))
       // send hash of this blockchain
       this.Coin.GetBestHash()
-        .then((hash) => { peer.send(HashMsg(hash)) })
+        .then((hash) => { peer.send(CreateMsg(CstP2P.HASH, hash)) })
         .catch(err => console.error(err))
     })
   }
-
   // send message to all connected peers (incoming) and connections (outgoing)
   Broadcast(type, payload) {
     Debug(`Broadcast a ${type} message`)
-    const msg = BroadcastMsg(type, payload)
+    const msg = CreateMsg(type, payload)
     this.Server.clients.forEach((peer) => {
       peer.send(msg)
     })
@@ -110,7 +83,6 @@ class P2P {
       connection.send(msg)
     })
   }
-
   // evaluate message
   MessageHandle(message, peer) {
     const msg = JSON.parse(message)
@@ -118,17 +90,17 @@ class P2P {
     // Debug(JSON.stringify(msg.payload))
 
     switch (msg.type) {
-      case Cst.P2P.RECEIVED:
-      case Cst.P2P.ACK:
-      case Cst.P2P.NACK:
-      case Cst.P2P.CONNECTED:
+      case CstP2P.RECEIVED:
+      case CstP2P.ACK:
+      case CstP2P.NACK:
+      case CstP2P.CONNECTED:
         break// prevent endless loop
 
-      case Cst.P2P.VERSION:
+      case CstP2P.VERSION:
         Debug(`Connected to peer version ${msg.payload}`)
         break
 
-      case Cst.P2P.BLOCK:
+      case CstP2P.BLOCK:
         Incoming.Block(msg.payload, this.Coin)
           .then((result) => {
             if (result instanceof Block) {
@@ -140,40 +112,39 @@ class P2P {
           .catch(err => console.error(err))
         break
 
-      case Cst.P2P.HASH:
+      case CstP2P.HASH:
         Debug(`Connected peer best hash ${msg.payload}`)
         Incoming.Hash(msg.payload, this.Coin)
           // send hashes that peers doesn't have
           .then((peerNeededHashes) => {
             Debug(`Send Inv with ${peerNeededHashes.length} hashes to peer`)
-            peer.send(InvMsg(peerNeededHashes))
+            peer.send(CreateMsg(CstP2P.INVENTORY, peerNeededHashes))
           })
           .catch(err => console.error(err))
         break
 
-      case Cst.P2P.INVENTORY:
+      case CstP2P.INVENTORY:
         // save needed hashes
         this.Coin.NeededHashes = this.Coin.NeededHashes.concat(msg.payload)
         // ask for blocks with  hashes that are available with this connected peer
         AskNeededBlocks(msg.payload, peer)
         break
 
-      case Cst.P2P.GETBLOCK:
+      case CstP2P.GETBLOCK:
         Debug(`Peer asked for block with hash ${msg.payload}`)
         this.Coin.GetBlockWithHash(msg.payload)
-          .then(block => peer.send(BlockMsg(block)))
+          .then(block => peer.send(CreateMsg(CstP2P.BLOCK, block)))
           .catch(err => console.error(err))
         break
-      case Cst.P2P.TRANSACTION:
+      case CstP2P.TRANSACTION:
         Debug('Incoming transaction')
         Incoming.Tx(msg.payload, this.Coin)
           .then(() => Debug('Incoming transaction saved'))
           .catch(err => console.error(err))
         break
-      default: peer.send(NakMsg)
+      default: peer.send(CreateMsg(CstP2P.NACK, null))
     }
   }
-
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
     return new Promise((resolve, reject) => {
@@ -207,7 +178,7 @@ class P2P {
       })
     })
   }
-
+  // send Version msg and best hash msg
   SendHandshake(connection, remoteIP, remotePort) {
     return new Promise((resolve, reject) => {
       Debug(`Connected to peer ${remoteIP}`)
@@ -215,19 +186,19 @@ class P2P {
       // save Outgoing connection to broadcast later
       this.OutgoingConnections.push(connection)
       Debug('Sending Version message')
-      connection.send(VersionMsg(this.Coin.Version))
+      connection.send(CreateMsg(CstP2P.VERSION, this.Coin.Version))
 
       // send hash of this blockchain
       this.Coin.GetBestHash()
         .then((hash) => {
           Debug('Sending best hash')
-          connection.send(HashMsg(hash))
+          connection.send(CreateMsg(CstP2P.HASH, hash))
           return resolve(`P2P handshake done with ${remoteIP}:${remotePort}`)
         })
         .catch(err => reject(new Error(`ERROR sending best hash ${err}`)))
     })
   }
-
+  // close connection
   Close() {
     this.Server.close()
   }

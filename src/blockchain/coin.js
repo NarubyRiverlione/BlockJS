@@ -8,7 +8,6 @@ const API = require('../api/express.js')
 const Genesis = require('./genesis.js')
 const Mining = require('./mining.js')
 
-// const http = require('http')
 const https = require('https')
 const fs = require('fs')
 const Debug = require('debug')('blockjs:coin')
@@ -21,13 +20,14 @@ class Coin {
   - connect to Db
   - load wallet from db
   - add genesis block if it doesn't exist
-  - start peer 2 peer server
+  - start p2p server
+  - start api server
   */
   static async Start(
     serverPort = Cst.DefaultServerPort,
     DbServer = '127.0.0.1',
     DbPort = Cst.Db.DefaultPort,
-    APIPort = Cst.API.DefaultPort,
+    APIPort = CstAPI.DefaultPort,
   ) {
     const database = new DB()
     await database.Connect(DbServer, DbPort)
@@ -39,33 +39,13 @@ class Coin {
     const coin = new Coin(database, wallet)
 
     // check if genesis block exists
-    const GenesesExist = await Genesis.BlockExistInDb(database)
-    // create genesis if needed
-    if (!GenesesExist) {
-      Debug('No blockchain in Db, create blockchain by adding Genesis Block')
-      const FirstLink = await Genesis.CreateBlockchain(database)
-      // save to ownTX is wallet = Genesis address
-      if (coin.Wallet.Address === Cst.GenesisAddress) {
-        const GenesisTxHash = FirstLink.Block.Transactions[0].Hash
-        await Wallet.SaveOwnTX(GenesisTxHash, coin.Db)
-        // set genesis wallet balance
-        await coin.Wallet.CalcBalance(coin.Db)
-      }
-    } else { Debug('Found genesis block in Db') }
+    await Genesis.BlockExistInDb(coin)
 
     // start P2P
-    coin.p2p = new P2P(serverPort, coin, this.version)
+    coin.P2P = new P2P(serverPort, coin, this.version)
 
     // start API server
-    coin.api = API(coin)
-    // const server = http.createServer(App)
-    // setImmediate(() => {
-    //   server.listen(CstAPI.DefaultPort, CstAPI.IP, () => {
-    //     Debug(`Express server listening on http://${CstAPI.IP}:${CstAPI.DefaultPort}`)
-    //   })
-    // })
-
-    const secureServer = https.createServer(coin.SSL_OPTIONS, coin.api)
+    const secureServer = https.createServer(coin.SSL_OPTIONS, coin.API)
     secureServer.listen(APIPort, CstAPI.IP, () => {
       Debug(`API server listening on https:/${CstAPI.IP}:${APIPort}`)
     })
@@ -78,15 +58,16 @@ class Coin {
    */
   End() {
     this.Db.Close()
-    this.p2p.Close()
+    this.P2P.Close()
   }
   constructor(Db, wallet, version = 1) {
     this.Db = Db
     this.Version = version
     this.BlockReward = Cst.StartBlockReward
     this.Wallet = wallet
-    this.p2p = null // p2p started when local blockchain is loaded or created
+    this.P2P = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = []
+    this.API = API(this)
 
     this.SSL_OPTIONS = {
       key: fs.readFileSync('./src/keys/ssl.key'),
@@ -213,7 +194,6 @@ class Coin {
         })
     })
   }
-
   // get all hashes between best hash and specified hash
   async GetHashesFromBestTo(toHash) {
     const betweenHashes = []
@@ -227,14 +207,13 @@ class Coin {
     }
     return betweenHashes
   }
-
   // transaction is alway sending from own wallet to receiver
   CreateTX(receiverAddress, amount) {
     return Transaction.Create(this.Wallet, receiverAddress, amount)
   }
-
   // add a TX to the pending transactions
   async SendTX(tx) {
+    // TODO: also to easy to cheat? Each other node need to check this tx before adding in a block
     // is tx a Transaction object ?
     if (tx instanceof Transaction === false) { return (new Error('SendTX: argument is not a transaction')) }
     // is the Transaction object not empty ?
@@ -242,7 +221,6 @@ class Coin {
     // is the Transaction complete ?
     if (!Transaction.IsValid(tx)) { return (new Error('SendTX: transaction is not valid')) }
 
-    // TODO: also to easy to cheat? Each other node will check this tx before adding in a block
     const balance = await this.Wallet.GetBalance(this.Db)
     if (tx.Amount > balance) { return (new Error('SendTX: Not enough balance !')) }
     // debit balance
@@ -250,13 +228,12 @@ class Coin {
     // add TX to pending pool
     await tx.Save(this.Db)
     // broadcast new pending TX to peers
-    this.p2p.Broadcast(Cst.P2P.TRANSACTION, tx)
+    this.P2P.Broadcast(Cst.P2P.TRANSACTION, tx)
     // save tx.hash in wallet for fast lookup to get balance
     const saveResult = await this.SaveOwnTx(tx)
     if (saveResult.n === 1 && saveResult.ok === 1) { return tx }
     return Promise.reject(new Error('ERROR saving to db'))
   }
-
   // save tx.hash in wallet for fast lookup to get balance
   async SaveOwnTx(tx) {
     const resultSaveTX = await Wallet.SaveOwnTX(tx.TXhash, this.Db)
@@ -269,17 +246,16 @@ class Coin {
     // save new balance
     await this.Wallet.SaveBalanceToDb(newBalance, this.Db)
   }
-
   // create new block with all pending transactions
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this, Cst.StartBlockReward)
     return newBlock
   }
-
+  // return all pending transactions in json format
   GetAllPendingTX() {
     return this.Db.Find(CstDocs.PendingTransactions, {})
   }
-
+  // change name of wallet
   RenameWallet(newName) {
     return new Promise((resolve, reject) => {
       if (!newName) { return reject(new Error('No new name')) }
@@ -289,28 +265,26 @@ class Coin {
         .catch(err => reject(err))
     })
   }
-
-  /* CAN BE VERY COSTLY */
-  CalcWalletAmountFromSavedOwnTXs() {
-    return this.Wallet.CalcBalance(this.Db)
-  }
-
-
+  // connect to a peer via ip:port
   ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
-    return this.p2p.Connect(remoteIP, remotePort)
+    return this.P2P.Connect(remoteIP, remotePort)
   }
-
+  // amount of connected peers (in + out)
   ConnectedAmount() {
-    return this.p2p.Amount()
+    return this.P2P.Amount()
   }
+  // details of connected peers
   PeersDetail() {
     const details = {
-      Incoming: this.p2p.IncomingDetails(),
-      Outgoing: this.p2p.OutgoingDetails(),
+      Incoming: this.P2P.IncomingDetails(),
+      Outgoing: this.P2P.OutgoingDetails(),
     }
     return details
   }
 
+  CalcWalletAmountFromSavedOwnTXs() {
+    return this.Wallet.CalcBalance(this.Db)
+  }
   UpdateNeededHashes(needed) {
     this.NeededHashes = needed
   }

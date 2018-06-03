@@ -11,7 +11,6 @@ const CreateGenesisBlock = () => {
   const GenesisTX = new Transaction(null, Cst.GenesisAddress, Cst.GenesisReward, true)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
 }
-
 const CreateFirstLink = () =>
   new Promise((resolve, reject) => {
     CreateGenesisBlock()
@@ -19,28 +18,40 @@ const CreateFirstLink = () =>
       .catch(err => reject(err))
   })
 
-const BlockExistInDb = Db =>
-  new Promise((resolve, reject) => {
-    // TODO check genesis tx
-    Db.Find(CstDocs.Blockchain, { Height: 0 })
-      .catch(err => reject(err))
-      .then(firstLink =>
-        resolve(firstLink.length !== 0))
-  })
-
-const CreateBlockchain = Db =>
-  new Promise((resolve, reject) => {
-    let FirstLink
+const CreateBlockchain = async (coin) => {
+  try {
     // no links in database = no genesis block (first run?)
     // create blockchain by adding genesis block
-    CreateFirstLink()
-      .then((link) => {
-        FirstLink = link
-        Debug('Save genesis in Db')
-        return Db.Add(CstDocs.Blockchain, FirstLink)
-      })
-      .then(() => resolve(FirstLink))
-      .catch(err => reject(new Error(`ERROR cannot create/save genesis block: ${err}`)))
-  })
+    const FirstLink = CreateFirstLink()
+    Debug('Save genesis in Db')
+    await coin.Db.Add(CstDocs.Blockchain, FirstLink)
+    // save to ownTX is wallet = Genesis address
+    if (coin.Wallet.Address === Cst.GenesisAddress) {
+      const GenesisTxHash = FirstLink.Block.Transactions[0].Hash
+      await coin.Wallet.SaveOwnTX(GenesisTxHash, coin.Db)
+      // set genesis wallet balance
+      await coin.Wallet.CalcBalance(coin.Db)
+    }
+    return true
+  } catch (err) {
+    return Promise.reject(new Error(`ERROR cannot create/save genesis block: ${err}`))
+  }
+}
+
+const BlockExistInDb = async (coin) => {
+  try {
+    const link = await coin.Db.Find(CstDocs.Blockchain, { Height: 0 })
+    if (link.length === 0) { await CreateBlockchain(coin) }
+    // check if first block is genesis block (verify hash = genesis hash)
+    const [firstLink] = link
+    const genesisBlock = Block.ParseFromDb(firstLink.Block)
+    if (genesisBlock.Blockhash() !== Cst.GenesisHash) {
+      return Promise.reject(new Error('ERROR first block isn\'t not the genesis block'))
+    }
+    return true
+  } catch (err) {
+    return Promise.reject(new Error(`ERROR cannot create/save genesis block: ${err}`))
+  }
+}
 
 module.exports = { BlockExistInDb, CreateBlockchain }
