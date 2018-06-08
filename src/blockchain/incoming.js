@@ -1,6 +1,6 @@
 const Debug = require('debug')('blockjs:incoming')
 const CstDocs = require('./const.js').Db.Docs
-const Transaction = require('./transaction.js')
+const Message = require('./message')
 const Blocks = require('./block.js')
 const ChainLink = require('./chainlink.js')
 
@@ -34,7 +34,7 @@ const CheckIfNewTopBlock = async (newBlock, coin) => {
   if (amountNeededEvaluation === 1) {
     // new incoming block --> remove all pendingTX
     // TODO: remove only pending TX that are in this block
-    await coin.Db.RemoveAllDocs(CstDocs.PendingTransactions)
+    await coin.Db.RemoveAllDocs(CstDocs.PendingMessages)
 
     // incoming block needed to be the next block in the blockchain
     const bestHash = await coin.GetBestHash()
@@ -45,7 +45,7 @@ const CheckIfNewTopBlock = async (newBlock, coin) => {
 }
 /* if block is needed or new on top of blockchain
 --> add to blockchain
---> check tx's for own address --> update wallet
+--> check msg's for own address --> update wallet
 --> remove in db collection IncomingBlocks
 */
 const EvaluateBlock = async (inboundBlock, coin) => {
@@ -82,8 +82,8 @@ const EvaluateBlock = async (inboundBlock, coin) => {
   // add link to the blockchain
   await Db.Add(CstDocs.Blockchain, newLink)
 
-  /*  check if block contains receiving transactions for this wallet */
-  // save tx to OwnTX & update balance
+  /*  check if block contains receiving messages for this wallet */
+  // save msg to OwnTX & update balance
   const balance = await coin.Wallet.IncomingBlock(newBlock, coin.Db)
   if (balance) Debug(`Updated balance: ${balance}`)
 
@@ -165,22 +165,18 @@ const Block = async (inboundBlock, coin) => {
   await ProcessReceivedBlocks(coin)
   return ('All stored blocks are evaluated')
 }
-// store incoming transaction as pending
-const Tx = (txMsg, coin) => {
-  const tx = new Transaction(
-    { Address: txMsg.FromAddress }, // fromWallet format
-    txMsg.ToAddress,
-    txMsg.Amount,
-    txMsg.CoinBaseTX,
+// store incoming message as pending
+const Msg = (msg, coin) => {
+  const message = new Message(
+    msg.FromAddress,
+    msg.Content,
   )
   // is the Transaction complete ?
-  if (!Transaction.IsValid(tx)) {
-    return Promise.reject(new Error('SendTX: transaction is not valid'))
+  if (!Message.IsValid(message)) {
+    return Promise.reject(new Error('SendTX: message is not valid'))
   }
-  // TODO: before adding check each tx: valid balance ?
-
   // save to local db for mining later
-  return tx.Save(coin.Db)
+  return message.Save(coin.Db)
 }
 
-module.exports = { Hash, Block, Tx }
+module.exports = { Hash, Block, Msg }

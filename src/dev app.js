@@ -3,17 +3,12 @@ const Debug = require('debug')('blockjs:app')
 const Cst = require('./blockchain/const.js')
 const Coin = require('./blockchain/coin.js')
 
-const Wallet = require('./blockchain/wallet.js')
-
 const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort
 const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
 const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 let SpiceCoin
 // const Me = Coin.CreateWallet('Me')
-
-// dummy wallets for testing
-const DockerAddress = 'SPICE_602d0abb8df465117a22'
 
 
 Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
@@ -36,22 +31,22 @@ Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
     //   Debug('Create TX 1:  -> docker 22')
     //   return SpiceCoin.CreateTX(DockerAddress, 20)
     // })
-    // .then((tx1) => {
-    //   Debug('Send tx1')
-    //   return SpiceCoin.SendTX(tx1)
+    // .then((msg1) => {
+    //   Debug('Send msg1')
+    //   return SpiceCoin.SendTX(msg1)
     // })
 
     // .then(() => {
     //   Debug('Create  TX 2: -> Dude 42')
     //   return SpiceCoin.CreateTX(DockerAddress, 30)
     // })
-    // .then((tx2) => {
-    //   Debug('Sent tx2')
-    //   return SpiceCoin.SendTX(tx2)
+    // .then((msg2) => {
+    //   Debug('Sent msg2')
+    //   return SpiceCoin.SendTX(msg2)
     // })
 
     // .then(() => {
-    //   Debug('Mine block with all pending transactions')
+    //   Debug('Mine block with all pending messages')
     //   return SpiceCoin.MineBlock()
     // })
     // .then((resultMining) => {

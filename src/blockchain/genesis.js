@@ -1,5 +1,5 @@
 
-const Transaction = require('./transaction.js')
+const Message = require('./message.js')
 const Block = require('./block.js')
 const ChainLink = require('./chainlink.js')
 const Cst = require('./const.js')
@@ -7,9 +7,8 @@ const Debug = require('debug')('blockjs:genesis')
 
 const CstDocs = Cst.Db.Docs
 const CreateGenesisBlock = () => {
-  // coinBase TX = true
-  const GenesisTX = new Transaction(null, Cst.GenesisAddress, Cst.GenesisReward, true)
-  return Block.Create(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
+  const GenesisMsg = new Message(Cst.GenesisAddress, Cst.GenesisMsg)
+  return Block.Create(null, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 const CreateFirstLink = () => {
   const GenesisBlock = CreateGenesisBlock()
@@ -27,10 +26,8 @@ const CreateBlockchain = async (coin) => {
     await coin.Db.Add(CstDocs.Blockchain, FirstLink)
     // save to ownTX is wallet = Genesis address
     if (coin.Wallet.Address === Cst.GenesisAddress) {
-      const GenesisTxHash = FirstLink.Block.Transactions[0].Hash
-      await coin.Wallet.SaveOwnTX(GenesisTxHash, coin.Db)
-      // set genesis wallet balance
-      await coin.Wallet.CalcBalance(coin.Db)
+      const GenesisMsgHash = FirstLink.Block.Messages[0].Hash
+      await coin.Wallet.SaveOwnTX(GenesisMsgHash, coin.Db)
     }
     return true
   } catch (err) {

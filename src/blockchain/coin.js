@@ -1,6 +1,5 @@
-const Transaction = require('./transaction.js')
+const Message = require('./message.js')
 const Block = require('./block.js')
-const Wallet = require('./wallet.js')
 const Cst = require('./const.js')
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
@@ -18,7 +17,6 @@ const CstAPI = Cst.API
 class Coin {
   /* start coin :
   - connect to Db
-  - load wallet from db
   - add genesis block if it doesn't exist
   - start p2p server
   - start api server
@@ -32,11 +30,8 @@ class Coin {
     const database = new DB()
     await database.Connect(DbServer, DbPort)
 
-    // load wallet
-    const wallet = await Wallet.Load(database)
-
     // make coin
-    const coin = new Coin(database, wallet)
+    const coin = new Coin(database)
 
     // check if genesis block exists
     await Genesis.BlockExistInDb(coin)
@@ -63,8 +58,7 @@ class Coin {
   constructor(Db, wallet, version = 1) {
     this.Db = Db
     this.Version = version
-    this.BlockReward = Cst.StartBlockReward
-    this.Wallet = wallet
+    this.Address = null // TODO !!
     this.P2P = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = []
     this.API = API(this)
@@ -76,21 +70,7 @@ class Coin {
     }
   }
 
-  GetBalance() {
-    return this.Wallet.GetBalance(this.Db)
-  }
-  // get name, address and balance of wallet
-  GetWalletInfo() {
-    return new Promise((resolve, reject) => {
-      this.GetBalance()
-        .then((balance) => {
-          const walletInfo = Object.assign({ Balance: balance }, this.Wallet)
-          return resolve(walletInfo)
-        })
-        .catch(err => reject(err))
-    })
-  }
-  // get info text with Height, Diff, hash, amount pending transactions
+  // get info text with Height, Diff, hash, amount pending messages
   GetInfo() {
     return new Promise((resolve, reject) => {
       const info = {}
@@ -105,7 +85,7 @@ class Coin {
         })
         .then((hash) => {
           info.hash = hash
-          return this.GetAmountOfPendingTX()
+          return this.GetAmountOfPendingMsgs()
         })
         .then((amount) => {
           info.amount = amount
@@ -114,7 +94,7 @@ class Coin {
           const infoText = `Height: ${info.height}
           Diff: ${info.diff}
           Last hash: ${info.hash}
-          Amount of pending TX: ${info.amount}`
+          Pending messages: ${info.amount}`
           return resolve(infoText)
         })
         .catch(err => reject(err))
@@ -149,9 +129,9 @@ class Coin {
         })
     })
   }
-  // get amount of pending transactions
-  GetAmountOfPendingTX() {
-    return this.Db.CountDocs(CstDocs.PendingTransactions)
+  // get amount of pending messages
+  GetAmountOfPendingMsgs() {
+    return this.Db.CountDocs(CstDocs.PendingMessages)
   }
   // get last block
   GetLastBlock() {
@@ -207,71 +187,38 @@ class Coin {
     }
     return betweenHashes
   }
-  // promise of create transaction
-  CreateTX(receiverAddress, amount) {
-    return Transaction.Create(this.Wallet, receiverAddress, amount)
+  // promise of create Message
+  CreateMsg(content) {
+    return new Message(this.Address, content)
   }
-  // add a TX to the pending transactions
-  async SendTX(tx) {
-    // TODO: also to easy to cheat? Each other node need to check this tx before adding in a block
-    // is tx a Transaction object ?
-    if (tx instanceof Transaction === false) { return (new Error('SendTX: argument is not a transaction')) }
-    // is the Transaction object not empty ?
-    if (Object.keys(tx).length === 0) { return (new Error('SendTX: Empty transaction supplied')) }
-    // is the Transaction complete ?
-    if (!Transaction.IsValid(tx)) { return (new Error('SendTX: transaction is not valid')) }
+  // add a TX to the pending Messages
+  async SendMsg(msg) {
+    // is msg a Message object ?
+    if (msg instanceof Message === false) { return (new Error('SendMsg: argument is not a message')) }
+    // is the Message object not empty ?
+    if (Object.keys(msg).length === 0) { return (new Error('SendMsg: Empty message supplied')) }
+    // is the Message complete ?
+    if (!Message.IsValid(msg)) { return (new Error('SendMsg: message is not valid')) }
 
-    const balance = await this.Wallet.GetBalance(this.Db)
-    if (tx.Amount > balance) { return (new Error('SendTX: Not enough balance !')) }
-    // debit balance
-    await this.ChangeBalance(-tx.Amount)
-    // add TX to pending pool
-    await tx.Save(this.Db)
-    // broadcast new pending TX to peers
-    this.P2P.Broadcast(Cst.P2P.TRANSACTION, tx)
-    // save tx.hash in wallet for fast lookup to get balance
-    const saveResult = await this.SaveOwnTx(tx)
-    if (saveResult.n === 1 && saveResult.ok === 1) { return tx }
-    return Promise.reject(new Error('ERROR saving to db'))
+    // add message to pending pool
+    await msg.Save(this.Db)
+    // broadcast new pending message to peers
+    this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
+    return msg
   }
-  // save tx.hash in wallet for fast lookup to get balance
-  async SaveOwnTx(tx) {
-    const resultSaveTX = await Wallet.SaveOwnTX(tx.TXhash, this.Db)
-    return resultSaveTX.result
-  }
-  // debit / credit balance & save to Db
-  async ChangeBalance(delta) {
-    const balance = await this.Wallet.GetBalance(this.Db)
-    const newBalance = balance + delta
-    // save new balance
-    await this.Wallet.SaveBalanceToDb(newBalance, this.Db)
-  }
-  // create new block with all pending transactions
+  // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this, Cst.StartBlockReward)
     return newBlock
   }
-  // return all pending transactions in json format
-  GetAllPendingTX() {
-    return this.Db.Find(CstDocs.PendingTransactions, {})
+  // return all pending messages in json format
+  GetAllPendingMgs() {
+    return this.Db.Find(CstDocs.PendingMessages, {})
   }
-  // change name of wallet
-  RenameWallet(newName) {
-    return new Promise((resolve, reject) => {
-      if (!newName) { return reject(new Error('No new name')) }
-      this.Wallet.ChangeName(newName, this.Db)
-        .then(() => this.GetWalletInfo())
-        .then(walletInfo => resolve(walletInfo))
-        .catch(err => reject(err))
-    })
-  }
+
   // connect to a peer via ip:port
   ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
     return this.P2P.Connect(remoteIP, remotePort)
-  }
-  // amount of connected peers (in + out)
-  ConnectedAmount() {
-    return this.P2P.Amount()
   }
   // details of connected peers
   PeersDetail() {
@@ -282,9 +229,6 @@ class Coin {
     return details
   }
 
-  CalcWalletAmountFromSavedOwnTXs() {
-    return this.Wallet.CalcBalance(this.Db)
-  }
   UpdateNeededHashes(needed) {
     this.NeededHashes = needed
   }

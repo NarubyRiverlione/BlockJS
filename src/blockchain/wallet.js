@@ -11,8 +11,8 @@ const FindInBlockchain = (TXhash, db) =>
     db.FindOne(CstDocs.Blockchain, filter)
       .catch(err => reject(err))
       .then((foundLink) => {
-        if (!foundLink) { return reject(new Error(`Could not find tx ${TXhash} in the blockchain`)) }
-        const TX = foundLink.Block.Transactions.find(tx => tx.TXhash === TXhash)
+        if (!foundLink) { return reject(new Error(`Could not find msg ${TXhash} in the blockchain`)) }
+        const TX = foundLink.Block.Transactions.find(msg => msg.TXhash === TXhash)
         return resolve(TX)
       })
   })
@@ -82,22 +82,19 @@ class Wallet {
     return db.Update(CstDocs.Wallet, filter, update)
   }
 
-  static SaveOwnTX(txhash, db) {
-    return db.Add(CstDocs.OwnTx, { txhash })
-  }
 
-  DeltaBalanceFromTX(tx) {
-    if (tx.FromAddress === this.Address) return -tx.Amount
-    else if (tx.ToAddress === this.Address) return tx.Amount
+  DeltaBalanceFromTX(msg) {
+    if (msg.FromAddress === this.Address) return -msg.Amount
+    else if (msg.ToAddress === this.Address) return msg.Amount
     return 0
   }
 
-  // calculate the balance based on own transactions
+  // calculate the balance based on own messages
   // send = debit, receive = credit
   UpdateBalanceFromTxs(myTXs, db, oldBalance = 0) {
     let newBalance = oldBalance
-    myTXs.forEach((tx) => {
-      newBalance += this.DeltaBalanceFromTX(tx)
+    myTXs.forEach((msg) => {
+      newBalance += this.DeltaBalanceFromTX(msg)
     })
     return newBalance
   }
@@ -113,22 +110,22 @@ class Wallet {
     })
   }
 
-  //  calculate balance from all saved transactions
+  //  calculate balance from all saved messages
   // Warning: could be costly
   CalcBalance(db) {
     const myTXs = []
 
     return new Promise((resolve, reject) => {
       const promisesFindTXs = []
-      // get all TX hashes of own transactions from db
+      // get all TX hashes of own messages from db
       db.Find(CstDocs.OwnTx, {})
         .then((ownTxHashes) => {
-          // make promise(s) to get each TX based on the tx hash
+          // make promise(s) to get each TX based on the msg hash
           ownTxHashes.forEach((ownTXhashDoc) => {
-            const { txhash } = ownTXhashDoc
+            const { msghash } = ownTXhashDoc
             const findPromise =
               // create array of promises to each find the TX in the blockchain with the TX has
-              FindInBlockchain(txhash, db)
+              FindInBlockchain(msghash, db)
                 .catch(err => reject(err))
                 .then((ownTX) => {
                   myTXs.push(ownTX)
@@ -137,7 +134,7 @@ class Wallet {
 
             promisesFindTXs.push(findPromise)
           })
-          // get all relative transactions from db
+          // get all relative messages from db
           return Promise.all(promisesFindTXs)
         })
         .then(() => this.UpdateBalanceFromTxs(myTXs, db))
@@ -147,20 +144,20 @@ class Wallet {
     })
   }
 
-  // check if there are relevant transactions for this wallet in the
-  // --> update balance and save tx in db
+  // check if there are relevant messages for this wallet in the
+  // --> update balance and save msg in db
   IncomingBlock(block, db) {
     return new Promise((resolve, reject) => {
       const ownTXs = this.FindOwnTXinBlock(block)
       if (ownTXs.length === 0) { return resolve() }
-      Debug(`Found ${ownTXs.length} transactions for this wallet in incoming block`)
+      Debug(`Found ${ownTXs.length} messages for this wallet in incoming block`)
       const newOwnTxPromises = []
-      // save any tx for this wallet to OwnTX
-      ownTXs.forEach(tx => newOwnTxPromises.push(Wallet.SaveOwnTX(tx.TXhash, db)))
+      // save any msg for this wallet to OwnTX
+      ownTXs.forEach(msg => newOwnTxPromises.push(Wallet.SaveOwnTX(msg.TXhash, db)))
       Promise.all(newOwnTxPromises)
         // get current balance
         .then(() => this.GetBalance(db))
-        // update balance with found own tx's
+        // update balance with found own msg's
         .then(oldBalance => this.UpdateBalanceFromTxs(ownTXs, db, oldBalance))
         // save updated balance
         .then(balance => this.SaveBalanceToDb(balance, db))
@@ -172,8 +169,8 @@ class Wallet {
 
   FindOwnTXinBlock(block) {
     const incomingTXs = []
-    block.Transactions.forEach((tx) => {
-      if (tx.ToAddress === this.Address) { incomingTXs.push(tx) }
+    block.Transactions.forEach((msg) => {
+      if (msg.ToAddress === this.Address) { incomingTXs.push(msg) }
     })
     return incomingTXs
   }

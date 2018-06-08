@@ -12,13 +12,6 @@ class Routes {
       res.status(200).json(req.body)
     })
 
-    this.router.get('/Balance', (req, res) => {
-      coin.GetBalance()
-        .then((balance) => {
-          res.status(200).json({ balance })
-        })
-        .catch(error => res.status(400).json({ error: error.message }))
-    })
     this.router.get('/Height', (req, res) => {
       coin.GetHeight()
         .then((height) => {
@@ -70,15 +63,15 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    this.router.get('/AmountOfPendingTX', (req, res) => {
-      coin.GetAmountOfPendingTX()
+    this.router.get('/AmountOfPendingMsgs', (req, res) => {
+      coin.GetAmountOfPendingMsgs()
         .then((amount) => {
-          res.status(200).send({ AmountOfPendingTX: amount })
+          res.status(200).send({ GetAmountOfPendingMsgs: amount })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    this.router.get('/AllPendingTx', (req, res) => {
-      coin.GetAllPendingTX()
+    this.router.get('/AllPendingMgs', (req, res) => {
+      coin.GetAllPendingMgs()
         .then((pending) => {
           res.status(200).send({ pending })
         })
@@ -115,24 +108,10 @@ class Routes {
         res.status(400).send({ error: 'Hash is not a string' })
       }
     })
-    this.router.get('/Wallet', (req, res) => {
-      coin.GetWalletInfo()
-        .then((wallet) => {
-          res.status(200).json({ wallet })
-        })
-        .catch(error => res.status(400).json({ error: error.message }))
-    })
     this.router.get('/Mine', (req, res) => {
       coin.MineBlock()
         .then((block) => {
           res.status(200).send({ block })
-        })
-        .catch(error => res.status(400).json({ error: error.message }))
-    })
-    this.router.get('/CalcWalletAmount', (req, res) => {
-      coin.CalcWalletAmountFromSavedOwnTXs()
-        .then((balance) => {
-          res.status(200).send({ balance })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
@@ -144,26 +123,17 @@ class Routes {
       const amount = coin.PeersDetail()
       res.status(200).json(amount)
     })
-    // body: newName
-    this.router.post('/RenameWallet/', (req, res) => {
-      const { newName } = req.body
-      coin.RenameWallet(newName)
-        .then((wallet) => {
-          res.status(200).send({ wallet })
-        })
-        .catch(error => res.status(400).json({ error: error.message }))
-    })
-    // body:  toAddress, amount
-    this.router.post('/SendTX/', (req, res) => {
-      const { toAddress, amount } = req.body
-      let tx
-      coin.CreateTX(toAddress, amount)
+    // body: content
+    this.router.post('/SendMsg/', (req, res) => {
+      const { Content } = req.body
+      let msg
+      coin.CreateMsg(Content)
         .then((newTx) => {
-          tx = newTx
-          return coin.SendTX(tx)
+          msg = newTx
+          return coin.SendMsg(msg)
         })
-        .then((sendTX) => {
-          res.status(200).json({ sendTX })
+        .then((sendMsg) => {
+          res.status(200).json({ sendMsg })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })

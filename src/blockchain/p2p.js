@@ -11,12 +11,12 @@ inbound GetBlockMsg(hash) -> SendBlockMsg(hash)
 inbound BlockMsg(block) ->IncomingBlock(block):  add to local blockchain
 */
 
-const CreateMsg = (type, payload) =>
+const CreateP2Pmsg = (type, payload) =>
   JSON.stringify({ type, payload })
 
 const AskNeededBlocks = (neededHashes, peer) => {
   neededHashes.forEach((hash) => {
-    peer.send(CreateMsg(CstP2P.GETBLOCK, hash))
+    peer.send(CreateP2Pmsg(CstP2P.GETBLOCK, hash))
   })
 }
 
@@ -29,13 +29,18 @@ class P2P {
 
     this.Coin = coin
     this.OutgoingConnections = []
+    this.IncomingConnections = []
 
     // start listening
     this.Server.on('listening', () => { Debug(`Listening on port ${port}`) })
     // incoming connections -> setup message handle + send info of own peer
     this.SetupIncomingConnectionHandle()
-    // handle a connection disconnect
-    this.Server.on('close', () => { Debug('peer has disconnected') })
+    // stop server, disconnect all peers
+    this.Server.on('close', () => {
+      Debug('Server stopped, all in/outgoing connections are closed')
+      this.IncomingConnections = []
+      this.OutgoingConnections = []
+    })
     // handle error
     this.Server.on('error', (error) => { Debug(`Error: ${error}`) })
   }
@@ -46,8 +51,7 @@ class P2P {
     return { peers: incoming + out }
   }
   IncomingDetails() {
-    // TODO: server.clients has no usefully information
-    return this.Server.clients
+    return this.IncomingConnections.map(peer => peer.url)
   }
   OutgoingDetails() {
     return this.OutgoingConnections.map(out => out.url)
@@ -61,21 +65,21 @@ class P2P {
 
       const { remoteAddress, remotePort } = req.connection
       Debug(`Incoming connection from ${remoteAddress} on port ${remotePort}`)
-
+      this.IncomingConnections.push({ url: `${remoteAddress}:${remotePort}` })
       // send Connected Msg
-      peer.send(CreateMsg(CstP2P.CONNECTED, null))
+      peer.send(CreateP2Pmsg(CstP2P.CONNECTED, null))
       // send version of this peer
-      peer.send(CreateMsg(CstP2P.VERSION, this.Coin.Version))
+      peer.send(CreateP2Pmsg(CstP2P.VERSION, this.Coin.Version))
       // send hash of this blockchain
       this.Coin.GetBestHash()
-        .then((hash) => { peer.send(CreateMsg(CstP2P.HASH, hash)) })
+        .then((hash) => { peer.send(CreateP2Pmsg(CstP2P.HASH, hash)) })
         .catch(err => console.error(err))
     })
   }
   // send message to all connected peers (incoming) and connections (outgoing)
   Broadcast(type, payload) {
     Debug(`Broadcast a ${type} message`)
-    const msg = CreateMsg(type, payload)
+    const msg = CreateP2Pmsg(type, payload)
     this.Server.clients.forEach((peer) => {
       peer.send(msg)
     })
@@ -105,7 +109,7 @@ class P2P {
           .then((result) => {
             if (result instanceof Block) {
               Debug('Incoming block successful evaluated')
-              // check if there's a relevant transaction for this wallet
+              // check if there's a relevant message for this wallet
               this.Wallet.IncomingBlock(result, this.Db)
             }
           })
@@ -118,7 +122,7 @@ class P2P {
           // send hashes that peers doesn't have
           .then((peerNeededHashes) => {
             Debug(`Send Inv with ${peerNeededHashes.length} hashes to peer`)
-            peer.send(CreateMsg(CstP2P.INVENTORY, peerNeededHashes))
+            peer.send(CreateP2Pmsg(CstP2P.INVENTORY, peerNeededHashes))
           })
           .catch(err => console.error(err))
         break
@@ -133,16 +137,19 @@ class P2P {
       case CstP2P.GETBLOCK:
         Debug(`Peer asked for block with hash ${msg.payload}`)
         this.Coin.GetBlockWithHash(msg.payload)
-          .then(block => peer.send(CreateMsg(CstP2P.BLOCK, block)))
+          .then(block => peer.send(CreateP2Pmsg(CstP2P.BLOCK, block)))
           .catch(err => console.error(err))
         break
-      case CstP2P.TRANSACTION:
-        Debug('Incoming transaction')
-        Incoming.Tx(msg.payload, this.Coin)
-          .then(() => Debug('Incoming transaction saved'))
+
+      case CstP2P.MESSAGE:
+        Debug('Incoming message')
+        Incoming.Msg(msg.payload, this.Coin)
+          .then(() => Debug('Incoming message saved'))
           .catch(err => console.error(err))
         break
-      default: peer.send(CreateMsg(CstP2P.NACK, null))
+
+
+      default: peer.send(CreateP2Pmsg(CstP2P.NACK, null))
     }
   }
   // Connect to a peer, send version + best hash
@@ -186,13 +193,13 @@ class P2P {
       // save Outgoing connection to broadcast later
       this.OutgoingConnections.push(connection)
       Debug('Sending Version message')
-      connection.send(CreateMsg(CstP2P.VERSION, this.Coin.Version))
+      connection.send(CreateP2Pmsg(CstP2P.VERSION, this.Coin.Version))
 
       // send hash of this blockchain
       this.Coin.GetBestHash()
         .then((hash) => {
           Debug('Sending best hash')
-          connection.send(CreateMsg(CstP2P.HASH, hash))
+          connection.send(CreateP2Pmsg(CstP2P.HASH, hash))
           return resolve(`P2P handshake done with ${remoteIP}:${remotePort}`)
         })
         .catch(err => reject(new Error(`ERROR sending best hash ${err}`)))

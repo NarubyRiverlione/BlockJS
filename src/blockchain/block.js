@@ -1,7 +1,7 @@
 
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
-const Transactions = require('./transaction.js')
+const Message = require('./message.js')
 
 
 const IsHeaderComplete = (block =>
@@ -11,7 +11,7 @@ const IsHeaderComplete = (block =>
   && block.Timestamp !== undefined)
 
 class Block {
-  static Create(prevHash, nonce, diff, transactions, timestamp, version = 1) {
+  static Create(prevHash, nonce, diff, messages, timestamp, version = 1) {
     if (
       prevHash === undefined
       || nonce === undefined
@@ -20,32 +20,32 @@ class Block {
       Debug(new Error('ERROR Block header incomplete !'))
       return null
     }
-    return new Block(prevHash, nonce, diff, transactions, timestamp, version)
+    return new Block(prevHash, nonce, diff, messages, timestamp, version)
   }
 
-  constructor(prevHash, nonce, diff, transactions, timestamp, version) {
+  constructor(prevHash, nonce, diff, messages, timestamp, version) {
     this.PrevHash = prevHash
     this.Nonce = nonce
     this.Diff = diff
     this.Version = version
     this.Timestamp = timestamp
-    this.Transactions = transactions
-    this.TransactionHash = this.HashTransactions()
+    this.Messages = messages
+    this.TransactionHash = this.HashMessages()
   }
 
-  HashTransactions() {
-    return SHA256(JSON.stringify(this.Transactions)).toString()
+  HashMessages() {
+    return SHA256(JSON.stringify(this.Messages)).toString()
   }
 
   // create instance of Block with db data
   static ParseFromDb(DBblock) {
-    const transactions = DBblock.Transactions.map(tx =>
-      Transactions.ParseFromDb(tx))
+    const messages = DBblock.Messages.map(msg => Message.ParseFromDb(msg))
+
     const block = new Block(
       DBblock.PrevHash,
       DBblock.Nonce,
       DBblock.Diff,
-      transactions,
+      messages,
       DBblock.Timestamp,
       DBblock.Version,
       DBblock.TransactionHash,
@@ -56,7 +56,7 @@ class Block {
 
   Blockhash() {
     const Content = this.PrevHash + this.Nonce + this.Diff + this.Timestamp + this.Version
-    return SHA256(Content + this.HashTransactions).toString()
+    return SHA256(Content + this.HashMessages).toString()
   }
 
   static IsValid(block) {
@@ -69,10 +69,10 @@ class Block {
       Debug('ERROR block is not valid: header incomplete')
       return false
     }
-    // are all transaction valid ?
-    if (block.Transactions && block.Transactions.length > 0) {
-      block.Transactions.forEach((tx) => {
-        if (!Transactions.IsValid(tx)) return false
+    // are all Messages valid ?
+    if (block.Messages && block.Messages.length > 0) {
+      block.Messages.forEach((msg) => {
+        if (!Message.IsValid(msg)) return false
         return true
       })
     }

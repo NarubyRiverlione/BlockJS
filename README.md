@@ -9,15 +9,15 @@ Let’s gets first get  the disclaimers out of the way
 This is a pure educational project. By no means is this a secure blockchain nor is this an attempt in creating one.
 It would be very irresponsible to use this as a template for launching a new crypto currency.
 I would be very pleased with any feedback but please don’t hold it against me if I response to a question in line of “..why did you use X and not Y…” with “..because I never heard of Y..”
-I only have 1 year of javascript expiriance and that’s the main reason for me to tackle this project: to learn.
+I only have 1 year of javascript experience and that’s the main reason for me to tackle this project: to learn.
 (back to normal reading speed)
 
 I’m planning on writing a series of articles that are inline with my progress in the project:
 ### Creating a blockchain in memory ###
-it would be very hard to dive into the code with all the persistent storage without some basic explication of the elementary blockchain elements (transaction, block, blockchain) 
+it would be very hard to dive into the code with all the persistent storage without some basic explication of the elementary blockchain elements (message, block, blockchain) 
 
-### Persistend storage ###
-I will the noSQL database  mongoDB with the native nodejs driver to store the blockchain. I did douwt about using mongoose as I have some previous experience with it. But as I’ve defined my classes in part 1 it feels wrong to use mongoose models. Time will tell if this was a right call. 
+### Persistent storage ###
+I will the noSQL database  mongoDB with the native nodejs driver to store the blockchain. I did know about using mongoose as I have some previous experience with it. But as I’ve defined my classes in part 1 it feels wrong to use mongoose models. Time will tell if this was a right call. 
 
 ### Peer-to-peer communication ###
 Exchanging blocks via p2p, I’ve opted to use the websocket ws implementation. Again I was in sought between socket.io or websocket 

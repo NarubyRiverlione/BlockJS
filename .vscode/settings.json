@@ -11,11 +11,14 @@
     "Blockhash",
     "Coinbase",
     "GETBLOCK",
+    "Msgs",
+    "Pmsg",
     "Xhash",
     "blockjs",
     "chainlink",
     "coinbased",
     "lastblock",
+    "msghash",
     "tx's",
     "txhash"
   ]
