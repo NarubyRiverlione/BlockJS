@@ -11,12 +11,12 @@ const CreateGenesisBlock = () => {
   const GenesisTX = new Transaction(null, Cst.GenesisAddress, Cst.GenesisReward, true)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisTX], Cst.GenesisTimestamp)
 }
-const CreateFirstLink = () =>
-  new Promise((resolve, reject) => {
-    CreateGenesisBlock()
-      .then(GenesisBlock => resolve(ChainLink.Create(GenesisBlock, 0)))
-      .catch(err => reject(err))
-  })
+const CreateFirstLink = () => {
+  const GenesisBlock = CreateGenesisBlock()
+  if (!GenesisBlock) { return Promise.reject(new Error('Could not create genesis block')) }
+  const link = ChainLink.Create(GenesisBlock, 0)
+  return link
+}
 
 const CreateBlockchain = async (coin) => {
   try {

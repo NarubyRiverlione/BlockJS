@@ -47,6 +47,10 @@ class Transaction {
     return tx
   }
   static IsValid(tx) {
+    if (!(tx instanceof Transaction)) {
+      Debug('tx is not of type Transaction (loaded from db without cast?)')
+      return false
+    }
     if (!tx.FromAddress && !tx.CoinBaseTX) {
       Debug('ERROR transaction is not valid: no from address in a non-coinbased transaction')
       return false

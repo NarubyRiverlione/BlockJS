@@ -12,16 +12,15 @@ const IsHeaderComplete = (block =>
 
 class Block {
   static Create(prevHash, nonce, diff, transactions, timestamp, version = 1) {
-    return new Promise((resolve, reject) => {
-      if (
-        prevHash === undefined
-        || nonce === undefined
-        || diff === undefined
-        || timestamp === undefined) {
-        return reject(new Error('ERROR Block header incomplete !'))
-      }
-      return resolve(new Block(prevHash, nonce, diff, transactions, timestamp, version))
-    })
+    if (
+      prevHash === undefined
+      || nonce === undefined
+      || diff === undefined
+      || timestamp === undefined) {
+      Debug(new Error('ERROR Block header incomplete !'))
+      return null
+    }
+    return new Block(prevHash, nonce, diff, transactions, timestamp, version)
   }
 
   constructor(prevHash, nonce, diff, transactions, timestamp, version) {
@@ -61,6 +60,10 @@ class Block {
   }
 
   static IsValid(block) {
+    if (!(block instanceof Block)) {
+      Debug('block is not of type Block (loaded from db without cast?)')
+      return false
+    }
     // header complete ?
     if (!IsHeaderComplete(block)) {
       Debug('ERROR block is not valid: header incomplete')

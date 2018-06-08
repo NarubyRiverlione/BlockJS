@@ -207,7 +207,7 @@ class Coin {
     }
     return betweenHashes
   }
-  // transaction is alway sending from own wallet to receiver
+  // promise of create transaction
   CreateTX(receiverAddress, amount) {
     return Transaction.Create(this.Wallet, receiverAddress, amount)
   }

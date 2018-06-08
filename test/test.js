@@ -14,18 +14,17 @@ const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
 const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 
-it('Blockchain creation', async () => {
+it('Blockchain', async () => {
   TestCoin = await Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   expect(TestCoin, 'creation failed').not.null
 
   describe('Genesis tests', () => {
     let GenesisBlock
-    let GenesisBlockInDB
 
     it('Load genesis from db', async () => {
-      GenesisBlockInDB = await TestCoin.GetBlockAtHeight(0)
-      expect(GenesisBlock.IsValid()).to.be.true
-      expect(GenesisBlockInDB).not.null
+      GenesisBlock = await TestCoin.GetBlockAtHeight(0)
+      expect(GenesisBlock).not.null
+      expect(Block.IsValid(GenesisBlock)).to.be.true
     })
     it('(GetBestHash) Check hash', () => {
       expect(GenesisBlock.Blockhash()).is.equal(Cst.GenesisHash)
@@ -52,8 +51,8 @@ it('Blockchain creation', async () => {
     })
   })
 
-  describe('Create block', () => {
-    const tx = TestCoin.CreateTX(`${Cst.AddressPrefix}toAnAddressYou`, 321)
+  describe('Create block', async () => {
+    const tx = await TestCoin.CreateTX(`${Cst.AddressPrefix}toAnAddressYou`, 321)
     const ValidBlock = Block.Create(null, 0, 2, [tx], Date.now())
     const savedTXhash = ValidBlock.HashTransactions
     const savedTX = ValidBlock.Transaction
@@ -62,7 +61,6 @@ it('Blockchain creation', async () => {
     it('Valid block creation', () => {
       expect(Block.IsValid(ValidBlock)).is.true
     })
-
     it('Invalid block detection: no headers', () => {
       const BlockWithoutHeaders = new Block()
       expect(Block.IsValid(BlockWithoutHeaders)).is.false
@@ -78,7 +76,6 @@ it('Blockchain creation', async () => {
       BlockChangedPrevHash.PrevHash = 'SHA256'
       expect(BlockChangedPrevHash.Blockhash()).not.equal(blockhash)
     })
-
     it('Transaction cannot be changed', () => {
       const changedTX = Object.assign({ Amount: 123 }, tx) // instead of 321
       ValidBlock.Transactions = [changedTX]
@@ -89,20 +86,20 @@ it('Blockchain creation', async () => {
     })
   })
 
-  xdescribe('Transaction', () => {
-    it('Invalid tx: no sender', () => {
-      const tx = Coin.CreateTX(null, 'toYou', 666)
-      expect(tx.IsValid()).is.false
-    })
-    it('Invalid tx: no reciever', () => {
-      const tx = Coin.CreateTX('me', null, 666)
-      expect(tx.IsValid()).is.false
-    })
-    it('Invalid tx: no amount', () => {
-      const tx = Coin.CreateTX('me', 'toYou', null)
-      expect(tx.IsValid()).is.false
-    })
-  })
+  // xdescribe('Transaction', () => {
+  //   it('Invalid tx: no sender', () => {
+  //     const tx = Coin.CreateTX(null, 'toYou', 666)
+  //     expect(tx.IsValid()).is.false
+  //   })
+  //   it('Invalid tx: no reciever', () => {
+  //     const tx = Coin.CreateTX('me', null, 666)
+  //     expect(tx.IsValid()).is.false
+  //   })
+  //   it('Invalid tx: no amount', () => {
+  //     const tx = Coin.CreateTX('me', 'toYou', null)
+  //     expect(tx.IsValid()).is.false
+  //   })
+  // })
 })
 
 // xdescribe('Add transaction to blockchain & mine new block', () => {

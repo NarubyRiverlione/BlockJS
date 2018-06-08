@@ -27,7 +27,7 @@ const MineBlock = async (coin, miningReward) => {
   // TODO: POW / POS
   // TODO: set Max of TX in block
   const prevHash = await coin.GetBestHash()
-  const createdBlock = await Block.Create(prevHash, 0, Cst.StartDiff, IncludeTXs, Date.now()) // eslint-disable-line max-len
+  const createdBlock = Block.Create(prevHash, 0, Cst.StartDiff, IncludeTXs, Date.now()) // eslint-disable-line max-len
   const height = await coin.GetHeight()
   // create new link with block
   const newLink = await ChainLink.Create(createdBlock, height + 1)
