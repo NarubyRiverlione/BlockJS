@@ -1,7 +1,6 @@
 const Block = require('./block.js')
 const ChainLink = require('./chainlink.js')
 const Cst = require('./const.js')
-const Debug = require('debug')('blockjs:mining')
 
 const CstDocs = Cst.Db.Docs
 
@@ -24,22 +23,8 @@ const MineBlock = async (coin) => {
   const newLink = await ChainLink.Create(createdBlock, height + 1)
   // save link to blockchain
   await coin.Db.Add(CstDocs.Blockchain, newLink)
-
-  /*  check if block contains receiving messages for this wallet */
-  // should be at least 1: the coinbase TX
-  // save msg(s) to OwnTX & update balance
-  const newBalance = await coin.Wallet.IncomingBlock(createdBlock, Db)
-  Debug(`Updated balance form this block: ${newBalance}`)
-
-  // // add mining reward to wallet
-  // await coin.ChangeBalance(miningReward)
-  // // save coinbase msg as ownTX
-  // await coin.SaveOwnTx(CoinbaseTX)
-
   // broadcast new block
   coin.P2P.Broadcast(Cst.P2P.BLOCK, createdBlock)
-
-
   // clear pending messages
   // TODO: only remove msg's that are added in coin block (once Max of TX are set)
   // TODO: instead of removing, mark as 'processed' so there available in case of forks

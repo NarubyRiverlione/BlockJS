@@ -30,25 +30,23 @@ class Block {
     this.Version = version
     this.Timestamp = timestamp
     this.Messages = messages
-    this.TransactionHash = this.HashMessages()
+    this.HashMessages = this.CalcHashMessages()
   }
 
-  HashMessages() {
+  CalcHashMessages() {
     return SHA256(JSON.stringify(this.Messages)).toString()
   }
 
   // create instance of Block with db data
   static ParseFromDb(DBblock) {
-    const messages = DBblock.Messages.map(msg => Message.ParseFromDb(msg))
-
     const block = new Block(
       DBblock.PrevHash,
       DBblock.Nonce,
       DBblock.Diff,
-      messages,
+      DBblock.Messages,
       DBblock.Timestamp,
       DBblock.Version,
-      DBblock.TransactionHash,
+      DBblock.HashMessages,
     )
     // all Block function now available
     return block

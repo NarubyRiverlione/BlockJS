@@ -6,6 +6,7 @@ const P2P = require('./p2p.js')
 const API = require('../api/express.js')
 const Genesis = require('./genesis.js')
 const Mining = require('./mining.js')
+const Address = require('./address.js')
 
 const https = require('https')
 const fs = require('fs')
@@ -30,8 +31,11 @@ class Coin {
     const database = new DB()
     await database.Connect(DbServer, DbPort)
 
+    // get own address
+    const address = await Address(database)
+
     // make coin
-    const coin = new Coin(database)
+    const coin = new Coin(database, address)
 
     // check if genesis block exists
     await Genesis.BlockExistInDb(coin)
@@ -55,10 +59,10 @@ class Coin {
     this.Db.Close()
     this.P2P.Close()
   }
-  constructor(Db, wallet, version = 1) {
+  constructor(Db, address, version = 1) {
     this.Db = Db
     this.Version = version
-    this.Address = null // TODO !!
+    this.Address = address
     this.P2P = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = []
     this.API = API(this)
@@ -189,9 +193,9 @@ class Coin {
   }
   // promise of create Message
   CreateMsg(content) {
-    return new Message(this.Address, content)
+    return Message.Create(this.Address, content)
   }
-  // add a TX to the pending Messages
+  // add a message to the pending Messages
   async SendMsg(msg) {
     // is msg a Message object ?
     if (msg instanceof Message === false) { return (new Error('SendMsg: argument is not a message')) }
@@ -208,7 +212,7 @@ class Coin {
   }
   // create new block with all pending messages
   async MineBlock() {
-    const newBlock = await Mining.MineBlock(this, Cst.StartBlockReward)
+    const newBlock = await Mining.MineBlock(this)
     return newBlock
   }
   // return all pending messages in json format

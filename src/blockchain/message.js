@@ -1,42 +1,36 @@
 const SHA256 = require('crypto-js/sha256')
-const Debug = require('debug')('blockjs:message')
-const CstDocs = require('./const').Db.Docs
+const CstDocs = require('./const.js').Db.Docs
+
+const msgHash = (fromAddress, content) => SHA256(fromAddress + content).toString()
 
 class Message {
-  constructor(fromAddress, content) {
+  constructor(fromAddress, hash) {
     this.From = fromAddress
-    this.Content = content
-    this.TXhash = this.Hash()
+    this.Hash = hash
   }
 
-  Hash() {
-    const hash = SHA256(this.From + this.Content)
-    return hash.toString()
-  }
-  static ParseFromDb(msgDb) {
-    const msg = new Message(
-      msgDb.From,
-      msgDb.Message,
-    )
-    return msg
-  }
-  static IsValid(msg) {
-    if (!(msg instanceof Message)) {
-      Debug('msg is not of type Message (loaded from db without cast?)')
-      return false
-    }
-    if (!msg.FromAddress) {
-      Debug('ERROR message is not valid: no from address')
-      return false
-    }
-    if (!msg.Content) {
-      Debug('ERROR message is not valid: no content')
-      return false
-    }
-    return true
+  static Create(fromAddress, content) {
+    return new Message(fromAddress, msgHash(fromAddress, content))
   }
 
-  // save to db
+  static IsValid(msg, content = null) {
+    return new Promise((resolve, reject) => {
+      // if (!(msg instanceof Message)) {
+      //   return reject(new Error('Not of type Message (loaded from db without cast?)'))
+      // }
+      if (!msg.From) {
+        return reject(new Error('ERROR message is not valid: no from address'))
+      }
+      if (content) {
+        const checkHash = msgHash(msg.From, content)
+        if (msg.Hash !== checkHash) {
+          return reject(new Error('ERROR message hash is not valid for content'))
+        }
+      }
+      return resolve(true)
+    })
+  }
+
   Save(db) {
     return db.Add(CstDocs.PendingMessages, this)
   }

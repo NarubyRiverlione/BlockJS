@@ -4,8 +4,9 @@ const Const = {
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_707d6653b0b81d679313',
-  GenesisHash: '2a6da0913f4d01a3233c9452346b042243f5e3c8b431a124aed9d787a9bb6ef8',
-  GenesisTxHash: 'a172cf1b97af949009b589822c86b72f5f09cdd5a3448048b754329734733b4a',
+  GenesisHashBlock: '182c67d43f333b962f88e1c7780c7650fc79f5a8dc23e8826bdbfe5d757f482f',
+  GenesisHashMessages: '6864320b5f8c28368ca6c7bb4395406625be41565c90a9fc927abe81ae248456',
+  GenesisHashMsg: '256100c3eaa459e608ffd425bab68e08b66a649b8da8c86306caef2da482e58d',
 
   StartDiff: 2,
   PrivateKeySize: 10,
@@ -19,7 +20,7 @@ const Const = {
     Docs: {
       PendingMessages: 'PendingMessages',
       Blockchain: 'Blockchain',
-      Wallet: 'Wallet',
+      Address: 'Address',
       IncomingBlocks: 'IncomingBlocks',
     },
   },
