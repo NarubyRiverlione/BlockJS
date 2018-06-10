@@ -19,28 +19,21 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
+    this.router.get('/Address', (req, res) => {
+      res.status(200).json({ address: coin.Address })
+    })
     this.router.get('/Info', (req, res) => {
-      let walletInfo
       let blockchainInfo
 
-      coin.GetWalletInfo()
-        .then((wallet) => {
-          walletInfo = wallet
-          return coin.GetInfo()
-        })
+      coin.GetInfo()
         .then((info) => {
           blockchainInfo = info
-          return coin.ConnectedAmount()
+          return coin.ConnectionCount()
         })
         .then((peerAmount) => {
           const showInfo = `
           BLOCKCHAIN INFO
           ${blockchainInfo}
-
-          WALLET INFO
-          Wallet address: ${walletInfo.Address} 
-          Wallet name: '${walletInfo.Name}'
-          Wallet balance: ${walletInfo.Balance}
 
           PEER INFO
           Connected peers: ${peerAmount.peers}`
@@ -116,7 +109,7 @@ class Routes {
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/AmountPeers', (req, res) => {
-      const amount = coin.ConnectedAmount()
+      const amount = coin.ConnectionCount()
       res.status(200).json(amount)
     })
     this.router.get('/PeersDetails', (req, res) => {
@@ -126,14 +119,12 @@ class Routes {
     // body: content
     this.router.post('/SendMsg/', (req, res) => {
       const { Content } = req.body
-      let msg
-      coin.CreateMsg(Content)
-        .then((newTx) => {
-          msg = newTx
-          return coin.SendMsg(msg)
-        })
-        .then((sendMsg) => {
-          res.status(200).json({ sendMsg })
+      const msg = coin.CreateMsg(Content)
+      coin.SendMsg(msg)
+        .then((result) => {
+          if (result) {
+            res.status(200).json({ msg })
+          } else { res.status(400).send('error') }
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })

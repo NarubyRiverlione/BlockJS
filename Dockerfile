@@ -1,5 +1,5 @@
 FROM node:alpine
-LABEL version="1.0"
+LABEL version="2.0"
 
 WORKDIR /app
 

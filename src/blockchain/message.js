@@ -9,7 +9,7 @@ class Message {
     this.Hash = hash
   }
 
-  static Create(fromAddress, content) {
+  static CreateFromContent(fromAddress, content) {
     return new Message(fromAddress, msgHash(fromAddress, content))
   }
 
@@ -29,6 +29,11 @@ class Message {
       }
       return resolve(true)
     })
+  }
+
+  // remove database _id property from messages
+  static ParseFromDb(msg) {
+    return new Message(msg.From, msg.Hash)
   }
 
   Save(db) {

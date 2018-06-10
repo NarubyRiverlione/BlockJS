@@ -95,7 +95,8 @@ class Coin {
           info.amount = amount
         })
         .then(() => {
-          const infoText = `Height: ${info.height}
+          const infoText = `Address: ${this.Address}
+          Height: ${info.height}
           Diff: ${info.diff}
           Last hash: ${info.hash}
           Pending messages: ${info.amount}`
@@ -141,14 +142,10 @@ class Coin {
   GetLastBlock() {
     return new Promise((resolve, reject) => {
       this.GetHeight()
-        .catch(err =>
-          reject(err))
-        .then(maxHeight =>
-          this.Db.Find(CstDocs.Blockchain, { Height: maxHeight }))
-        .then(foundLinks =>
-          Block.ParseFromDb(foundLinks[0].Block))
-        .then(block =>
-          resolve(block))
+        .catch(err => reject(err))
+        .then(maxHeight => this.Db.Find(CstDocs.Blockchain, { Height: maxHeight }))
+        .then(foundLinks => Block.ParseFromDb(foundLinks[0].Block))
+        .then(block => resolve(block))
     })
   }
   // get block at specific height
@@ -193,22 +190,25 @@ class Coin {
   }
   // promise of create Message
   CreateMsg(content) {
-    return Message.Create(this.Address, content)
+    return Message.CreateFromContent(this.Address, content)
   }
   // add a message to the pending Messages
-  async SendMsg(msg) {
+  async SendMsg(message) {
+    // copy message because db save will mutated it (add _id)
+    const msg = Message.ParseFromDb(message)
     // is msg a Message object ?
     if (msg instanceof Message === false) { return (new Error('SendMsg: argument is not a message')) }
     // is the Message object not empty ?
     if (Object.keys(msg).length === 0) { return (new Error('SendMsg: Empty message supplied')) }
     // is the Message complete ?
-    if (!Message.IsValid(msg)) { return (new Error('SendMsg: message is not valid')) }
+    const valid = await Message.IsValid(msg)
+    if (!valid) { return (new Error('SendMsg: message is not valid')) }
 
     // add message to pending pool
     await msg.Save(this.Db)
     // broadcast new pending message to peers
     this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
-    return msg
+    return true
   }
   // create new block with all pending messages
   async MineBlock() {
@@ -216,8 +216,11 @@ class Coin {
     return newBlock
   }
   // return all pending messages in json format
-  GetAllPendingMgs() {
-    return this.Db.Find(CstDocs.PendingMessages, {})
+  async GetAllPendingMgs() {
+    const pendingDbMsgs = await this.Db.Find(CstDocs.PendingMessages, {})
+    // remove database _id property
+    const pendingMsg = pendingDbMsgs.map(msg => Message.ParseFromDb(msg))
+    return pendingMsg
   }
 
   // connect to a peer via ip:port
@@ -232,7 +235,10 @@ class Coin {
     }
     return details
   }
-
+  // amount of incoming and outgoing connections
+  ConnectionCount() {
+    return this.P2P.Amount()
+  }
   UpdateNeededHashes(needed) {
     this.NeededHashes = needed
   }

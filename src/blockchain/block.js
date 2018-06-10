@@ -20,7 +20,10 @@ class Block {
       Debug(new Error('ERROR Block header incomplete !'))
       return null
     }
-    return new Block(prevHash, nonce, diff, messages, timestamp, version)
+    // remove database _id property from messages
+    const msgs = messages.map(msg => Message.ParseFromDb(msg))
+
+    return new Block(prevHash, nonce, diff, msgs, timestamp, version)
   }
 
   constructor(prevHash, nonce, diff, messages, timestamp, version) {
@@ -39,11 +42,14 @@ class Block {
 
   // create instance of Block with db data
   static ParseFromDb(DBblock) {
+    // remove database _id property from messages
+    const messages = DBblock.Messages.map(msg => Message.ParseFromDb(msg))
+
     const block = new Block(
       DBblock.PrevHash,
       DBblock.Nonce,
       DBblock.Diff,
-      DBblock.Messages,
+      messages,
       DBblock.Timestamp,
       DBblock.Version,
       DBblock.HashMessages,

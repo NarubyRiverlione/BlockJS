@@ -7,7 +7,7 @@ const Debug = require('debug')('blockjs:genesis')
 
 const CstDocs = Cst.Db.Docs
 const CreateGenesisBlock = () => {
-  const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
+  const GenesisMsg = Message.CreateFromContent(Cst.GenesisAddress, Cst.GenesisMsg)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 const CreateFirstLink = () =>
