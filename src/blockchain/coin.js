@@ -210,6 +210,20 @@ class Coin {
     this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
     return true
   }
+  // find a message in the blockchain, return link
+  async FindMsg(content, from) {
+    // default search from own address
+    const fromAddress = from || this.Address
+    // create Message to get the message hash
+    const msg = Message.CreateFromContent(fromAddress, content)
+    const filter = { 'Block.Messages.Hash': msg.Hash }
+    // find link that contains the message hash
+    const foundLink = await this.Db.FindOne(CstDocs.Blockchain, filter)
+    if (!foundLink) return null
+    // remove _id property by  deconstruct it out of foundLink
+    const { _id, ...linkWithoutID } = foundLink // eslint-disable-line
+    return linkWithoutID
+  }
   // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this)
