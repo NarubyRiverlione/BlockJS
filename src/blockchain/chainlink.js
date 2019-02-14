@@ -1,3 +1,4 @@
+/* ChainLink =  Height, Hash (of block) , Block (header + content)  */
 
 const Block = require('./block.js')
 // const Debug = require('debug')('blockjs:Chainlink')

@@ -2,7 +2,7 @@
 
 const expect = require('chai').expect // eslint-disable-line 
 
-const Coin = require('../src/blockchain/coin.js')
+const BlockChain = require('../src/blockchain/BlockChain.js')
 const Block = require('../src/blockchain/block.js')
 const Message = require('../src/blockchain/message.js')
 // const Wallet = require('../src/wallet.js')
@@ -15,7 +15,7 @@ const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 
 it('Blockchain', async () => {
-  TestCoin = await Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
+  TestCoin = await BlockChain.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   expect(TestCoin, 'creation failed').not.null
 
   describe('Genesis tests', () => {

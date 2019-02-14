@@ -3,7 +3,7 @@ const crypto = require('crypto')
 
 const Debug = require('debug')('blockjs:address')
 
-const PrivateKeySize = Cst.PrivateKeySize // eslint-disable-line
+const { PrivateKeySize } = Cst
 const CstDocs = Cst.Db.Docs
 
 const Address = async (db) => {

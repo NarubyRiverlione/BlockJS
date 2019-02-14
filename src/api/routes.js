@@ -2,7 +2,7 @@ const express = require('express')
 // const controller = require('./controller.js')
 
 class Routes {
-  constructor(coin) {
+  constructor(blockchain) {
     this.router = express.Router()
 
     this.router.get('/', (req, res) => {
@@ -13,22 +13,22 @@ class Routes {
     })
 
     this.router.get('/Height', (req, res) => {
-      coin.GetHeight()
+      blockchain.GetHeight()
         .then((height) => {
           res.status(200).json({ height })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/Address', (req, res) => {
-      res.status(200).json({ address: coin.Address })
+      res.status(200).json({ address: blockchain.Address })
     })
     this.router.get('/Info', (req, res) => {
       let blockchainInfo
 
-      coin.GetInfo()
+      blockchain.GetInfo()
         .then((info) => {
           blockchainInfo = info
-          return coin.ConnectionCount()
+          return blockchain.ConnectionCount()
         })
         .then((peerAmount) => {
           const showInfo = `
@@ -43,35 +43,35 @@ class Routes {
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/Diff', (req, res) => {
-      coin.GetDiff()
+      blockchain.GetDiff()
         .then((diff) => {
           res.status(200).send({ diff })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/LastHash', (req, res) => {
-      coin.GetBestHash()
+      blockchain.GetBestHash()
         .then((hash) => {
           res.status(200).send({ hash })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/AmountOfPendingMsgs', (req, res) => {
-      coin.GetAmountOfPendingMsgs()
+      blockchain.GetAmountOfPendingMsgs()
         .then((amount) => {
           res.status(200).send({ GetAmountOfPendingMsgs: amount })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/AllPendingMgs', (req, res) => {
-      coin.GetAllPendingMgs()
+      blockchain.GetAllPendingMgs()
         .then((pending) => {
           res.status(200).send({ pending })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/LastBlock', (req, res) => {
-      coin.GetLastBlock()
+      blockchain.GetLastBlock()
         .then((block) => {
           res.status(200).send({ block })
         })
@@ -80,7 +80,7 @@ class Routes {
     this.router.get('/BlockAtHeight/:height', (req, res) => {
       const height = Number(req.params.height)
       if (height) {
-        coin.GetBlockAtHeight(height)
+        blockchain.GetBlockAtHeight(height)
           .then((block) => {
             res.status(200).send({ block })
           })
@@ -92,7 +92,7 @@ class Routes {
     this.router.get('/GetBlockWithHash/:hash', (req, res) => {
       const { hash } = req.params
       if (hash && typeof (hash) === 'string') {
-        coin.GetBlockWithHash(hash)
+        blockchain.GetBlockWithHash(hash)
           .then((block) => {
             res.status(200).send({ block })
           })
@@ -102,25 +102,25 @@ class Routes {
       }
     })
     this.router.get('/Mine', (req, res) => {
-      coin.MineBlock()
+      blockchain.MineBlock()
         .then((block) => {
           res.status(200).send({ block })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get('/AmountPeers', (req, res) => {
-      const amount = coin.ConnectionCount()
+      const amount = blockchain.ConnectionCount()
       res.status(200).json(amount)
     })
     this.router.get('/PeersDetails', (req, res) => {
-      const amount = coin.PeersDetail()
+      const amount = blockchain.PeersDetail()
       res.status(200).json(amount)
     })
     // body: content
     this.router.post('/SendMsg/', (req, res) => {
       const { Content } = req.body
-      const msg = coin.CreateMsg(Content)
-      coin.SendMsg(msg)
+      const msg = blockchain.CreateMsg(Content)
+      blockchain.SendMsg(msg)
         .then((result) => {
           if (result) {
             res.status(200).json({ msg })
@@ -131,7 +131,7 @@ class Routes {
     // body: content
     this.router.post('/CheckMsgExist/', (req, res) => {
       const { Content, From } = req.body
-      coin.FindMsg(Content, From)
+      blockchain.FindMsg(Content, From)
         .then((result) => {
           res.status(200).json({ result })
         })
@@ -140,7 +140,7 @@ class Routes {
     // body: remoteIP, remotePort
     this.router.post('/ConnectPeer', (req, res) => {
       const { remoteIP, remotePort } = req.body
-      coin.ConnectPeer(remoteIP, remotePort)
+      blockchain.ConnectPeer(remoteIP, remotePort)
         .then((connectionResult) => {
           res.status(200).json({ connectionResult })
         })

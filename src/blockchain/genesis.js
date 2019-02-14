@@ -20,24 +20,24 @@ const CreateFirstLink = () =>
       .catch(err => reject(err))
   })
 
-const CreateBlockchain = async (coin) => {
+const CreateBlockchain = async (BlockChain) => {
   try {
     // no links in database = no genesis block (first run?)
     // create blockchain by adding genesis block
     const FirstLink = await CreateFirstLink()
     Debug('Save genesis in Db')
-    await coin.Db.Add(CstDocs.Blockchain, FirstLink)
+    await BlockChain.Db.Add(CstDocs.Blockchain, FirstLink)
     return Promise.resolve()
   } catch (err) {
     return Promise.reject(new Error(`ERROR cannot create/save genesis block: ${err}`))
   }
 }
 
-const BlockExistInDb = async (coin) => {
+const BlockExistInDb = async (BlockChain) => {
   try {
-    const link = await coin.Db.Find(CstDocs.Blockchain, { Height: 0 })
+    const link = await BlockChain.Db.Find(CstDocs.Blockchain, { Height: 0 })
     if (link.length === 0) {
-      await CreateBlockchain(coin)
+      await CreateBlockchain(BlockChain)
       return Promise.resolve()
     }
     // check if first block is genesis block (verify hash = genesis hash)

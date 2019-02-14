@@ -11,9 +11,9 @@ const bodyErrorHandler = require('bodymen').errorHandler
 const Routes = require('./routes.js')
 const Cst = require('../blockchain/const.js')
 
-module.exports = (coin) => {
+module.exports = (BlockChain) => {
   const app = express()
-  const apiRoutes = new Routes(coin)
+  const apiRoutes = new Routes(BlockChain)
 
   // https
   app.set('forceSSLOptions', {

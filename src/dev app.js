@@ -1,19 +1,19 @@
 
 const Debug = require('debug')('blockjs:app')
 const Cst = require('./blockchain/const.js')
-const Coin = require('./blockchain/coin.js')
+const BlockChain = require('./blockchain/BlockChain.js')
 
 const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort
 const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
 const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 let SpiceCoin
-// const Me = Coin.CreateWallet('Me')
+// const Me = BlockChain.CreateWallet('Me')
 
 
-Coin.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
-  .then((coin) => {
-    SpiceCoin = coin
+BlockChain.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
+  .then((blockchain) => {
+    SpiceCoin = blockchain
     return SpiceCoin.GetInfo()
   })
   .then((info) => {

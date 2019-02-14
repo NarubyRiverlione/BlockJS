@@ -1,3 +1,4 @@
+/* Block: PrevHash, Nonce, Diff, Version, Timestamp, MessagesHash, Messages */
 
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
@@ -39,7 +40,6 @@ class Block {
   CalcHashMessages() {
     return SHA256(JSON.stringify(this.Messages)).toString()
   }
-
   // create instance of Block with db data
   static ParseFromDb(DBblock) {
     // remove database _id property from messages
@@ -58,11 +58,13 @@ class Block {
     return block
   }
 
+  // Block hash = PrevHash + Nonce + Diff + Timestamp + Version + Hash Messages
   Blockhash() {
     const Content = this.PrevHash + this.Nonce + this.Diff + this.Timestamp + this.Version
     return SHA256(Content + this.HashMessages).toString()
   }
 
+  //  is type of Block + header valid + all messages valid
   static IsValid(block) {
     if (!(block instanceof Block)) {
       Debug('block is not of type Block (loaded from db without cast?)')

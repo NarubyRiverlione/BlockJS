@@ -21,13 +21,13 @@ const AskNeededBlocks = (neededHashes, peer) => {
 }
 
 class P2P {
-  constructor(port, coin) {
+  constructor(port, BlockChain) {
     this.Server = new WebSocket.Server({
       port,
       clientTracking: true, // keep list of connected peers
     })
 
-    this.Coin = coin
+    this.BlockChain = BlockChain
     this.OutgoingConnections = []
     this.IncomingConnections = []
 
@@ -69,9 +69,9 @@ class P2P {
       // send Connected Msg
       peer.send(CreateP2Pmsg(CstP2P.CONNECTED, null))
       // send version of this peer
-      peer.send(CreateP2Pmsg(CstP2P.VERSION, this.Coin.Version))
+      peer.send(CreateP2Pmsg(CstP2P.VERSION, this.BlockChain.Version))
       // send hash of this blockchain
-      this.Coin.GetBestHash()
+      this.BlockChain.GetBestHash()
         .then((hash) => { peer.send(CreateP2Pmsg(CstP2P.HASH, hash)) })
         .catch(err => console.error(err))
     })
@@ -105,7 +105,7 @@ class P2P {
         break
 
       case CstP2P.BLOCK:
-        Incoming.Block(msg.payload, this.Coin)
+        Incoming.Block(msg.payload, this.BlockChain)
           .then((result) => {
             if (result instanceof Block) {
               Debug('Incoming block successful evaluated')
@@ -118,7 +118,7 @@ class P2P {
 
       case CstP2P.HASH:
         Debug(`Connected peer best hash ${msg.payload}`)
-        Incoming.Hash(msg.payload, this.Coin)
+        Incoming.Hash(msg.payload, this.BlockChain)
           // send hashes that peers doesn't have
           .then((peerNeededHashes) => {
             Debug(`Send Inv with ${peerNeededHashes.length} hashes to peer`)
@@ -129,21 +129,21 @@ class P2P {
 
       case CstP2P.INVENTORY:
         // save needed hashes
-        this.Coin.NeededHashes = this.Coin.NeededHashes.concat(msg.payload)
+        this.BlockChain.NeededHashes = this.BlockChain.NeededHashes.concat(msg.payload)
         // ask for blocks with  hashes that are available with this connected peer
         AskNeededBlocks(msg.payload, peer)
         break
 
       case CstP2P.GETBLOCK:
         Debug(`Peer asked for block with hash ${msg.payload}`)
-        this.Coin.GetBlockWithHash(msg.payload)
+        this.BlockChain.GetBlockWithHash(msg.payload)
           .then(block => peer.send(CreateP2Pmsg(CstP2P.BLOCK, block)))
           .catch(err => console.error(err))
         break
 
       case CstP2P.MESSAGE:
         Debug('Incoming message')
-        Incoming.Msg(msg.payload, this.Coin)
+        Incoming.Msg(msg.payload, this.BlockChain)
           .then(() => Debug('Incoming message saved'))
           .catch(err => console.error(err))
         break
@@ -193,10 +193,10 @@ class P2P {
       // save Outgoing connection to broadcast later
       this.OutgoingConnections.push(connection)
       Debug('Sending Version message')
-      connection.send(CreateP2Pmsg(CstP2P.VERSION, this.Coin.Version))
+      connection.send(CreateP2Pmsg(CstP2P.VERSION, this.BlockChain.Version))
 
       // send hash of this blockchain
-      this.Coin.GetBestHash()
+      this.BlockChain.GetBestHash()
         .then((hash) => {
           Debug('Sending best hash')
           connection.send(CreateP2Pmsg(CstP2P.HASH, hash))

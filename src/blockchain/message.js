@@ -1,3 +1,5 @@
+/* Message: From, Hash (from+content) */
+
 const SHA256 = require('crypto-js/sha256')
 const CstDocs = require('./const.js').Db.Docs
 

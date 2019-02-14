@@ -1,7 +1,7 @@
 
-const ShowLastBlock = ((coin) => {
-  coin.GetLastBlock()
-    .then(lastBlock => { })
-}
+const ShowLastBlock = ((BlockChain) => {
+  BlockChain.GetLastBlock()
+    .then((lastBlock) => { })
+})
 
 module.exports = { ShowLastBlock }

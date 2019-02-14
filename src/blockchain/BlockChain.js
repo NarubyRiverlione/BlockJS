@@ -10,13 +10,13 @@ const Address = require('./address.js')
 
 const https = require('https')
 const fs = require('fs')
-const Debug = require('debug')('blockjs:coin')
+const Debug = require('debug')('blockjs:BlockChain')
 
 const CstDocs = Cst.Db.Docs
 const CstAPI = Cst.API
 
-class Coin {
-  /* start coin :
+class BlockChain {
+  /* start BlockChain :
   - connect to Db
   - add genesis block if it doesn't exist
   - start p2p server
@@ -34,24 +34,24 @@ class Coin {
     // get own address
     const address = await Address(database)
 
-    // make coin
-    const coin = new Coin(database, address)
+    // make BlockChain
+    const blockchain = new BlockChain(database, address)
 
     // check if genesis block exists
-    await Genesis.BlockExistInDb(coin)
+    await Genesis.BlockExistInDb(blockchain)
 
     // start P2P
-    coin.P2P = new P2P(serverPort, coin, this.version)
+    blockchain.P2P = new P2P(serverPort, blockchain, this.version)
 
     // start API server
-    const secureServer = https.createServer(coin.SSL_OPTIONS, coin.API)
+    const secureServer = https.createServer(blockchain.SSL_OPTIONS, blockchain.API)
     secureServer.listen(APIPort, CstAPI.IP, () => {
       Debug(`API server listening on https:/${CstAPI.IP}:${APIPort}`)
     })
-    return (coin)
+    return (blockchain)
   }
   /*
-   End coin :
+   End BlockChain :
    - close Db connection
    - stop peer 2 peer server
    */
@@ -271,4 +271,4 @@ class Coin {
   }
 }
 
-module.exports = Coin
+module.exports = BlockChain
