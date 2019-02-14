@@ -43,8 +43,8 @@ const Const = {
 
   API: {
     Root: '/api',
-    IP: '0.0.0.0',
-    DefaultPort: 9000,
+    IP: '127.0.0.1', // '0.0.0.0',
+    DefaultPort: 2100,
   },
 }
 
