@@ -58,14 +58,14 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    this.router.get(Cmd.AmountOfPendingMsgs, (req, res) => {
+    this.router.get(Cmd.PendingAmount, (req, res) => {
       blockchain.GetAmountOfPendingMsgs()
         .then((amount) => {
-          res.status(200).send({ GetAmountOfPendingMsgs: amount })
+          res.status(200).send({ PendingAmount: amount })
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    this.router.get(Cmd.AllPendingMgs, (req, res) => {
+    this.router.get(Cmd.PendingAll, (req, res) => {
       blockchain.GetAllPendingMgs()
         .then((pending) => {
           res.status(200).send({ pending })
@@ -118,7 +118,7 @@ class Routes {
       const amount = blockchain.PeersDetail()
       res.status(200).json(amount)
     })
-    // body: content
+    // body: {Content : messageText}
     this.router.post(Cmd.SendMsg, (req, res) => {
       const { Content } = req.body
       const msg = blockchain.CreateMsg(Content)
@@ -130,7 +130,7 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    // body: content
+    // body: {Content : messageText, From: address}
     this.router.post(Cmd.CheckMsgExist, (req, res) => {
       const { Content, From } = req.body
       blockchain.FindMsg(Content, From)
@@ -139,7 +139,7 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    // body: remoteIP, remotePort
+    // body: {remoteIP: ipv4, remotePort: port}
     this.router.post(Cmd.ConnectPeer, (req, res) => {
       const { remoteIP, remotePort } = req.body
       blockchain.ConnectPeer(remoteIP, remotePort)

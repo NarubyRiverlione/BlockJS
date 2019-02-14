@@ -211,11 +211,10 @@ class BlockChain {
     return true
   }
   // find a message in the blockchain, return link
-  async FindMsg(content, from) {
-    // default search from own address
-    const fromAddress = from || this.Address
+  // default search from own address
+  async FindMsg(Content, FromAddress = this.Address) {
     // create Message to get the message hash
-    const msg = Message.CreateFromContent(fromAddress, content)
+    const msg = Message.CreateFromContent(FromAddress, Content)
     const filter = { 'Block.Messages.Hash': msg.Hash }
     // find link that contains the message hash
     const foundLink = await this.Db.FindOne(CstDocs.Blockchain, filter)

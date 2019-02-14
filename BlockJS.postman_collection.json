@@ -1,0 +1,628 @@
+{
+	"info": {
+		"_postman_id": "26c7ab12-04ae-4c46-8388-33f58d30c53e",
+		"name": "BlockJS",
+		"description": "BlockJS API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Wallet",
+			"item": [
+				{
+					"name": "Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/Balance",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"Balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Wallet",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/Wallet/",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"Wallet",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calc Wallet Amount",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/CalcWalletAmount",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"CalcWalletAmount"
+							]
+						},
+						"description": "Calculate balance by scanning the blockchain.\nCan take some time\n\nReturns balance"
+					},
+					"response": []
+				},
+				{
+					"name": "RenameWallet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"newName\":\"Dev wallet\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/RenameWallet/",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"RenameWallet",
+								""
+							]
+						},
+						"description": "toAddress: \namount:"
+					},
+					"response": []
+				},
+				{
+					"name": "SendTX",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"toAddress\":\"SPICE_bf450225a991580b4ed3\",\n  \"amount\":5\n}"
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/SendTX/",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"SendTX",
+								""
+							]
+						},
+						"description": "toAddress: \namount:"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Blockchain",
+			"item": [
+				{
+					"name": "Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/Info",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"Info"
+							]
+						},
+						"description": "Height: \nDiff:\nLast hash: \nAmount of pending TX: \nWallet address: \nWallet name: \nWallet balance:"
+					},
+					"response": [
+						{
+							"name": "Info",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://localhost:{{Port}}/api/Info",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "{{Port}}",
+									"path": [
+										"api",
+										"Info"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "html",
+							"header": [
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"name": "Connection",
+									"description": "Options that are desired for the connection"
+								},
+								{
+									"key": "Content-Length",
+									"value": "276",
+									"name": "Content-Length",
+									"description": "The length of the response body in octets (8-bit bytes)"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/html; charset=utf-8",
+									"name": "Content-Type",
+									"description": "The mime type of this content"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 10 Jun 2018 13:19:07 GMT",
+									"name": "Date",
+									"description": "The date and time that the message was sent"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"114-1sefprw2oVPXDk0PHyBWNBHhvAc\"",
+									"name": "ETag",
+									"description": "An identifier for a specific version of a resource, often a message digest"
+								},
+								{
+									"key": "Vary",
+									"value": "Accept-Encoding",
+									"name": "Vary",
+									"description": "Tells downstream proxies how to match future request headers to decide whether the cached response can be used rather than requesting a fresh one from the origin server."
+								},
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"name": "X-Powered-By",
+									"description": "Specifies the technology (ASP.NET, PHP, JBoss, e.g.) supporting the web application (version details are often in X-Runtime, X-Version, or X-AspNet-Version)"
+								}
+							],
+							"cookie": [],
+							"body": "\n          BLOCKCHAIN INFO\n          Address: SPICE_c766c1a46b82e042021d\n          Height: 7\n          Diff: 2\n          Last hash: 0c3085561eb0536e3bc4e55b7a8b20be766708f94442a8f3e56cdac246264fc9\n          Pending messages: 1\n\n          PEER INFO\n          Connected peers: 0"
+						}
+					]
+				},
+				{
+					"name": "Height",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/Height",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"Height"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Diff",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/Diff",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"Diff"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LastHash",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/LastHash",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"LastHash"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LastBlock",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/LastBlock",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"LastBlock"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BlockAtHeight/:height",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/BlockAtHeight/0",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"BlockAtHeight",
+								"0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetBlockWithHash/:hash",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/GetBlockWithHash/619087c846b2e19e707c6d3ce5a38be0972d2ae295f5820c93c9a64ff95e6f6a",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"GetBlockWithHash",
+								"619087c846b2e19e707c6d3ce5a38be0972d2ae295f5820c93c9a64ff95e6f6a"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "P2P",
+			"item": [
+				{
+					"name": "Amount Peers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/AmountPeers",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"AmountPeers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Peers details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/PeersDetails",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"PeersDetails"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ConnectPeer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"remoteIP\": \"127.0.0.1\",\n  \"remotePort\":2000\n}"
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/ConnectPeer/",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"ConnectPeer",
+								""
+							]
+						},
+						"description": "toAddress: \namount:"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mining",
+			"item": [
+				{
+					"name": "Mine",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/Mine",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"Mine"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pending amount",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/PendingAmount",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"PendingAmount"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pending all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/PendingAll",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"PendingAll"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Message",
+			"item": [
+				{
+					"name": "Check message exist",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"Content\":\"Hello World\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/CheckMsgExist/",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"CheckMsgExist",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"Content\": \"Hello World\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost:{{Port}}/api/SendMsg/",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "{{Port}}",
+							"path": [
+								"api",
+								"SendMsg",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
