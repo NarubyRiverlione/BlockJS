@@ -22,7 +22,7 @@ const CreateBlockchain = async (coin) => {
   try {
     // no links in database = no genesis block (first run?)
     // create blockchain by adding genesis block
-    const FirstLink = CreateFirstLink()
+    const FirstLink = await CreateFirstLink()
     Debug('Save genesis in Db')
     await coin.Db.Add(CstDocs.Blockchain, FirstLink)
     // save to ownTX is wallet = Genesis address
@@ -32,7 +32,7 @@ const CreateBlockchain = async (coin) => {
       // set genesis wallet balance
       await coin.Wallet.CalcBalance(coin.Db)
     }
-    return true
+    return Promise.resolve()
   } catch (err) {
     return Promise.reject(new Error(`ERROR cannot create/save genesis block: ${err}`))
   }
