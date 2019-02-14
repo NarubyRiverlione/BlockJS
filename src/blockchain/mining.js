@@ -1,8 +1,8 @@
 const Block = require('./block.js')
 const ChainLink = require('./chainlink.js')
-const Cst = require('./const.js')
+const { Cst } = require('./const.js')
 
-const CstDocs = Cst.Db.Docs
+const { Db: { Docs: CstDocs } } = Cst
 
 
 // create new block with all pending messages

@@ -1,5 +1,5 @@
 
-const Const = {
+const Cst = {
   GenesisReward: 10000,
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
@@ -40,9 +40,40 @@ const Const = {
 
   API: {
     Root: '/api',
-    IP: '0.0.0.0',
-    DefaultPort: 9000,
+    IP: '127.0.0.1', // '0.0.0.0',
+    DefaultPort: 2100,
+    Cmd: {
+      Height: '/Height',
+      Address: '/Address',
+      Info: '/Info',
+      Diff: '/Diff',
+      LastHash: '/LastHash',
+      AmountOfPendingMsgs: '/AmountOfPendingMsgs',
+      AllPendingMgs: '/AllPendingMgs',
+      LastBlock: '/LastBlock',
+      BlockAtHeight: '/BlockAtHeight/:height',
+      GetBlockWithHash: '/GetBlockWithHash/:hash',
+      Mine: '/Mine',
+      AmountPeers: '/AmountPeers',
+      PeersDetails: '/PeersDetails',
+      SendMsg: '/SendMsg',
+      CheckMsgExist: '/CheckMsgExist',
+      ConnectPeer: '/ConnectPeer',
+    },
   },
 }
 
-module.exports = Const
+const CstTxt = {
+  ApiName: 'BlockJS API',
+  InfoTitle: 'BLOCKCHAIN INFO',
+  PeerInfoTitle: 'PEER INFO',
+  PeersConnectedTitle: 'Connected peers:',
+}
+
+const CstError = {
+  HeightNotNumber: 'Height is not a number.',
+  HashNotString: 'Hash is not a string',
+}
+
+
+module.exports = { Cst, CstTxt, CstError }

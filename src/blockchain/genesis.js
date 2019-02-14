@@ -2,10 +2,11 @@
 const Message = require('./message.js')
 const Block = require('./block.js')
 const ChainLink = require('./chainlink.js')
-const Cst = require('./const.js')
+const { Cst } = require('./const.js')
 const Debug = require('debug')('blockjs:genesis')
 
-const CstDocs = Cst.Db.Docs
+const { Db: { Docs: CstDocs } } = Cst
+
 const CreateGenesisBlock = () => {
   const GenesisMsg = Message.CreateFromContent(Cst.GenesisAddress, Cst.GenesisMsg)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)

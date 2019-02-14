@@ -1,7 +1,9 @@
 /* Message: From, Hash (from+content) */
 
 const SHA256 = require('crypto-js/sha256')
-const CstDocs = require('./const.js').Db.Docs
+const { Cst } = require('./const.js')
+
+const { Db: { Docs: CstDocs } } = Cst
 
 const msgHash = (fromAddress, content) => SHA256(fromAddress + content).toString()
 

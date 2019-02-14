@@ -11,7 +11,7 @@
     "dev": "node --inspect ./src/dev app.js",
     "test": "mocha",
     "stopdb": "mongo admin --eval 'db.shutdownServer()'",
-    "lint": "eslint src/**.js"
+    "lint": "eslint src/**.js --fix -v"
   },
   "keywords": [
     "blockchain",

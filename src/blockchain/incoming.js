@@ -1,8 +1,10 @@
 const Debug = require('debug')('blockjs:incoming')
-const CstDocs = require('./const.js').Db.Docs
+const { Cst } = require('./const.js')
 const Message = require('./message')
 const Blocks = require('./block.js')
 const ChainLink = require('./chainlink.js')
+
+const { Db: { Docs: CstDocs } } = Cst
 
 // find the height of a block in the blockchain
 const GetHeightOfBlock = (block, db) =>

@@ -2,7 +2,9 @@
 const MongoClient = require('mongodb').MongoClient // eslint-disable-line
 const Debug = require('debug')('blockjs:DB')
 
-const CstDB = require('./const.js').Db
+const { Cst } = require('./const.js')
+
+const { Db: CstDB } = Cst
 
 class Db {
   constructor() {

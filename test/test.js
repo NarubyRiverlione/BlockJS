@@ -6,7 +6,7 @@ const BlockChain = require('../src/blockchain/BlockChain.js')
 const Block = require('../src/blockchain/block.js')
 const Message = require('../src/blockchain/message.js')
 // const Wallet = require('../src/wallet.js')
-const Cst = require('../src/blockchain/const.js')
+const { Cst } = require('../src/blockchain/const.js')
 
 let TestCoin
 const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort

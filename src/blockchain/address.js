@@ -1,10 +1,10 @@
-const Cst = require('./const.js')
+const { Cst } = require('./const.js')
 const crypto = require('crypto')
 
 const Debug = require('debug')('blockjs:address')
 
-const { PrivateKeySize } = Cst
-const CstDocs = Cst.Db.Docs
+
+const { PrivateKeySize, Db: { Docs: CstDocs } } = Cst
 
 const Address = async (db) => {
   const address = await db.Find(CstDocs.Address, {})

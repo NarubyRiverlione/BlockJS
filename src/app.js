@@ -1,6 +1,6 @@
 
 const Debug = require('debug')('blockjs:app')
-const Cst = require('./blockchain/const.js')
+const { Cst } = require('./blockchain/const.js')
 const BlockChain = require('./blockchain/BlockChain.js')
 // const Wallet = require('./blockchain/wallet.js')
 

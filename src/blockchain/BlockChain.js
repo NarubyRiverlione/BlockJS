@@ -1,6 +1,6 @@
 const Message = require('./message.js')
 const Block = require('./block.js')
-const Cst = require('./const.js')
+const { Cst } = require('./const.js')
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
 const API = require('../api/express.js')
@@ -12,8 +12,8 @@ const https = require('https')
 const fs = require('fs')
 const Debug = require('debug')('blockjs:BlockChain')
 
-const CstDocs = Cst.Db.Docs
-const CstAPI = Cst.API
+const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
+
 
 class BlockChain {
   /* start BlockChain :

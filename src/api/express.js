@@ -9,7 +9,7 @@ const queryErrorHandler = require('querymen').errorHandler
 const bodyErrorHandler = require('bodymen').errorHandler
 
 const Routes = require('./routes.js')
-const Cst = require('../blockchain/const.js')
+const { Cst } = require('../blockchain/const.js')
 
 module.exports = (BlockChain) => {
   const app = express()
