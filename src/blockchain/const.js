@@ -64,15 +64,50 @@ const Cst = {
 }
 
 const CstTxt = {
+  BlockchainVersion: 'Blockchain version',
   ApiName: 'BlockJS API',
   InfoTitle: 'BLOCKCHAIN INFO',
   PeerInfoTitle: 'PEER INFO',
   PeersConnectedTitle: 'Connected peers:',
+  Started: 'started',
+  Port: 'port',
+  Address: 'Address',
+  Block: 'Block',
+  Height: 'Height',
+  LastHash: 'Last hash',
+  Pending: 'Pending messages',
+  IncomingBlockNotNext: 'Incoming block is not next block in non-sync mode --> ignore block',
+  IncomingBlockAdded: 'added in blockchain',
+  IncomingBlockStored: 'Incoming block stored',
+  IncomingBlocksEvaluated: 'All stored blocks are evaluated',
 }
 
 const CstError = {
   HeightNotNumber: 'Height is not a number.',
   HashNotString: 'Hash is not a string',
+  SendNotMsg: 'SendMsg: argument is not a message',
+  SendNoContent: 'SendMsg: Empty message supplied',
+  SendNoValid: 'SendMsg: message is not valid',
+  MultiBlocks: 'Multiple blocks found',
+  SameHeigh: 'with height',
+  SameHash: 'with hash',
+  ParseBlock: 'Could not parse block',
+  NotBlock: 'argument is not a block',
+  BlockInvalid: 'Block is not valid',
+  BlockHeaderIncomplete: 'Block header incomplete',
+  GenesisNotCreated: 'Could not create genesis block',
+  GenessisNotAdded: 'cannot create/save genesis block',
+  GenessisNotFirst: 'First block is not the genesis block',
+  DbNotConnected: 'Cannot connect to the database',
+  DbNotSaved: 'ERROR saving to the database: ',
+  DbNotUpdate: 'ERROR updating to the database: ',
+  DbNotFind: 'ERROR finding in the database: ',
+  DbCounting: 'ERROR counting docs in the database',
+  DbRemoveAll: 'ERROR removing all documents',
+  DbRemoveOne: 'ERROR removing one document with',
+  DbToCollection: 'with the collection: ',
+  DbData: 'the data',
+  DbFilter: 'filter:',
 }
 
 

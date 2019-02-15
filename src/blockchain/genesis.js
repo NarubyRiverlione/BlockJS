@@ -1,8 +1,7 @@
-
 const Message = require('./message.js')
 const Block = require('./block.js')
 const ChainLink = require('./chainlink.js')
-const { Cst } = require('./const.js')
+const { Cst, CstError } = require('./const.js')
 const Debug = require('debug')('blockjs:genesis')
 
 const { Db: { Docs: CstDocs } } = Cst
@@ -14,7 +13,7 @@ const CreateGenesisBlock = () => {
 const CreateFirstLink = () =>
   new Promise((resolve, reject) => {
     const GenesisBlock = CreateGenesisBlock()
-    if (!GenesisBlock) { return reject(new Error('Could not create genesis block')) }
+    if (!GenesisBlock) { return reject(new Error(CstError.GenesisNotCreated)) }
 
     ChainLink.Create(GenesisBlock, 0)
       .then(link => resolve(link))
@@ -30,7 +29,7 @@ const CreateBlockchain = async (BlockChain) => {
     await BlockChain.Db.Add(CstDocs.Blockchain, FirstLink)
     return Promise.resolve()
   } catch (err) {
-    return Promise.reject(new Error(`ERROR cannot create/save genesis block: ${err}`))
+    return Promise.reject(new Error(`${CstError.GenessisNotAdded} : ${err}`))
   }
 }
 
@@ -45,11 +44,11 @@ const BlockExistInDb = async (BlockChain) => {
     const [firstLink] = link
     const genesisBlock = Block.ParseFromDb(firstLink.Block)
     if (genesisBlock.Blockhash() !== Cst.GenesisHashBlock) {
-      return Promise.reject(new Error('ERROR first block isn\'t not the genesis block'))
+      return Promise.reject(new Error(CstError.GenessisNotFirst))
     }
     return Promise.resolve()
   } catch (err) {
-    return Promise.reject(new Error(`ERROR cannot create/save genesis block: ${err}`))
+    return Promise.reject(new Error(`${CstError.GenessisNotAdded}: ${err}`))
   }
 }
 

@@ -1,5 +1,5 @@
 const Debug = require('debug')('blockjs:incoming')
-const { Cst } = require('./const.js')
+const { Cst, CstTxt, CstError } = require('./const.js')
 const Message = require('./message')
 const Blocks = require('./block.js')
 const ChainLink = require('./chainlink.js')
@@ -41,7 +41,7 @@ const CheckIfNewTopBlock = async (newBlock, BlockChain) => {
     // incoming block needed to be the next block in the blockchain
     const bestHash = await BlockChain.GetBestHash()
     if (newBlock.PrevHash !== bestHash) {
-      await RemoveIncomingBlock(newBlock.PrevHash, BlockChain.Db, 'Incoming block is not next block in non-sync mode --> ignore block')
+      await RemoveIncomingBlock(newBlock.PrevHash, BlockChain.Db, CstTxt.IncomingBlockNotNext)
     }
   }
 }
@@ -52,7 +52,7 @@ const CheckIfNewTopBlock = async (newBlock, BlockChain) => {
 */
 const EvaluateBlock = async (inboundBlock, BlockChain) => {
   const newBlock = Blocks.ParseFromDb(inboundBlock)
-  if (!newBlock) return ('ERROR: could not parse block')
+  if (!newBlock) return (CstError.ParseBlock)
   const blockhash = newBlock.Blockhash()
   const { Db } = BlockChain
 
@@ -90,7 +90,7 @@ const EvaluateBlock = async (inboundBlock, BlockChain) => {
   if (balance) Debug(`Updated balance: ${balance}`)
 
   /* remove block from incoming list */
-  const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`Block ${blockhash} added in blockchain`))
+  const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db, (`${CstTxt.Block} ${blockhash} ${CstTxt.IncomingBlockAdded}`))
   return removeResult
 }
 // all needed block are stored, now process them (check prevHash,..)
@@ -159,13 +159,13 @@ const Block = async (inboundBlock, BlockChain) => {
   // still need other block before they can be evaluated ?
   Debug(`Still need  ${updatedNeeded.length} blocks`)
   if (updatedNeeded.length !== 0) {
-    return ('Incoming block stored')
+    return (CstTxt.IncomingBlockStored)
   }
 
   // needed list empty ->  process stored blocks
   Debug('Got all needed blocks, process stored blocks now')
   await ProcessReceivedBlocks(BlockChain)
-  return ('All stored blocks are evaluated')
+  return (CstTxt.IncomingBlocksEvaluated)
 }
 // store incoming message as pending
 const Msg = (msg, BlockChain) => {
@@ -175,7 +175,7 @@ const Msg = (msg, BlockChain) => {
   )
   // is the Transaction complete ?
   if (!Message.IsValid(message)) {
-    return Promise.reject(new Error('SendTX: message is not valid'))
+    return Promise.reject(new Error(CstError.SendNoValid))
   }
   // save to local db for mining later
   return message.Save(BlockChain.Db)

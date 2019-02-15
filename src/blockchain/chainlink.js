@@ -1,14 +1,14 @@
 /* ChainLink =  Height, Hash (of block) , Block (header + content)  */
-
+const { CstError } = require('../blockchain/const')
 const Block = require('./block.js')
 // const Debug = require('debug')('blockjs:Chainlink')
 
 class ChainLink {
   static Create(block, newHeight) {
     return new Promise((resolve, reject) => {
-      if (block instanceof Block === false) { return reject(new Error('ERROR AddBlock: argument is not a Block')) }
+      if (block instanceof Block === false) { return reject(new Error(CstError.NotBlock)) }
 
-      if (!Block.IsValid(block)) { return reject(new Error('ERROR AddBlock: block is not valid')) }
+      if (!Block.IsValid(block)) { return reject(new Error(CstError.BlockInvalid)) }
       // if (block.PrevHash !== blockchain.GetBestHash()) {
       //   Debug('ERROR AddBlock: previous hash of block is not latest hash in blockchain')
       //   return null

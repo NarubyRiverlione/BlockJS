@@ -1,6 +1,6 @@
 const Message = require('./message.js')
 const Block = require('./block.js')
-const { Cst } = require('./const.js')
+const { Cst, CstError, CstTxt } = require('./const.js')
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
 const API = require('../api/express.js')
@@ -95,11 +95,11 @@ class BlockChain {
           info.amount = amount
         })
         .then(() => {
-          const infoText = `Address: ${this.Address}
-          Height: ${info.height}
-          Diff: ${info.diff}
-          Last hash: ${info.hash}
-          Pending messages: ${info.amount}`
+          const infoText = `${CstTxt.Address}: ${this.Address}
+          ${CstTxt.Height}: ${info.height}
+          ${CstTxt.Diff}: ${info.diff}
+          ${CstTxt.LastHash}: ${info.hash}
+          ${CstTxt.Pending}: ${info.amount}`
           return resolve(infoText)
         })
         .catch(err => reject(err))
@@ -154,7 +154,7 @@ class BlockChain {
       this.Db.Find(CstDocs.Blockchain, { Height: atHeight })
         .catch(err => reject(err))
         .then((foundLink) => {
-          if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with height ${atHeight}`))
+          if (foundLink.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHeigh} ${atHeight}`))
           if (foundLink.length === 0) return resolve(null)
           Debug(`Loaded block with hash ${foundLink[0].Hash} for height ${atHeight}`)
           const block = Block.ParseFromDb(foundLink[0].Block)
@@ -168,7 +168,7 @@ class BlockChain {
       this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
         .catch(err => reject(err))
         .then((foundLink) => {
-          if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${blockhash}`))
+          if (foundLink.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}:  ${blockhash}`))
           if (foundLink.length === 0) return resolve(null)
           const block = Block.ParseFromDb(foundLink[0].Block)
           return resolve(block)
@@ -181,7 +181,7 @@ class BlockChain {
     let getHash = await this.GetBestHash()
 
     while (getHash !== toHash) {
-      const prevBlock = await this.GetBlockWithHash(getHash) // eslint-disable-line
+      const prevBlock = await this.GetBlockWithHash(getHash) // eslint-disable-line no-await-in-loop
       // add hash to between array
       betweenHashes.push(prevBlock.Blockhash())
       getHash = prevBlock.PrevHash
@@ -197,12 +197,12 @@ class BlockChain {
     // copy message because db save will mutated it (add _id)
     const msg = Message.ParseFromDb(message)
     // is msg a Message object ?
-    if (msg instanceof Message === false) { return (new Error('SendMsg: argument is not a message')) }
+    if (msg instanceof Message === false) { return (new Error(CstError.SendNotMsg)) }
     // is the Message object not empty ?
-    if (Object.keys(msg).length === 0) { return (new Error('SendMsg: Empty message supplied')) }
+    if (Object.keys(msg).length === 0) { return (new Error(CstError.SendNoContent)) }
     // is the Message complete ?
     const valid = await Message.IsValid(msg)
-    if (!valid) { return (new Error('SendMsg: message is not valid')) }
+    if (!valid) { return (new Error(CstError.SendNoValid)) }
 
     // add message to pending pool
     await msg.Save(this.Db)
@@ -220,7 +220,7 @@ class BlockChain {
     const foundLink = await this.Db.FindOne(CstDocs.Blockchain, filter)
     if (!foundLink) return null
     // remove _id property by  deconstruct it out of foundLink
-    const { _id, ...linkWithoutID } = foundLink // eslint-disable-line
+    const { _id, ...linkWithoutID } = foundLink
     return linkWithoutID
   }
   // create new block with all pending messages

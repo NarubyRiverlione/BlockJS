@@ -1,5 +1,5 @@
 /* Block: PrevHash, Nonce, Diff, Version, Timestamp, MessagesHash, Messages */
-
+const { CstError } = require('../blockchain/const')
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
 const Message = require('./message.js')
@@ -18,7 +18,7 @@ class Block {
       || nonce === undefined
       || diff === undefined
       || timestamp === undefined) {
-      Debug(new Error('ERROR Block header incomplete !'))
+      Debug(new Error(CstError.BlockHeaderIncomplete))
       return null
     }
     // remove database _id property from messages
