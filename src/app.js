@@ -1,4 +1,5 @@
 const Debug = require('debug')('blockjs:app')
+
 const { Cst, CstTxt } = require('./blockchain/const.js')
 const BlockChain = require('./blockchain/BlockChain.js')
 
@@ -10,4 +11,3 @@ const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 BlockChain.Start(ServerPort, DbServer, DbPort, APIPort)
   .then((blockchain) => { Debug(`${CstTxt.BlockchainVersion} ${blockchain.Version} ${CstTxt.Started} !`) })
   .catch(err => console.error(err))
-

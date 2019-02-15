@@ -16,6 +16,7 @@ class ChainLink {
       return resolve(new ChainLink(block, newHeight))
     })
   }
+
   constructor(block, newHeight) {
     this.Height = newHeight
     this.Hash = block.Blockhash()

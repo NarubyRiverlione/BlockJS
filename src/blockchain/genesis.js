@@ -1,8 +1,9 @@
+const Debug = require('debug')('blockjs:genesis')
+
 const Message = require('./message.js')
 const Block = require('./block.js')
 const ChainLink = require('./chainlink.js')
 const { Cst, CstError } = require('./const.js')
-const Debug = require('debug')('blockjs:genesis')
 
 const { Db: { Docs: CstDocs } } = Cst
 
@@ -10,15 +11,11 @@ const CreateGenesisBlock = () => {
   const GenesisMsg = Message.CreateFromContent(Cst.GenesisAddress, Cst.GenesisMsg)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
-const CreateFirstLink = () =>
-  new Promise((resolve, reject) => {
-    const GenesisBlock = CreateGenesisBlock()
-    if (!GenesisBlock) { return reject(new Error(CstError.GenesisNotCreated)) }
-
-    ChainLink.Create(GenesisBlock, 0)
-      .then(link => resolve(link))
-      .catch(err => reject(err))
-  })
+const CreateFirstLink = () => {
+  const GenesisBlock = CreateGenesisBlock()
+  if (!GenesisBlock) { return Promise.reject(new Error(CstError.GenesisNotCreated)) }
+  return ChainLink.Create(GenesisBlock, 0)
+}
 
 const CreateBlockchain = async (BlockChain) => {
   try {

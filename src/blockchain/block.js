@@ -1,12 +1,12 @@
 /* Block: PrevHash, Nonce, Diff, Version, Timestamp, MessagesHash, Messages */
-const { CstError } = require('../blockchain/const')
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
+
+const { CstError } = require('../blockchain/const')
 const Message = require('./message.js')
 
 
-const IsHeaderComplete = (block =>
-  block.PrevHash !== undefined
+const IsHeaderComplete = (block => block.PrevHash !== undefined
   && block.Nonce !== undefined
   && block.Diff !== undefined
   && block.Timestamp !== undefined)
@@ -40,6 +40,7 @@ class Block {
   CalcHashMessages() {
     return SHA256(JSON.stringify(this.Messages)).toString()
   }
+
   // create instance of Block with db data
   static ParseFromDb(DBblock) {
     // remove database _id property from messages

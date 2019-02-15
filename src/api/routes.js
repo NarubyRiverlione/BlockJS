@@ -1,4 +1,5 @@
 const express = require('express')
+
 const { CstTxt, CstError, Cst } = require('../blockchain/const')
 
 const { API: { Cmd } } = Cst
@@ -46,46 +47,34 @@ class Routes {
     })
     this.router.get(Cmd.Diff, (req, res) => {
       blockchain.GetDiff()
-        .then((diff) => {
-          res.status(200).send({ diff })
-        })
+        .then((diff) => { res.status(200).send({ diff }) })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.LastHash, (req, res) => {
       blockchain.GetBestHash()
-        .then((hash) => {
-          res.status(200).send({ hash })
-        })
+        .then((hash) => { res.status(200).send({ hash }) })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.PendingAmount, (req, res) => {
       blockchain.GetAmountOfPendingMsgs()
-        .then((amount) => {
-          res.status(200).send({ PendingAmount: amount })
-        })
+        .then((amount) => { res.status(200).send({ PendingAmount: amount }) })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.PendingAll, (req, res) => {
       blockchain.GetAllPendingMgs()
-        .then((pending) => {
-          res.status(200).send({ pending })
-        })
+        .then((pending) => { res.status(200).send({ pending }) })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.LastBlock, (req, res) => {
       blockchain.GetLastBlock()
-        .then((block) => {
-          res.status(200).send({ block })
-        })
+        .then((block) => { res.status(200).send({ block }) })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.BlockAtHeight, (req, res) => {
       const height = Number(req.params.height)
       if (Number.isInteger(height)) {
         blockchain.GetBlockAtHeight(height)
-          .then((block) => {
-            res.status(200).send({ block })
-          })
+          .then((block) => { res.status(200).send({ block }) })
           .catch(error => res.status(400).json({ error: error.message }))
       } else {
         res.status(400).send({ error: CstError.HeightNotNumber })
@@ -95,9 +84,7 @@ class Routes {
       const { hash } = req.params
       if (hash && typeof (hash) === 'string') {
         blockchain.GetBlockWithHash(hash)
-          .then((block) => {
-            res.status(200).send({ block })
-          })
+          .then((block) => { res.status(200).send({ block }) })
           .catch(error => res.status(400).json({ error: error.message }))
       } else {
         res.status(400).send({ error: CstError.HashNotString })
@@ -105,9 +92,7 @@ class Routes {
     })
     this.router.get(Cmd.Mine, (req, res) => {
       blockchain.MineBlock()
-        .then((block) => {
-          res.status(200).send({ block })
-        })
+        .then((block) => { res.status(200).send({ block }) })
         .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.AmountPeers, (req, res) => {

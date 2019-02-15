@@ -74,6 +74,7 @@ const CstTxt = {
   Address: 'Address',
   Block: 'Block',
   Height: 'Height',
+  Diff: 'Difficulty',
   LastHash: 'Last hash',
   Pending: 'Pending messages',
   IncomingBlockNotNext: 'Incoming block is not next block in non-sync mode --> ignore block',

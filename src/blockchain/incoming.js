@@ -1,4 +1,5 @@
 const Debug = require('debug')('blockjs:incoming')
+
 const { Cst, CstTxt, CstError } = require('./const.js')
 const Message = require('./message')
 const Blocks = require('./block.js')
@@ -7,25 +8,22 @@ const ChainLink = require('./chainlink.js')
 const { Db: { Docs: CstDocs } } = Cst
 
 // find the height of a block in the blockchain
-const GetHeightOfBlock = (block, db) =>
-  new Promise((resolve, reject) => {
-    db.Find(CstDocs.Blockchain, { Hash: block.Blockhash() })
-      .catch(err => reject(err))
-      .then((foundLink) => {
-        if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
-        if (foundLink.length === 0) return resolve(null)
-        return resolve(foundLink[0].Height)
-      })
-  })
+const GetHeightOfBlock = (block, db) => new Promise((resolve, reject) => {
+  db.Find(CstDocs.Blockchain, { Hash: block.Blockhash() })
+    .catch(err => reject(err))
+    .then((foundLink) => {
+      if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
+      if (foundLink.length === 0) return resolve(null)
+      return resolve(foundLink[0].Height)
+    })
+})
 // remove block in db form Incoming collection
-const RemoveIncomingBlock = (prevHash, db, resolveMsg) =>
-  new Promise((resolve, reject) => {
-    const filter = { PrevHash: prevHash }
-    db.RemoveOne(CstDocs.IncomingBlocks, filter)
-      .then(() => resolve(resolveMsg))
-      .catch(err => reject(err))
-  })
-
+const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, reject) => {
+  const filter = { PrevHash: prevHash }
+  db.RemoveOne(CstDocs.IncomingBlocks, filter)
+    .then(() => resolve(resolveMsg))
+    .catch(err => reject(err))
+})
 
 /* amount of blocks that need evaluation = only 1
 --> this must be a new block on top of the blockchain
@@ -117,7 +115,6 @@ const ProcessReceivedBlocks = async (BlockChain) => {
     })
     .catch(err => console.error(err))
 }
-
 
 // evaluate incoming best hash from peer
 // hash is known   --> make Inv message of hashes this node knowns

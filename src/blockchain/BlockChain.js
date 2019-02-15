@@ -1,3 +1,7 @@
+const Debug = require('debug')('blockjs:BlockChain')
+const https = require('https')
+const fs = require('fs')
+
 const Message = require('./message.js')
 const Block = require('./block.js')
 const { Cst, CstError, CstTxt } = require('./const.js')
@@ -8,9 +12,6 @@ const Genesis = require('./genesis.js')
 const Mining = require('./mining.js')
 const Address = require('./address.js')
 
-const https = require('https')
-const fs = require('fs')
-const Debug = require('debug')('blockjs:BlockChain')
 
 const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
 
@@ -50,6 +51,7 @@ class BlockChain {
     })
     return (blockchain)
   }
+
   /*
    End BlockChain :
    - close Db connection
@@ -59,6 +61,7 @@ class BlockChain {
     this.Db.Close()
     this.P2P.Close()
   }
+
   constructor(Db, address, version = 1) {
     this.Db = Db
     this.Version = version
@@ -105,15 +108,16 @@ class BlockChain {
         .catch(err => reject(err))
     })
   }
+
   // max height of blockchain
   GetHeight() {
     return new Promise((resolve, reject) => {
       this.Db.FindMax(CstDocs.Blockchain, 'Height')
         .catch(err => reject(err))
-        .then(linkWithMaxHeight =>
-          resolve(linkWithMaxHeight.Height))
+        .then(linkWithMaxHeight => resolve(linkWithMaxHeight.Height))
     })
   }
+
   // current diff = diff of last block
   GetDiff() {
     return new Promise((resolve, reject) => {
@@ -122,6 +126,7 @@ class BlockChain {
         .then(lastBlock => resolve(lastBlock.Diff))
     })
   }
+
   // hash of last block
   GetBestHash() {
     return new Promise((resolve, reject) => {
@@ -134,10 +139,12 @@ class BlockChain {
         })
     })
   }
+
   // get amount of pending messages
   GetAmountOfPendingMsgs() {
     return this.Db.CountDocs(CstDocs.PendingMessages)
   }
+
   // get last block
   GetLastBlock() {
     return new Promise((resolve, reject) => {
@@ -148,6 +155,7 @@ class BlockChain {
         .then(block => resolve(block))
     })
   }
+
   // get block at specific height
   GetBlockAtHeight(atHeight) {
     return new Promise((resolve, reject) => {
@@ -162,6 +170,7 @@ class BlockChain {
         })
     })
   }
+
   // get block with specific block hash
   GetBlockWithHash(blockhash) {
     return new Promise((resolve, reject) => {
@@ -175,6 +184,7 @@ class BlockChain {
         })
     })
   }
+
   // get all hashes between best hash and specified hash
   async GetHashesFromBestTo(toHash) {
     const betweenHashes = []
@@ -188,10 +198,12 @@ class BlockChain {
     }
     return betweenHashes
   }
+
   // promise of create Message
   CreateMsg(content) {
     return Message.CreateFromContent(this.Address, content)
   }
+
   // add a message to the pending Messages
   async SendMsg(message) {
     // copy message because db save will mutated it (add _id)
@@ -210,6 +222,7 @@ class BlockChain {
     this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
     return true
   }
+
   // find a message in the blockchain, return link
   // default search from own address
   async FindMsg(Content, FromAddress = this.Address) {
@@ -223,11 +236,13 @@ class BlockChain {
     const { _id, ...linkWithoutID } = foundLink
     return linkWithoutID
   }
+
   // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this)
     return newBlock
   }
+
   // return all pending messages in json format
   async GetAllPendingMgs() {
     const pendingDbMsgs = await this.Db.Find(CstDocs.PendingMessages, {})
@@ -240,6 +255,7 @@ class BlockChain {
   ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
     return this.P2P.Connect(remoteIP, remotePort)
   }
+
   // details of connected peers
   PeersDetail() {
     const details = {
@@ -248,10 +264,12 @@ class BlockChain {
     }
     return details
   }
+
   // amount of incoming and outgoing connections
   ConnectionCount() {
     return this.P2P.Amount()
   }
+
   UpdateNeededHashes(needed) {
     this.NeededHashes = needed
   }
