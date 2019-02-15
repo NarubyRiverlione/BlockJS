@@ -201,7 +201,7 @@ class BlockChain {
 
   // promise of create Message
   CreateMsg(content) {
-    return Message.CreateFromContent(this.Address, content)
+    return Message.Create(this.Address, content)
   }
 
   // add a message to the pending Messages
@@ -227,7 +227,7 @@ class BlockChain {
   // default search from own address
   async FindMsg(Content, FromAddress = this.Address) {
     // create Message to get the message hash
-    const msg = Message.CreateFromContent(FromAddress, Content)
+    const msg = Message.Create(FromAddress, Content)
     const filter = { 'Block.Messages.Hash': msg.Hash }
     // find link that contains the message hash
     const foundLink = await this.Db.FindOne(CstDocs.Blockchain, filter)

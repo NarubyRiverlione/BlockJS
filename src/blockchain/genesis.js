@@ -8,7 +8,7 @@ const { Cst, CstError } = require('./const.js')
 const { Db: { Docs: CstDocs } } = Cst
 
 const CreateGenesisBlock = () => {
-  const GenesisMsg = Message.CreateFromContent(Cst.GenesisAddress, Cst.GenesisMsg)
+  const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
   return Block.Create(null, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 const CreateFirstLink = () => {

@@ -15,15 +15,15 @@ class DummyDb {
   }
 }
 
-it('Create a message from content', () => {
-  const Msg = Message.CreateFromContent(TestFromAddress, TestContent)
+it('Create a message', () => {
+  const Msg = Message.Create(TestFromAddress, TestContent)
   expect(Msg).not.toBeNull()
   expect(Msg.Hash).toBe(TestMsgHash)
   expect(Msg.From).toBe(TestFromAddress)
 })
 
 it('Validated correct message ', () => {
-  const Msg = Message.CreateFromContent(TestFromAddress, TestContent)
+  const Msg = Message.Create(TestFromAddress, TestContent)
   expect(Message.IsValid(Msg, TestContent)).toBeTruthy()
 })
 
@@ -48,7 +48,7 @@ it('Parse from db: remove extra property', () => {
 })
 
 it('Save to dummy db', async () => {
-  const Msg = Message.CreateFromContent(TestFromAddress, TestContent)
+  const Msg = Message.Create(TestFromAddress, TestContent)
   expect(Msg).not.toBeNull()
   const db = new DummyDb()
   const result = await Msg.Save(db)

@@ -14,7 +14,7 @@ class Message {
     this.Hash = hash
   }
 
-  static CreateFromContent(fromAddress, content) {
+  static Create(fromAddress, content) {
     return new Message(fromAddress, msgHash(fromAddress, content))
   }
 
