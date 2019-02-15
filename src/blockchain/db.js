@@ -1,5 +1,5 @@
 
-const MongoClient = require('mongodb').MongoClient // eslint-disable-line
+const { MongoClient } = require('mongodb')
 const Debug = require('debug')('blockjs:DB')
 
 const { Cst, CstError, CstTxt } = require('./const.js')
@@ -65,8 +65,7 @@ class Db {
           const error = new Error(`${CstError.DbNotFind} max "${property}" ${CstError.DbToCollection} "${col}": ${err} " `)
           reject(error)
         })
-        .then(docs =>
-          resolve(docs[0]))
+        .then(docs => resolve(docs[0]))
     })
   }
 
@@ -93,6 +92,7 @@ class Db {
         .then(docs => resolve(docs))
     })
   }
+
   FindOne(col, filter) {
     return new Promise((resolve, reject) => {
       const collection = this.db.collection(col)
@@ -104,6 +104,7 @@ class Db {
         .then(doc => resolve(doc))
     })
   }
+
   CountDocs(col) {
     return new Promise((resolve, reject) => {
       const collection = this.db.collection(col)
@@ -127,6 +128,7 @@ class Db {
         .then(result => resolve(result))
     })
   }
+
   RemoveOne(col, filter) {
     return new Promise((resolve, reject) => {
       const collection = this.db.collection(col)

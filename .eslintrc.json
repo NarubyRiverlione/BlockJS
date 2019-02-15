@@ -1,15 +1,18 @@
 {
   "env": {
     "node": true,
-    "mocha": true,
+    "jest/globals": true,
     "mongo": true
   },
   "plugins": [
-    "mocha"
+    "jest"
   ],
-  "extends": "airbnb-base",
+  "extends": [
+    "airbnb-base",
+    "plugin:jest/recommended"
+  ],
   "rules": {
-    "mocha/no-exclusive-tests": "error",
+    "no-underscore-dangle": "off",
     "no-unused-vars": "warn",
     "max-len": "warn",
     "indent": [

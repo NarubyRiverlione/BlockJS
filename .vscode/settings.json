@@ -22,5 +22,6 @@
     "tx's",
     "txhash",
     "xdescribe"
-  ]
+  ],
+  "eslint.enable": true
 }

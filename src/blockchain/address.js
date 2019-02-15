@@ -1,8 +1,7 @@
-const { Cst } = require('./const.js')
+const Debug = require('debug')('blockjs:address')
 const crypto = require('crypto')
 
-const Debug = require('debug')('blockjs:address')
-
+const { Cst } = require('./const.js')
 
 const { PrivateKeySize, Db: { Docs: CstDocs } } = Cst
 

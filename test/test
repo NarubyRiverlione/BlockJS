@@ -5,24 +5,24 @@ const expect = require('chai').expect // eslint-disable-line
 const BlockChain = require('../src/blockchain/BlockChain.js')
 const Block = require('../src/blockchain/block.js')
 const Message = require('../src/blockchain/message.js')
-// const Wallet = require('../src/wallet.js')
+
 const { Cst } = require('../src/blockchain/const.js')
 
-let TestCoin
+let TestChain
 const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort
 const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
 const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
 
 
 it('Blockchain', async () => {
-  TestCoin = await BlockChain.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
-  expect(TestCoin, 'creation failed').not.null
+  TestChain = await BlockChain.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
+  expect(TestChain, 'creation failed').not.null
 
   describe('Genesis tests', () => {
     let GenesisBlock
 
     it('Load genesis from db', async () => {
-      GenesisBlock = await TestCoin.GetBlockAtHeight(0)
+      GenesisBlock = await TestChain.GetBlockAtHeight(0)
       expect(GenesisBlock).not.null
       expect(Block.IsValid(GenesisBlock)).to.be.true
     })
@@ -53,7 +53,7 @@ it('Blockchain', async () => {
   })
   describe('Message', () => {
     const content = 'Test message'
-    const msg = TestCoin.CreateMsg(content)
+    const msg = TestChain.CreateMsg(content)
     it('Create valid message', async () => {
       expect(msg).not.be.null
       const valid = await Message.IsValid(msg)
@@ -74,7 +74,7 @@ it('Blockchain', async () => {
     // })
   })
   describe('Create block', async () => {
-    const msg = TestCoin.CreateMsg('Test message')
+    const msg = TestChain.CreateMsg('Test message')
     const ValidBlock = Block.Create(null, 0, 2, [msg], Date.now())
     const savedMgsHash = ValidBlock.HashMessages
     const blockhash = ValidBlock.Blockhash()
@@ -107,7 +107,7 @@ it('Blockchain', async () => {
   describe('Add message to blockchain & mine new block', async () => {
     it('start amount pending msg = 0', async () => {
       try {
-        const startAmount = await TestCoin.GetAmountOfPendingMsgs()
+        const startAmount = await TestChain.GetAmountOfPendingMsgs()
         expect(startAmount, 'no pending Msg before add tests').is.equal(0)
       } catch (err) {
         console.error(err)
@@ -116,9 +116,9 @@ it('Blockchain', async () => {
     it('Add msg -> amount of pending msg = 1', async () => {
       try {
         const Content = 'New test message'
-        const msg = TestCoin.CreateMsg(Content)
-        await TestCoin.SendMsg(msg)
-        const amount = await TestCoin.GetAmountOfPendingMsgs()
+        const msg = TestChain.CreateMsg(Content)
+        await TestChain.SendMsg(msg)
+        const amount = await TestChain.GetAmountOfPendingMsgs()
         expect(amount).is.equal(1)
       } catch (err) {
         console.error(err)
@@ -126,7 +126,7 @@ it('Blockchain', async () => {
     })
     it('Mine new block', async () => {
       try {
-        const newBlock = await TestCoin.MineBlock()
+        const newBlock = await TestChain.MineBlock()
         expect(Block.IsValid(newBlock), 'mined block is not valid').is.true
       } catch (err) {
         console.error(err)
@@ -134,14 +134,14 @@ it('Blockchain', async () => {
     })
     it('After mining: Height = 1', async () => {
       try {
-        const height = await TestCoin.GetHeight()
+        const height = await TestChain.GetHeight()
         expect(height).is.equal(1)
       } catch (err) {
         console.error(err)
       }
     })
     it('After mining: amount of pending msg = 0', async () => {
-      const amount = await TestCoin.GetAmountOfPendingMsgs()
+      const amount = await TestChain.GetAmountOfPendingMsgs()
       expect(amount).is.equal(0)
     })
     // it('After mining:  blockchain is valid', () => {

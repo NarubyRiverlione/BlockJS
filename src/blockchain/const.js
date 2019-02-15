@@ -109,6 +109,8 @@ const CstError = {
   DbToCollection: 'with the collection: ',
   DbData: 'the data',
   DbFilter: 'filter:',
+  MsgNoFrom: 'ERROR message is not valid: no from address',
+  msgHashInvalid: 'ERROR message hash is not valid for content'
 }
 
 

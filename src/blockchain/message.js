@@ -1,7 +1,8 @@
 /* Message: From, Hash (from+content) */
 const SHA256 = require('crypto-js/sha256')
+const Debug = require('debug')('blockjs:message')
 
-const { Cst } = require('./const.js')
+const { Cst, CstError } = require('./const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
@@ -18,22 +19,17 @@ class Message {
   }
 
   static IsValid(msg, content = null) {
-    return new Promise((resolve, reject) => {
-      // if (!(msg instanceof Message)) {
-      //   return reject(new Error('Not of type Message (loaded from db without cast?)'))
-      // }
-      if (!msg.From) {
-        return reject(new Error('ERROR message is not valid: no from address'))
-      }
-      if (content) {
-        const checkHash = msgHash(msg.From, content)
-        if (msg.Hash !== checkHash) {
-          return reject(new Error('ERROR message hash is not valid for content'))
-        }
-      }
-      return resolve(true)
-    })
+    // if (!(msg instanceof Message)) {
+    //   return reject(new Error('Not of type Message (loaded from db without cast?)'))
+    // }
+    if (!msg.From) { Debug(CstError.MsgNoFrom); return false }
+    if (content) {
+      const checkHash = msgHash(msg.From, content)
+      if (msg.Hash !== checkHash) { Debug(CstError.msgHashInvalid); return false }
+    }
+    return true
   }
+
 
   // remove database _id property from messages
   static ParseFromDb(msg) {
