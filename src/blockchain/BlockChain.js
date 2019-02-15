@@ -2,15 +2,15 @@ const Debug = require('debug')('blockjs:BlockChain')
 const https = require('https')
 const fs = require('fs')
 
-const Message = require('./message.js')
-const Block = require('./block.js')
-const { Cst, CstError, CstTxt } = require('./const.js')
-const DB = require('./db.js')
-const P2P = require('./p2p.js')
+const Message = require('./Message.js')
+const Block = require('./Block.js')
+const { Cst, CstError, CstTxt } = require('../Const.js')
+const DB = require('./Db.js')
+const P2P = require('./P2p.js')
 const API = require('../api/express.js')
-const Genesis = require('./genesis.js')
-const Mining = require('./mining.js')
-const Address = require('./address.js')
+const Genesis = require('./Genesis.js')
+const Mining = require('./Mining.js')
+const Address = require('./Address.js')
 
 
 const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
@@ -114,7 +114,7 @@ class BlockChain {
     return new Promise((resolve, reject) => {
       this.Db.FindMax(CstDocs.Blockchain, 'Height')
         .catch(err => reject(err))
-        .then(linkWithMaxHeight => resolve(linkWithMaxHeight.Height))
+        .then(BlockWithMaxHeight => resolve(BlockWithMaxHeight.Height))
     })
   }
 
@@ -151,7 +151,7 @@ class BlockChain {
       this.GetHeight()
         .catch(err => reject(err))
         .then(maxHeight => this.Db.Find(CstDocs.Blockchain, { Height: maxHeight }))
-        .then(foundLinks => Block.ParseFromDb(foundLinks[0].Block))
+        .then(foundBlocksAtHeight => Block.ParseFromDb(foundBlocksAtHeight[0]))
         .then(block => resolve(block))
     })
   }
@@ -161,11 +161,11 @@ class BlockChain {
     return new Promise((resolve, reject) => {
       this.Db.Find(CstDocs.Blockchain, { Height: atHeight })
         .catch(err => reject(err))
-        .then((foundLink) => {
-          if (foundLink.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHeigh} ${atHeight}`))
-          if (foundLink.length === 0) return resolve(null)
-          Debug(`Loaded block with hash ${foundLink[0].Hash} for height ${atHeight}`)
-          const block = Block.ParseFromDb(foundLink[0].Block)
+        .then((foundBlock) => {
+          if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHeigh} ${atHeight}`))
+          if (foundBlock.length === 0) return resolve(null)
+          Debug(`Loaded block with hash ${foundBlock[0].Hash} for height ${atHeight}`)
+          const block = Block.ParseFromDb(foundBlock[0])
           return resolve(block)
         })
     })
@@ -176,10 +176,10 @@ class BlockChain {
     return new Promise((resolve, reject) => {
       this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
         .catch(err => reject(err))
-        .then((foundLink) => {
-          if (foundLink.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}:  ${blockhash}`))
-          if (foundLink.length === 0) return resolve(null)
-          const block = Block.ParseFromDb(foundLink[0].Block)
+        .then((foundBlock) => {
+          if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}:  ${blockhash}`))
+          if (foundBlock.length === 0) return resolve(null)
+          const block = Block.ParseFromDb(foundBlock[0])
           return resolve(block)
         })
     })
@@ -223,18 +223,18 @@ class BlockChain {
     return true
   }
 
-  // find a message in the blockchain, return link
+  // find a message in the blockchain, return Block
   // default search from own address
   async FindMsg(Content, FromAddress = this.Address) {
     // create Message to get the message hash
     const msg = Message.Create(FromAddress, Content)
     const filter = { 'Block.Messages.Hash': msg.Hash }
-    // find link that contains the message hash
-    const foundLink = await this.Db.FindOne(CstDocs.Blockchain, filter)
-    if (!foundLink) return null
-    // remove _id property by  deconstruct it out of foundLink
-    const { _id, ...linkWithoutID } = foundLink
-    return linkWithoutID
+    // find Block that contains the message hash
+    const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
+    if (!foundBlock) return null
+    // remove _id property by  deconstruct it out of foundBlock
+    const { _id, ...BlockWithoutID } = foundBlock
+    return BlockWithoutID
   }
 
   // create new block with all pending messages

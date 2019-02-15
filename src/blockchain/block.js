@@ -2,25 +2,27 @@
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
 
-const { CstError } = require('../blockchain/const')
-const Message = require('./message.js')
+const { CstError } = require('../Const')
+const Message = require('./Message.js')
 
 
 // PrevHash can be null = Genesis block
 // other header properties must be a Number
 const IsHeaderComplete = (block => block.PrevHash !== undefined
+  && Number.isInteger(block.Height)
   && Number.isInteger(block.Nonce)
   && Number.isInteger(block.Diff)
   && Number.isInteger(block.Timestamp)
 )
 
 class Block {
-  static Create(prevHash, nonce, diff, messages, timestamp, version = 1) {
+  static Create(prevHash, height, nonce, diff, messages, timestamp, version = 1) {
     // PrevHash can be null = Genesis block
     // other header properties must be a Number
     if (
       prevHash === undefined
       || !Number.isInteger(nonce)
+      || !Number.isInteger(height)
       || !Number.isInteger(diff)
       || !Number.isInteger(timestamp)) {
       Debug(new Error(CstError.BlockHeaderIncomplete))
@@ -31,11 +33,13 @@ class Block {
       ? messages.map(msg => Message.ParseFromDb(msg))
       : null
 
-    return new Block(prevHash, nonce, diff, msgs, timestamp, version)
+    return new Block(prevHash, height, nonce, diff, msgs, timestamp, version)
   }
 
-  constructor(prevHash, nonce, diff, messages, timestamp, version) {
+  constructor(prevHash, height, nonce, diff, messages, timestamp, version) {
     this.PrevHash = prevHash
+    this.Height = height
+    this.Hash = this.Blockhash()
     this.Nonce = nonce
     this.Diff = diff
     this.Version = version
@@ -49,23 +53,24 @@ class Block {
   }
 
   // create instance of Block with db data
-  static ParseFromDb(DBblock) {
+  static ParseFromDb(blockObj) {
     // remove database _id property from messages
-    const messages = DBblock.Messages
-      ? DBblock.Messages.map(msg => Message.ParseFromDb(msg))
+    const messages = blockObj.Messages
+      ? blockObj.Messages.map(msg => Message.ParseFromDb(msg))
       : null
 
-    const block = new Block(
-      DBblock.PrevHash,
-      DBblock.Nonce,
-      DBblock.Diff,
+    const ParsedBlock = Block.Create(
+      blockObj.PrevHash,
+      blockObj.Height,
+      blockObj.Nonce,
+      blockObj.Diff,
       messages,
-      DBblock.Timestamp,
-      DBblock.Version,
-      DBblock.HashMessages,
+      blockObj.Timestamp,
+      blockObj.Version,
+      //    blockObj.HashMessages,
     )
     // all Block function now available
-    return block
+    return ParsedBlock
   }
 
   // Block hash = PrevHash + Nonce + Diff + Timestamp + Version + Hash Messages
@@ -95,6 +100,11 @@ class Block {
     }
     return true
   }
+
+  // AddToChain(blockchain) {
+  //   const newBlockchain = [].concat(...blockchain, this)
+  //   return newBlockchain
+  // }
 }
 
 module.exports = Block

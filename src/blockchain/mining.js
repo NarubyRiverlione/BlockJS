@@ -1,6 +1,6 @@
-const Block = require('./block.js')
-const ChainLink = require('./chainlink.js')
-const { Cst } = require('./const.js')
+const Block = require('./Block.js')
+// const ChainLink = require('./chainlink.js')
+const { Cst } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
@@ -17,12 +17,10 @@ const MineBlock = async (BlockChain) => {
   // TODO: POW / POS
   // TODO: set Max of TX in block
   const prevHash = await BlockChain.GetBestHash()
-  const createdBlock = Block.Create(prevHash, 0, Cst.StartDiff, PendingMessages, Date.now()) // eslint-disable-line max-len
   const height = await BlockChain.GetHeight()
-  // create new link with block
-  const newLink = await ChainLink.Create(createdBlock, height + 1)
+  const createdBlock = Block.Create(prevHash, height + 1, 0, Cst.StartDiff, PendingMessages, Date.now()) // eslint-disable-line max-len
   // save link to blockchain
-  await BlockChain.Db.Add(CstDocs.Blockchain, newLink)
+  await BlockChain.Db.Add(CstDocs.Blockchain, createdBlock)
   // broadcast new block
   BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, createdBlock)
   // clear pending messages

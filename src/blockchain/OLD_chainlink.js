@@ -1,6 +1,6 @@
 /* ChainLink =  Height, Hash (of block) , Block (header + content)  */
-const { CstError } = require('../blockchain/const')
-const Block = require('./block.js')
+const { CstError } = require('../Const')
+const Block = require('./Block.js')
 // const Debug = require('debug')('blockjs:Chainlink')
 
 class ChainLink {

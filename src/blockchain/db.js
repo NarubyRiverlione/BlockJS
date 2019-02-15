@@ -2,7 +2,7 @@
 const { MongoClient } = require('mongodb')
 const Debug = require('debug')('blockjs:DB')
 
-const { Cst, CstError, CstTxt } = require('./const.js')
+const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { Db: CstDB } = Cst
 

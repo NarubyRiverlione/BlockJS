@@ -1,6 +1,6 @@
 const Debug = require('debug')('blockjs:app')
 
-const { Cst, CstTxt } = require('./blockchain/const.js')
+const { Cst, CstTxt } = require('./Const.js')
 const BlockChain = require('./blockchain/BlockChain.js')
 
 const DbServer = process.env.dbServer

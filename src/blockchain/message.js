@@ -2,7 +2,7 @@
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:message')
 
-const { Cst, CstError } = require('./const.js')
+const { Cst, CstError } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
@@ -32,8 +32,8 @@ class Message {
 
 
   // remove database _id property from messages
-  static ParseFromDb(msg) {
-    return new Message(msg.From, msg.Hash)
+  static ParseFromDb(messageObj) {
+    return new Message(messageObj.From, messageObj.Hash)
   }
 
   Save(db) {

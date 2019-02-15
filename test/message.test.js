@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
-const Message = require('../src/blockchain/message.js')
-const { Cst } = require('../src/blockchain/const')
+const Message = require('../src/blockchain/Message.js')
+const { Cst } = require('../src/Const')
 
 const { Db: { Docs: CstDocs } } = Cst
 

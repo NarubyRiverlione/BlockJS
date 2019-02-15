@@ -1,8 +1,8 @@
 const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
-const CstP2P = require('./const.js').P2P
-const Block = require('./block.js')
-const Incoming = require('./incoming.js')
+const CstP2P = require('../Const.js').P2P
+const Block = require('./Block.js')
+const Incoming = require('./Incoming.js')
 
 /*
 inbound HashMsg -> send InvMsg([received Hash ... best hash])
@@ -11,8 +11,7 @@ inbound GetBlockMsg(hash) -> SendBlockMsg(hash)
 inbound BlockMsg(block) ->IncomingBlock(block):  add to local blockchain
 */
 
-const CreateP2Pmsg = (type, payload) =>
-  JSON.stringify({ type, payload })
+const CreateP2Pmsg = (type, payload) => JSON.stringify({ type, payload })
 
 const AskNeededBlocks = (neededHashes, peer) => {
   neededHashes.forEach((hash) => {
@@ -44,15 +43,18 @@ class P2P {
     // handle error
     this.Server.on('error', (error) => { Debug(`Error: ${error}`) })
   }
+
   // amount of incoming (peers) and outgoing (connection)
   Amount() {
     const incoming = this.Server.clients.size
     const out = this.OutgoingConnections.length
     return { peers: incoming + out }
   }
+
   IncomingDetails() {
     return this.IncomingConnections.map(peer => peer.url)
   }
+
   OutgoingDetails() {
     return this.OutgoingConnections.map(out => out.url)
   }
@@ -76,6 +78,7 @@ class P2P {
         .catch(err => console.error(err))
     })
   }
+
   // send message to all connected peers (incoming) and connections (outgoing)
   Broadcast(type, payload) {
     Debug(`Broadcast a ${type} message`)
@@ -87,6 +90,7 @@ class P2P {
       connection.send(msg)
     })
   }
+
   // evaluate message
   MessageHandle(message, peer) {
     const msg = JSON.parse(message)
@@ -152,6 +156,7 @@ class P2P {
       default: peer.send(CreateP2Pmsg(CstP2P.NACK, null))
     }
   }
+
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
     return new Promise((resolve, reject) => {
@@ -172,8 +177,7 @@ class P2P {
         Debug('connection has disconnected')
       })
       // handle error
-      connection.on('error', error =>
-        Debug(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
+      connection.on('error', error => Debug(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
 
       // setup message handler from this connection
       connection.on('message', (message) => { this.MessageHandle(message, connection) })
@@ -185,6 +189,7 @@ class P2P {
       })
     })
   }
+
   // send Version msg and best hash msg
   SendHandshake(connection, remoteIP, remotePort) {
     return new Promise((resolve, reject) => {
@@ -205,6 +210,7 @@ class P2P {
         .catch(err => reject(new Error(`ERROR sending best hash ${err}`)))
     })
   }
+
   // close connection
   Close() {
     this.Server.close()

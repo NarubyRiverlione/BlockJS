@@ -1,5 +1,5 @@
-const Block = require('../src/blockchain/block')
-const Message = require('../src/blockchain/message')
+const Block = require('../src/blockchain/Block')
+const Message = require('../src/blockchain/Message')
 
 const TestContent = 'Test message'
 const TestFromAddress = 'Azerty123456789'
@@ -7,16 +7,17 @@ const TestFromAddress = 'Azerty123456789'
 const TestMsg = Message.Create(TestFromAddress, TestContent)
 const TestMsg2 = Message.Create(TestFromAddress, TestContent)
 
-const ValidBlock = Block.Create(null, 0, 2, [TestMsg, TestMsg2], Date.now())
+const ValidBlock = Block.Create(null, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
 
 const SavedMgsHash = ValidBlock.HashMessages
 const SavedBlockHash = ValidBlock.Blockhash()
 
 const NotBlock = {
   PrevHash: 12,
-  Nonce: 0,
-  Diff: 2,
-  Version: 1,
+  Height: 1556,
+  Nonce: 669880,
+  Diff: 1352,
+  Version: 165,
   Timestamp: Date.now(),
   Messages: null,
 }
@@ -25,7 +26,7 @@ it('Valid block creation: block with 2 messages', () => {
   expect(Block.IsValid(ValidBlock)).toBeTruthy()
 })
 it('Valid block: without messages', () => {
-  const BlockWithoutMsg = Block.Create(null, 0, 2, null, Date.now())
+  const BlockWithoutMsg = Block.Create(null, 0, 0, 2, null, Date.now())
   expect(Block.IsValid(BlockWithoutMsg)).toBeTruthy()
 })
 
@@ -38,7 +39,7 @@ it('Invalid block detection: header incomplete without a nonce', () => {
   expect(BlockWithoutHeaders).toBeNull()
 })
 it('Invalid block detection: no nonce', () => {
-  const BlockWithoutNonce = Block.Create(null, 0, 2, [TestMsg, TestMsg2], Date.now())
+  const BlockWithoutNonce = Block.Create(null, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
   BlockWithoutNonce.Nonce = null
   expect(BlockWithoutNonce instanceof Block).toBeTruthy()
   expect(Block.IsValid(BlockWithoutNonce)).toBeFalsy()
@@ -46,7 +47,7 @@ it('Invalid block detection: no nonce', () => {
 it('Invalid block: invalid message', () => {
   const InvalidMsg = { Hash: 123 } // invalid: not From address
   expect(Message.IsValid(InvalidMsg)).toBeFalsy()
-  const InvalidBlock = Block.Create(null, 0, 2, [TestMsg, InvalidMsg, TestMsg2], Date.now())
+  const InvalidBlock = Block.Create(null, 0, 0, 2, [TestMsg, InvalidMsg, TestMsg2], Date.now())
   expect(Block.IsValid(InvalidBlock)).toBeFalsy()
 })
 

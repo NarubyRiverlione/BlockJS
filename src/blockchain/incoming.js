@@ -1,9 +1,9 @@
 const Debug = require('debug')('blockjs:incoming')
 
-const { Cst, CstTxt, CstError } = require('./const.js')
-const Message = require('./message')
-const Blocks = require('./block.js')
-const ChainLink = require('./chainlink.js')
+const { Cst, CstTxt, CstError } = require('../Const.js')
+const Message = require('./Message')
+const Blocks = require('./Block.js')
+// const ChainLink = require('./chainlink.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
@@ -78,9 +78,9 @@ const EvaluateBlock = async (inboundBlock, BlockChain) => {
   Debug(`Height if Incoming block will be ${newHeight}`)
 
   /* create new link with block */
-  const newLink = await ChainLink.Create(newBlock, newHeight)
+  newBlock.Height = newHeight
   // add link to the blockchain
-  await Db.Add(CstDocs.Blockchain, newLink)
+  await Db.Add(CstDocs.Blockchain, newBlock)
 
   /*  check if block contains receiving messages for this wallet */
   // save msg to OwnTX & update balance

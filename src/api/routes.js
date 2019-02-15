@@ -1,6 +1,6 @@
 const express = require('express')
 
-const { CstTxt, CstError, Cst } = require('../blockchain/const')
+const { CstTxt, CstError, Cst } = require('../Const')
 
 const { API: { Cmd } } = Cst
 
