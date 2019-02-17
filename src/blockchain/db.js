@@ -31,15 +31,18 @@ class Db {
     this.client.close()
   }
 
-  async Add(col, data) {
-    try {
-      const result = await this.db.collection(col).insertOne(data)
-      Debug(`Added ${col} in db`)
-      return result
-    } catch (err) {
-      const error = `${CstError.BlockInvalid} ${err} ${CstError.DbToCollection} "${col}"  ${CstError.DbData} "${data}"`
-      return (error)
-    }
+  Add(col, data) {
+    return new Promise((resolve, reject) => {
+      this.db.collection(col).insertOne(data)
+        .then((result) => {
+          Debug(`Added ${col} in db`)
+          return resolve(result)
+        })
+        .catch((err) => {
+          const error = `${CstError.BlockInvalid} ${err} ${CstError.DbToCollection} "${col}"  ${CstError.DbData} "${data}"`
+          return reject(error)
+        })
+    })
   }
 
   // filter = {field:value }, update = {field:newValue}

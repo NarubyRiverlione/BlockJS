@@ -2,7 +2,7 @@
 const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
 
-const { CstError } = require('../Const')
+const { CstError, Cst } = require('../Const')
 const Message = require('./Message.js')
 
 
@@ -77,6 +77,22 @@ class Block {
   Blockhash() {
     const Content = this.PrevHash + this.Nonce + this.Diff + this.Timestamp + this.Version
     return SHA256(Content + this.HashMessages).toString()
+  }
+
+  // check if Prevhash is a block hash in the blockchain
+  async CheckPrevHash(blockchain) {
+    try {
+      if (this.prevHash === null) {
+        // only first block shouldn't have a prevHash
+        if (this.Height !== 0 || this.Blockhash !== Cst.GenesisHashBlock) return false
+        return true
+      }
+      const PrevBlock = await blockchain.GetBlockWithHash(this.prevHash)
+      if (!PrevBlock) return false
+      return true
+    } catch (err) {
+      return false
+    }
   }
 
   //  is type of Block + header valid + all messages valid

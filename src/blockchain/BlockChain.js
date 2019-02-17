@@ -39,7 +39,7 @@ class BlockChain {
     const blockchain = new BlockChain(database, address)
 
     // check if genesis block exists
-    await Genesis.BlockExistInDb(blockchain)
+    await Genesis.ExistInDb(blockchain)
 
     // start P2P
     blockchain.P2P = new P2P(serverPort, blockchain, this.version)

@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 const Block = require('../src/blockchain/Block')
 const Message = require('../src/blockchain/Message')
 
@@ -7,7 +8,7 @@ const TestFromAddress = 'Azerty123456789'
 const TestMsg = Message.Create(TestFromAddress, TestContent)
 const TestMsg2 = Message.Create(TestFromAddress, TestContent)
 
-const ValidBlock = Block.Create(null, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
+const ValidBlock = Block.Create(123, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
 
 const SavedMgsHash = ValidBlock.HashMessages
 const SavedBlockHash = ValidBlock.Blockhash()
@@ -99,4 +100,35 @@ it('Parse from object, with messages (read from db)', () => {
   NotBlock.Messages = [TestMsg]
   const ParsedBlock = Block.ParseFromDb(NotBlock)
   expect(Block.IsValid(ParsedBlock)).toBeTruthy()
+})
+
+it('Check prevhash: correct is in the blockchain', async () => {
+  class DummyBlockChain {
+    GetBlockWithHash() {
+      return Promise.resolve(Block.Create(null, 0, 0, 2, [], Date.now()))
+    }
+  }
+
+  const OkBlockChain = new DummyBlockChain()
+
+  const result = await ValidBlock.CheckPrevHash(OkBlockChain)
+  expect(result).toBeTruthy()
+})
+
+it('Check prevhash: invalid is not in the blockchain', async () => {
+  class DummyBlockChain {
+    GetBlockWithHash() { return Promise.resolve(null) }
+  }
+
+  const NOkBlockChain = new DummyBlockChain()
+
+  const result = await ValidBlock.CheckPrevHash(NOkBlockChain)
+  expect(result).toBeFalsy()
+})
+
+it('Check prevhash: invalid, not first block without prevHash', async () => {
+  const TestBlock = Block.Create(null, 5, 0, 2, [TestMsg], Date.now())
+  console.log(TestBlock.PrevHash)
+  const result = await TestBlock.CheckPrevHash()
+  expect(result).toBeFalsy()
 })
