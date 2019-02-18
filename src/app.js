@@ -1,7 +1,9 @@
 const Debug = require('debug')('blockjs:app')
-
+const Sentry = require('@sentry/node')
 const { Cst, CstTxt } = require('./Const.js')
 const BlockChain = require('./blockchain/BlockChain.js')
+
+Sentry.init({ dsn: 'https://93b377777ac64d6c82956ef60947354c@sentry.io/1396748' })
 
 const DbServer = process.env.dbServer
 const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort

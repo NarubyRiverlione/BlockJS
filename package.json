@@ -21,6 +21,7 @@
   "author": "Naruby",
   "license": "ISC",
   "dependencies": {
+    "@sentry/node": "4.6.1",
     "body-parser": "^1.18.3",
     "bodymen": "^1.1.0",
     "compression": "^1.7.2",
