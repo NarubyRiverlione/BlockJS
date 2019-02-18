@@ -200,8 +200,8 @@ class BlockChain {
   }
 
   // promise of create Message
-  CreateMsg(content) {
-    return Message.Create(this.Address, content)
+  CreateMsg(content, Id) {
+    return Message.Create(this.Address, content, Id)
   }
 
   // add a message to the pending Messages
@@ -228,7 +228,19 @@ class BlockChain {
   async FindMsg(Content, FromAddress = this.Address) {
     // create Message to get the message hash
     const msg = Message.Create(FromAddress, Content)
-    const filter = { 'Block.Messages.Hash': msg.Hash }
+    const filter = { 'Block.Messages.Hash': msg.ContentHash }
+    // find Block that contains the message hash
+    const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
+    if (!foundBlock) return null
+    // remove _id property by  deconstruct it out of foundBlock
+    const { _id, ...BlockWithoutID } = foundBlock
+    return BlockWithoutID
+  }
+
+  // find a message  by Id in the blockchain, return Block
+  // default search from own address
+  async FindMsgById(MsgId, FromAddress = this.Address) {
+    const filter = { 'Block.Messages.Id': MsgId }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
     if (!foundBlock) return null

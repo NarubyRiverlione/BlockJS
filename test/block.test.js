@@ -109,7 +109,7 @@ it('Parse from object, invalid block hash', () => {
 })
 it('Parse from object, with messages (read from db)', () => {
   NotBlock.Messages = [TestMsg]
-  NotBlock.Hash = 'debc0494a625b0000068b5b05193d48105fed4350d78415d13cf9a04bf00f431'
+  NotBlock.Hash = '6152d809492bb224d0ca66772f8365ba64d2aa8e9b929f3187d7be33c62796f1'
   const ParsedBlock = Block.ParseFromDb(NotBlock)
   expect(ParsedBlock).not.toBeNull()
   expect(Block.IsValid(ParsedBlock)).toBeTruthy()
@@ -149,14 +149,14 @@ it('Check prevhash: invalid error during search in the blockchain', async () => 
 })
 it('Check prevhash: invalid, not first block without prevHash', async () => {
   const TestBlock = Block.Create(null, 5, 0, 2, [TestMsg], Date.now())
-  console.log(TestBlock.PrevHash)
+  // console.log(TestBlock.PrevHash)
   const result = await TestBlock.CheckPrevHash()
   expect(result).toBeFalsy()
 })
 it('Check prevhash: valid,  first genesisblock = no prevHash', async () => {
   const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
   const GenesisBlock = Block.Create(null, 0, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
-  console.log(GenesisBlock.Blockhash())
+  // console.log(GenesisBlock.Blockhash())
   const result = await GenesisBlock.CheckPrevHash()
   expect(result).toBeTruthy()
 })

@@ -60,15 +60,12 @@ class Block {
       ? blockObj.Messages.map(msg => Message.ParseFromDb(msg))
       : null
 
+    const {
+      PrevHash, Height, Nonce, Diff, Timestamp, Version,
+    } = blockObj
+
     const ParsedBlock = Block.Create(
-      blockObj.PrevHash,
-      blockObj.Height,
-      blockObj.Nonce,
-      blockObj.Diff,
-      messages,
-      blockObj.Timestamp,
-      blockObj.Version,
-      //    blockObj.HashMessages,
+      PrevHash, Height, Nonce, Diff, messages, Timestamp, Version,
     )
     // verify saved block hash with calculated
     if (blockObj.Hash !== ParsedBlock.Blockhash()) {

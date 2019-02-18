@@ -3,9 +3,10 @@ const Cst = {
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_707d6653b0b81d679313',
-  GenesisHashBlock: '182c67d43f333b962f88e1c7780c7650fc79f5a8dc23e8826bdbfe5d757f482f',
-  GenesisHashMessages: '6864320b5f8c28368ca6c7bb4395406625be41565c90a9fc927abe81ae248456',
+  GenesisHashBlock: 'b56b73b6b14995683fc30e18dc86c40d1f371a9cd05f0f3aa056bc3426597597',
+  GenesisHashMessages: '4fc18ba6223bb2301064867f903f29b39866f680144f2aff50863e64a12abb90',
   GenesisHashMsg: '256100c3eaa459e608ffd425bab68e08b66a649b8da8c86306caef2da482e58d',
+  GenesisMsgId: null,
   GenesisNonce: 0,
 
   StartDiff: 2,
@@ -59,6 +60,7 @@ const Cst = {
       SendMsg: '/SendMsg',
       CheckMsgExist: '/CheckMsgExist',
       ConnectPeer: '/ConnectPeer',
+      FindMsgID: '/FindMsgID',
     },
   },
 }

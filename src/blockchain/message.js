@@ -9,13 +9,15 @@ const { Db: { Docs: CstDocs } } = Cst
 const msgHash = (fromAddress, content) => SHA256(fromAddress + content).toString()
 
 class Message {
-  constructor(fromAddress, hash) {
+  constructor(fromAddress, hash, id = null) {
     this.From = fromAddress
     this.Hash = hash
+    this.Id = id
   }
 
-  static Create(fromAddress, content) {
-    return new Message(fromAddress, msgHash(fromAddress, content))
+  static Create(fromAddress, content, id) {
+    const MsgHash = msgHash(fromAddress, content, id)
+    return new Message(fromAddress, MsgHash, id)
   }
 
   static IsValid(msg, content = null) {
@@ -33,7 +35,8 @@ class Message {
 
   // remove database _id property from messages
   static ParseFromDb(messageObj) {
-    return new Message(messageObj.From, messageObj.Hash)
+    const { From, Hash, Id } = messageObj
+    return new Message(From, Hash, Id)
   }
 
   Save(db) {

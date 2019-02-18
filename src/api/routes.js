@@ -103,10 +103,10 @@ class Routes {
       const amount = blockchain.PeersDetail()
       res.status(200).json(amount)
     })
-    // body: {Content : messageText}
+    // body: {Content : messageText, Id: messageID}
     this.router.post(Cmd.SendMsg, (req, res) => {
-      const { Content } = req.body
-      const msg = blockchain.CreateMsg(Content)
+      const { Content, Id } = req.body
+      const msg = blockchain.CreateMsg(Content, Id)
       blockchain.SendMsg(msg)
         .then((result) => {
           if (result) {
@@ -119,6 +119,15 @@ class Routes {
     this.router.post(Cmd.CheckMsgExist, (req, res) => {
       const { Content, From } = req.body
       blockchain.FindMsg(Content, From)
+        .then((result) => {
+          res.status(200).json({ result })
+        })
+        .catch(error => res.status(400).json({ error: error.message }))
+    })
+
+    this.router.get(Cmd.FindMsgID, (req, res) => {
+      const { MsgId } = req.params
+      blockchain.FindMsgID(MsgId)
         .then((result) => {
           res.status(200).json({ result })
         })

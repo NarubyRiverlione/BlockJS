@@ -6,7 +6,9 @@ const { Db: { Docs: CstDocs } } = Cst
 
 const TestContent = 'Test message'
 const TestFromAddress = 'Azerty123456789'
-const TestMsgHash = '53f93f273c38a9c4e43d313122cf84508f86e13d009073ddf754788b95034abc'
+const TestHashWithoutId = '53f93f273c38a9c4e43d313122cf84508f86e13d009073ddf754788b95034abc'
+const TestId = '12345'
+const TestHashWithId = '53f93f273c38a9c4e43d313122cf84508f86e13d009073ddf754788b95034abc'
 
 class DummyDb {
   Add(collection, data) {
@@ -15,11 +17,18 @@ class DummyDb {
   }
 }
 
-it('Create a message', () => {
+it('Create a message, without Id', () => {
   const Msg = Message.Create(TestFromAddress, TestContent)
   expect(Msg).not.toBeNull()
-  expect(Msg.Hash).toBe(TestMsgHash)
+  expect(Msg.Hash).toBe(TestHashWithoutId)
   expect(Msg.From).toBe(TestFromAddress)
+})
+it('Create a message, with Id', () => {
+  const Msg = Message.Create(TestFromAddress, TestContent, TestId)
+  expect(Msg).not.toBeNull()
+  expect(Msg.Hash).toBe(TestHashWithId)
+  expect(Msg.From).toBe(TestFromAddress)
+  expect(Msg.Id).toBe(TestId)
 })
 
 it('Validated correct message ', () => {
@@ -40,7 +49,11 @@ it('Validated message with wrong hash', () => {
 })
 
 it('Parse from db: remove extra property', () => {
-  const DbMsg = { From: TestFromAddress, Hash: TestMsgHash, _id: 'DatabaseID' }
+  const DbMsg = {
+    From: TestFromAddress,
+    Hash: TestHashWithoutId,
+    _id: 'DatabaseID',
+  }
   expect(Message.IsValid(DbMsg)).toBeTruthy()
   const ParsedMsg = Message.ParseFromDb(DbMsg)
   expect(Message.IsValid(ParsedMsg)).toBeTruthy()
