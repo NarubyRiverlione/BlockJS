@@ -1,6 +1,5 @@
 
 const Cst = {
-  GenesisReward: 10000,
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_707d6653b0b81d679313',
@@ -111,6 +110,7 @@ const CstError = {
   DbFilter: 'filter:',
   MsgNoFrom: 'ERROR message is not valid: no from address',
   msgHashInvalid: 'ERROR message hash is not valid for content',
+  MineNotSync: 'Cannot mine a block, BlockChain node needs syncing',
 }
 
 

@@ -1,6 +1,6 @@
 const Block = require('./Block.js')
-// const ChainLink = require('./chainlink.js')
-const { Cst } = require('../Const.js')
+
+const { Cst, CstError } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
@@ -8,7 +8,7 @@ const { Db: { Docs: CstDocs } } = Cst
 // create new block with all pending messages
 const MineBlock = async (BlockChain) => {
   const syncing = await BlockChain.CheckSyncingNeeded()
-  if (syncing) return ('Cannot mine a block, BlockChain node needs syncing')
+  if (syncing) return (CstError.MineNotSync)
 
   const { Db } = BlockChain
   const PendingMessages = await Db.Find(CstDocs.PendingMessages, {})
@@ -19,7 +19,7 @@ const MineBlock = async (BlockChain) => {
   const prevHash = await BlockChain.GetBestHash()
   const height = await BlockChain.GetHeight()
   const createdBlock = Block.Create(prevHash, height + 1, 0, Cst.StartDiff, PendingMessages, Date.now()) // eslint-disable-line max-len
-  // save link to blockchain
+  // save block to blockchain
   await BlockChain.Db.Add(CstDocs.Blockchain, createdBlock)
   // broadcast new block
   BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, createdBlock)
