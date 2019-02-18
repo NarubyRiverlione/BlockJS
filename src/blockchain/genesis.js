@@ -9,7 +9,7 @@ const { Db: { Docs: CstDocs } } = Cst
 
 const CreateGenesisBlock = () => {
   const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
-  return Block.Create(null, 0, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  return Block.Create(null, 0, Cst.GenesisNonce, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 
 

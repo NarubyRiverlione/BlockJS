@@ -16,7 +16,7 @@ class Db {
       // Connection URL
       const url = `mongodb://${DbServer}:${DbPort}`
       // Use connect method to connect to the server
-      MongoClient.connect(url)
+      MongoClient.connect(url, { useNewUrlParser: true })
         .then((client) => {
           Debug(`Connected successfully to DB server ${DbServer} ${CstTxt.Port} ${DbPort}`)
           this.client = client

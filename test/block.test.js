@@ -20,8 +20,9 @@ const NotBlock = {
   Nonce: 669880,
   Diff: 1352,
   Version: 165,
-  Timestamp: Date.now(),
+  Timestamp: 1550499139,
   Messages: null,
+
 }
 
 it('Valid block creation: block with 2 messages', () => {
@@ -94,12 +95,23 @@ it('Message cannot be changed', () => {
 })
 
 it('Parse from object, without messages (read from db)', () => {
+  // define Hash inside this test as other test mutates it for there run
+  NotBlock.Hash = 'a048ff3c334069371a74b50caeb181035f204e2f0c22dedee284cc9e4dc4b1f7'
   const ParsedBlock = Block.ParseFromDb(NotBlock)
+  expect(ParsedBlock).not.toBeNull()
   expect(Block.IsValid(ParsedBlock)).toBeTruthy()
+})
+it('Parse from object, invalid block hash', () => {
+  NotBlock.Hash = 0
+  const ParsedBlock = Block.ParseFromDb(NotBlock)
+  expect(ParsedBlock).toBeNull()
+  expect(Block.IsValid(ParsedBlock)).toBeFalsy()
 })
 it('Parse from object, with messages (read from db)', () => {
   NotBlock.Messages = [TestMsg]
+  NotBlock.Hash = 'debc0494a625b0000068b5b05193d48105fed4350d78415d13cf9a04bf00f431'
   const ParsedBlock = Block.ParseFromDb(NotBlock)
+  expect(ParsedBlock).not.toBeNull()
   expect(Block.IsValid(ParsedBlock)).toBeTruthy()
 })
 

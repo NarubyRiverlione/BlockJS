@@ -6,6 +6,7 @@ const Cst = {
   GenesisHashBlock: '182c67d43f333b962f88e1c7780c7650fc79f5a8dc23e8826bdbfe5d757f482f',
   GenesisHashMessages: '6864320b5f8c28368ca6c7bb4395406625be41565c90a9fc927abe81ae248456',
   GenesisHashMsg: '256100c3eaa459e608ffd425bab68e08b66a649b8da8c86306caef2da482e58d',
+  GenesisNonce: 0,
 
   StartDiff: 2,
   PrivateKeySize: 10,
@@ -92,6 +93,7 @@ const CstError = {
   SameHeigh: 'with height',
   SameHash: 'with hash',
   ParseBlock: 'Could not parse block',
+  ParseBlockWrongHash: 'The hash of the saved block is not valid',
   NotBlock: 'argument is not a block',
   BlockInvalid: 'Block is not valid',
   BlockHeaderIncomplete: 'Block header incomplete',

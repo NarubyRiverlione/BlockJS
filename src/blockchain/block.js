@@ -39,13 +39,13 @@ class Block {
   constructor(prevHash, height, nonce, diff, messages, timestamp, version) {
     this.PrevHash = prevHash
     this.Height = height
-    this.Hash = this.Blockhash()
     this.Nonce = nonce
     this.Diff = diff
     this.Version = version
     this.Timestamp = timestamp
     this.Messages = messages
     this.HashMessages = this.CalcHashMessages()
+    this.Hash = this.Blockhash() // calc BlockHas as last, needs other properties
   }
 
   CalcHashMessages() {
@@ -53,6 +53,7 @@ class Block {
   }
 
   // create instance of Block with db data
+  // verify saved block hash, hash can only be correct of header is complete
   static ParseFromDb(blockObj) {
     // remove database _id property from messages
     const messages = blockObj.Messages
@@ -69,14 +70,19 @@ class Block {
       blockObj.Version,
       //    blockObj.HashMessages,
     )
+    // verify saved block hash with calculated
+    if (blockObj.Hash !== ParsedBlock.Blockhash()) {
+      Debug(`CstError.ParseBlockWrongHash: Saved=${blockObj.Hash} - Calced=${ParsedBlock.Hash}`)
+      return null
+    }
     // all Block function now available
     return ParsedBlock
   }
 
   // Block hash = PrevHash + Nonce + Diff + Timestamp + Version + Hash Messages
   Blockhash() {
-    const Content = this.PrevHash + this.Nonce + this.Diff + this.Timestamp + this.Version
-    return SHA256(Content + this.HashMessages).toString()
+    const Header = this.PrevHash + this.Nonce + this.Diff + this.Timestamp + this.Version
+    return SHA256(Header + this.HashMessages).toString()
   }
 
   // check if Prevhash is a block hash in the blockchain
