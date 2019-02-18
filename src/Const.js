@@ -1,6 +1,5 @@
 
 const Cst = {
-  GenesisReward: 10000,
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_707d6653b0b81d679313',

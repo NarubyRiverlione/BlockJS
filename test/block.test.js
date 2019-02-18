@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
 const Block = require('../src/blockchain/Block')
 const Message = require('../src/blockchain/Message')
+const { Cst } = require('../src/Const')
 
 const TestContent = 'Test message'
 const TestFromAddress = 'Azerty123456789'
@@ -114,7 +115,6 @@ it('Check prevhash: correct is in the blockchain', async () => {
   const result = await ValidBlock.CheckPrevHash(OkBlockChain)
   expect(result).toBeTruthy()
 })
-
 it('Check prevhash: invalid is not in the blockchain', async () => {
   class DummyBlockChain {
     GetBlockWithHash() { return Promise.resolve(null) }
@@ -125,10 +125,26 @@ it('Check prevhash: invalid is not in the blockchain', async () => {
   const result = await ValidBlock.CheckPrevHash(NOkBlockChain)
   expect(result).toBeFalsy()
 })
+it('Check prevhash: invalid error during search in the blockchain', async () => {
+  class DummyBlockChain {
+    GetBlockWithHash() { return Promise.reject() }
+  }
 
+  const NOkBlockChain = new DummyBlockChain()
+
+  const result = await ValidBlock.CheckPrevHash(NOkBlockChain)
+  expect(result).toBeFalsy()
+})
 it('Check prevhash: invalid, not first block without prevHash', async () => {
   const TestBlock = Block.Create(null, 5, 0, 2, [TestMsg], Date.now())
   console.log(TestBlock.PrevHash)
   const result = await TestBlock.CheckPrevHash()
   expect(result).toBeFalsy()
+})
+it('Check prevhash: valid,  first genesisblock = no prevHash', async () => {
+  const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
+  const GenesisBlock = Block.Create(null, 0, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  console.log(GenesisBlock.Blockhash())
+  const result = await GenesisBlock.CheckPrevHash()
+  expect(result).toBeTruthy()
 })

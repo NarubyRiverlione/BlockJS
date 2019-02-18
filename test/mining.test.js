@@ -1,0 +1,56 @@
+/* eslint-disable class-methods-use-this */
+const Mining = require('../src/blockchain/Mining')
+const Message = require('../src/blockchain/Message')
+const Block = require('../src/blockchain/Block')
+
+const { Cst } = require('../src/Const')
+
+const { Db: { Docs: CstDocs } } = Cst
+
+const TestContent = 'Test message'
+const TestFromAddress = 'Azerty123456789'
+
+const TestMsg = Message.Create(TestFromAddress, TestContent)
+
+class DummyDb {
+  Find(doc) {
+    if (doc === CstDocs.PendingMessages) {
+      return Promise.resolve([TestMsg])
+    }
+    return Promise.reject()
+  }
+
+  Add() { return Promise.resolve(true) }
+
+  RemoveAllDocs() { return Promise.resolve(true) }
+}
+
+class DummyP2P {
+  Broadcast() { }
+}
+
+class DummyBlockchain {
+  constructor(syncNeeded) {
+    this.Db = new DummyDb()
+    this.P2P = new DummyP2P()
+    this.syncNeeded = syncNeeded
+  }
+
+  CheckSyncingNeeded() { return this.syncNeeded }
+
+  GetBestHash() {
+    return 123
+  }
+
+  GetHeight() {
+    return 0
+  }
+}
+
+it('Mine a block', async () => {
+  const TestBlockchain = new DummyBlockchain(false)
+  const NewBlock = await Mining.MineBlock(TestBlockchain)
+  console.log(NewBlock)
+  expect(NewBlock).not.toBeNull()
+  expect(Block.IsValid(NewBlock)).toBeTruthy()
+})

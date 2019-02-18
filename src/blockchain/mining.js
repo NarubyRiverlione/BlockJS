@@ -19,7 +19,7 @@ const MineBlock = async (BlockChain) => {
   const prevHash = await BlockChain.GetBestHash()
   const height = await BlockChain.GetHeight()
   const createdBlock = Block.Create(prevHash, height + 1, 0, Cst.StartDiff, PendingMessages, Date.now()) // eslint-disable-line max-len
-  // save link to blockchain
+  // save block to blockchain
   await BlockChain.Db.Add(CstDocs.Blockchain, createdBlock)
   // broadcast new block
   BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, createdBlock)

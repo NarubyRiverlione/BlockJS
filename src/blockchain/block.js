@@ -82,9 +82,9 @@ class Block {
   // check if Prevhash is a block hash in the blockchain
   async CheckPrevHash(blockchain) {
     try {
-      if (this.prevHash === null) {
+      if (this.PrevHash === null) {
         // only first block shouldn't have a prevHash
-        if (this.Height !== 0 || this.Blockhash !== Cst.GenesisHashBlock) return false
+        if (this.Height !== 0 || this.Blockhash() !== Cst.GenesisHashBlock) return false
         return true
       }
       const PrevBlock = await blockchain.GetBlockWithHash(this.prevHash)
