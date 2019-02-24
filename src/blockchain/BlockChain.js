@@ -225,10 +225,10 @@ class BlockChain {
 
   // find a message in the blockchain, return Block
   // default search from own address
-  async FindMsg(Content, FromAddress = this.Address) {
+  async FindMsg(Content, FromAddress = this.Address, Id = null) {
     // create Message to get the message hash
-    const msg = Message.Create(FromAddress, Content)
-    const filter = { 'Block.Messages.Hash': msg.ContentHash }
+    const msg = Message.Create(FromAddress, Content, Id)
+    const filter = { 'Messages.Hash': msg.Hash }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
     if (!foundBlock) return null
