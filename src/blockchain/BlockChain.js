@@ -219,7 +219,7 @@ class BlockChain {
     // add message to pending pool
     await msg.Save(this.Db)
     // broadcast new pending message to peers
-    this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
+    this.P2P.Broadcast(Cst.P2P.MESSAGE, message)
     return true
   }
 

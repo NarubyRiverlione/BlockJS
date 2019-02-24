@@ -1,8 +1,11 @@
 const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
-const CstP2P = require('../Const.js').P2P
 const Block = require('./Block.js')
 const Incoming = require('./Incoming.js')
+
+const { Cst, CstError } = require('../Const.js')
+
+const { P2P: CstP2P } = Cst
 
 /*
 inbound HashMsg -> send InvMsg([received Hash ... best hash])
