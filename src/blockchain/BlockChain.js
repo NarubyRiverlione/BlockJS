@@ -24,8 +24,8 @@ class BlockChain {
   - start api server
   */
   static async Start(
-    serverPort = Cst.DefaultServerPort,
-    DbServer = '127.0.0.1',
+    serverPort = Cst.P2P.DefaultServerPort,
+    DbServer = Cst.Db.DefaultServerIP,
     DbPort = Cst.Db.DefaultPort,
     APIPort = CstAPI.DefaultPort,
   ) {
@@ -219,16 +219,16 @@ class BlockChain {
     // add message to pending pool
     await msg.Save(this.Db)
     // broadcast new pending message to peers
-    this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
+    this.P2P.Broadcast(Cst.P2P.MESSAGE, message)
     return true
   }
 
   // find a message in the blockchain, return Block
   // default search from own address
-  async FindMsg(Content, FromAddress = this.Address) {
+  async FindMsg(Content, FromAddress = this.Address, Id = null) {
     // create Message to get the message hash
-    const msg = Message.Create(FromAddress, Content)
-    const filter = { 'Block.Messages.Hash': msg.ContentHash }
+    const msg = Message.Create(FromAddress, Content, Id)
+    const filter = { 'Messages.Hash': msg.Hash }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
     if (!foundBlock) return null
@@ -264,7 +264,7 @@ class BlockChain {
   }
 
   // connect to a peer via ip:port
-  ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
+  ConnectPeer(remoteIP, remotePort = Cst.P2P.DefaultServerPort) {
     return this.P2P.Connect(remoteIP, remotePort)
   }
 

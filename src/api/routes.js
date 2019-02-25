@@ -115,10 +115,10 @@ class Routes {
         })
         .catch(error => res.status(400).json({ error: error.message }))
     })
-    // body: {Content : messageText, From: address}
+    // body: {Content : messageText, From: address, Id: messageId}
     this.router.post(Cmd.CheckMsgExist, (req, res) => {
-      const { Content, From } = req.body
-      blockchain.FindMsg(Content, From)
+      const { Content, From, Id } = req.body
+      blockchain.FindMsg(Content, From, Id)
         .then((result) => {
           res.status(200).json({ result })
         })

@@ -111,7 +111,7 @@ class Db {
   CountDocs(col) {
     return new Promise((resolve, reject) => {
       const collection = this.db.collection(col)
-      collection.count()
+      collection.countDocuments()
         .catch((err) => {
           const error = new Error(`${CstError.DbCounting} ${CstError.DbToCollection} "${col}": ${err}" `)
           reject(error)
