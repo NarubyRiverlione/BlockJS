@@ -237,7 +237,6 @@ class BlockChain {
     return BlockWithoutID
   }
 
-  // find a message  by Id in the blockchain, return Block
   // default search from own address
   async FindMsgById(MsgId) {
     const filter = { 'Block.Messages.Id': MsgId }

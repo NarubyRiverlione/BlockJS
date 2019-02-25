@@ -80,10 +80,20 @@ const CstTxt = {
   Diff: 'Difficulty',
   LastHash: 'Last hash',
   Pending: 'Pending messages',
+  IncomingBlockInvalid: 'Incoming p2p block is not valid',
   IncomingBlockNotNext: 'Incoming block is not next block in non-sync mode --> ignore block',
+  IncomingBlockAllReceived: 'Received all needed blocks, start evaluating them now',
   IncomingBlockAdded: 'added in blockchain',
   IncomingBlockStored: 'Incoming block stored',
   IncomingBlocksEvaluated: 'All stored blocks are evaluated',
+  IncomingBlockAlreadyKnow: 'Incoming block already in blockchain, don\'t need to evaluate',
+  IncomingBlockPrevNotKnown: 'Previous block is not in the blockchain, keep block in stored incoming blocks, will need to evaluate again',
+  IncomingBlockNewHeight: 'Height of new incoming block will be',
+  IncomingBlockProcessResult: 'Incoming block evaluated:',
+  IncomingBlockReprocess: 'Still needs evaluation',
+  IncomingBlockAllProcessed: 'All blocks are evaluated',
+  IncomingHashNeedsSync: 'This node needs syncing ! Wait for incoming inventory message',
+  IncomingHashKnown: 'Incoming hash is known, create inventory message for peer',
 }
 
 const CstError = {
