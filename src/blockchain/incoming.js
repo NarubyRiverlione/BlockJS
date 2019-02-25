@@ -1,7 +1,7 @@
 const Debug = require('debug')('blockjs:incoming')
 
-const Message = require('./Message')
-const Blocks = require('./Block.js')
+const Message = require('./message.js')
+const Blocks = require('./block.js')
 
 const { Cst, CstTxt, CstError } = require('../Const.js')
 

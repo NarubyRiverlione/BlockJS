@@ -1,7 +1,7 @@
 const Debug = require('debug')('blockjs:genesis')
 
-const Message = require('./Message.js')
-const Block = require('./Block.js')
+const Message = require('./message.js')
+const Block = require('./block.js')
 // const ChainLink = require('./chainlink.js')
 const { Cst, CstError } = require('../Const.js')
 

@@ -5,6 +5,7 @@ LABEL description="Blockchain via node.js & MongoDb"
 WORKDIR /app
 
 COPY package.json package.json
+COPY yarn.lock yarn.lock
 RUN yarn
 
 COPY src/ /app/src

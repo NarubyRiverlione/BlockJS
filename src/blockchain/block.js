@@ -3,7 +3,7 @@ const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:block')
 
 const { CstError, Cst } = require('../Const')
-const Message = require('./Message.js')
+const Message = require('./message.js')
 
 
 // PrevHash can be null = Genesis block

@@ -1,9 +1,9 @@
 const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
-const Block = require('./Block.js')
-const Incoming = require('./Incoming.js')
+const Block = require('./block.js')
+const Incoming = require('./incoming.js')
 
-const { Cst, CstError } = require('../Const.js')
+const { Cst } = require('../Const.js')
 
 const { P2P: CstP2P } = Cst
 
@@ -185,11 +185,7 @@ class P2P {
       // setup message handler from this connection
       connection.on('message', (message) => { this.MessageHandle(message, connection) })
       // send handshake with own version and best hash
-      connection.on('open', () => {
-        this.SendHandshake(connection, remoteIP, remotePort)
-          .then(result => resolve(result))
-          .catch(err => reject(err))
-      })
+      connection.on('open', () => (this.SendHandshake(connection, remoteIP, remotePort)))
     })
   }
 

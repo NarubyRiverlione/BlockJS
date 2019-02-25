@@ -26,6 +26,7 @@ module.exports = (BlockChain) => {
   // logger
   app.use(morgan('dev'))
   // body must be json
+  // eslint-disable-next-line consistent-return
   app.use(Cst.API.Root, (req, res, next) => {
     if (req.body) {
       const contentType = req.headers['content-type']

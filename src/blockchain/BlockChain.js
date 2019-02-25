@@ -2,15 +2,15 @@ const Debug = require('debug')('blockjs:BlockChain')
 const https = require('https')
 const fs = require('fs')
 
-const Message = require('./Message.js')
-const Block = require('./Block.js')
+const Message = require('./message.js')
+const Block = require('./block.js')
 const { Cst, CstError, CstTxt } = require('../Const.js')
-const DB = require('./Db.js')
-const P2P = require('./P2p.js')
+const DB = require('./db.js')
+const P2P = require('./p2p.js')
 const API = require('../api/express.js')
-const Genesis = require('./Genesis.js')
-const Mining = require('./Mining.js')
-const Address = require('./Address.js')
+const Genesis = require('./genesis.js')
+const Mining = require('./mining.js')
+const Address = require('./address.js')
 
 
 const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
@@ -239,7 +239,7 @@ class BlockChain {
 
   // find a message  by Id in the blockchain, return Block
   // default search from own address
-  async FindMsgById(MsgId, FromAddress = this.Address) {
+  async FindMsgById(MsgId) {
     const filter = { 'Block.Messages.Id': MsgId }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)

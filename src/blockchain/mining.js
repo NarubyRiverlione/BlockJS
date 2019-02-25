@@ -1,4 +1,4 @@
-const Block = require('./Block.js')
+const Block = require('./block.js')
 
 const { Cst, CstError } = require('../Const.js')
 

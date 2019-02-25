@@ -62,4 +62,3 @@ BlockChain.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   })
 
   .catch(err => console.error(err))
-

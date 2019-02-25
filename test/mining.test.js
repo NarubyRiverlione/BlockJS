@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
-const Mining = require('../src/blockchain/Mining')
-const Message = require('../src/blockchain/Message')
-const Block = require('../src/blockchain/Block')
+const Mining = require('../src/blockchain/mining.js')
+const Message = require('../src/blockchain/message.js')
+const Block = require('../src/blockchain/block.js')
 
 const { Cst, CstError } = require('../src/Const')
 
