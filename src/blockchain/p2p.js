@@ -162,30 +162,34 @@ class P2P {
 
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
-    // return new Promise((resolve, reject) => {
-    if (!remotePort) {
-      return Promise.reject(new Error('No remote IP'))
-    }
-    if (!remotePort) {
-      return Promise.reject(new Error('No remote port'))
-    }
+    return new Promise((resolve, reject) => {
+      if (!remotePort) {
+        return reject(new Error('No remote IP'))
+      }
+      if (!remotePort) {
+        return reject(new Error('No remote port'))
+      }
 
-    Debug(`Connecting to peer ${remoteIP} on port ${remotePort}`)
-    const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
+      Debug(`Connecting to peer ${remoteIP} on port ${remotePort}`)
+      const connection = new WebSocket(`ws://${remoteIP}:${remotePort}`)
 
-    // handle a connection disconnect
-    connection.on('close', () => {
-      // remove outgoing connection from saved
-      this.OutgoingConnections = this.OutgoingConnections.filter(conn => conn !== connection)
-      Debug('connection has disconnected')
+      // handle a connection disconnect
+      connection.on('close', () => {
+        // remove outgoing connection from saved
+        this.OutgoingConnections = this.OutgoingConnections.filter(conn => conn !== connection)
+        Debug('connection has disconnected')
+      })
+      // handle error
+      connection.on('error', error => new Error(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
+      // setup message handler from this connection
+      connection.on('message', (message) => { this.MessageHandle(message, connection) })
+      // send handshake with own version and best hash
+      connection.on('open', () => {
+        this.SendHandshake(connection, remoteIP, remotePort)
+          .then(result => resolve(result))
+          .catch(err => reject(err))
+      })
     })
-    // handle error
-    connection.on('error', error => Debug(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
-    // setup message handler from this connection
-    connection.on('message', (message) => { this.MessageHandle(message, connection) })
-    // send handshake with own version and best hash
-    connection.on('open', () => this.SendHandshake(connection, remoteIP, remotePort))
-    // })
   }
 
   // send Version msg and best hash msg
