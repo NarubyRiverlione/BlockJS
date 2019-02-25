@@ -9,7 +9,7 @@ const Cst = {
   GenesisMsgId: null,
   GenesisNonce: 0,
 
-  StartDiff: 2,
+  StartDiff: 4,
   PrivateKeySize: 10,
   AddressPrefix: 'SPICE_',
 
@@ -94,6 +94,7 @@ const CstTxt = {
   IncomingBlockAllProcessed: 'All blocks are evaluated',
   IncomingHashNeedsSync: 'This node needs syncing ! Wait for incoming inventory message',
   IncomingHashKnown: 'Incoming hash is known, create inventory message for peer',
+  MiningFoundBlock: 'Found block with after ',
 }
 
 const CstError = {
