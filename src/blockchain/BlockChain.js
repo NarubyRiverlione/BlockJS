@@ -24,8 +24,8 @@ class BlockChain {
   - start api server
   */
   static async Start(
-    serverPort = Cst.DefaultServerPort,
-    DbServer = '127.0.0.1',
+    serverPort = Cst.P2P.DefaultServerPort,
+    DbServer = Cst.Db.DefaultServerIP,
     DbPort = Cst.Db.DefaultPort,
     APIPort = CstAPI.DefaultPort,
   ) {
@@ -264,7 +264,7 @@ class BlockChain {
   }
 
   // connect to a peer via ip:port
-  ConnectPeer(remoteIP, remotePort = Cst.DefaultServerPort) {
+  ConnectPeer(remoteIP, remotePort = Cst.P2P.DefaultServerPort) {
     return this.P2P.Connect(remoteIP, remotePort)
   }
 

@@ -9,7 +9,7 @@ services:
   ports:
     - "2000:2000"   # P2P
     - "2100:2100"   # API
-    - "9229:9229"   # NodeJS Debug
+   # - "9229:9229"   # NodeJS Debug
   environment:
     dbServer: database
   depends_on: 

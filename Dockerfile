@@ -1,5 +1,6 @@
 FROM node:alpine
-LABEL version="2.0"
+LABEL version="3.0"
+LABEL description="Blockchain via node.js & MongoDb"
 
 WORKDIR /app
 
@@ -8,10 +9,10 @@ RUN yarn
 
 COPY src/ /app/src
 
-EXPOSE 9000 2000 
-EXPOSE 9229 
+EXPOSE 2100 2000 
+#EXPOSE 9229 
 
 ENV NODE_ENV development
 ENV DEBUG blockjs:*
 
-CMD ["npm" ,"start"]
+CMD ["yarn" ,"start"]

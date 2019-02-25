@@ -11,12 +11,12 @@ const Cst = {
 
   StartDiff: 2,
   PrivateKeySize: 10,
-  DefaultServerPort: 2000,
   AddressPrefix: 'SPICE_',
 
   Db: {
     DefaultDataDir: './data',
     DefaultPort: 27017,
+    DefaultServerIP: '127.0.0.1', // 'host.docker.internal',
     Name: 'BlockJS',
     Docs: {
       PendingMessages: 'PendingMessages',
@@ -27,6 +27,7 @@ const Cst = {
   },
 
   P2P: {
+    DefaultServerPort: 2000,
     CONNECTED: 'CONNECTED',
     RECEIVED: 'RECEIVED',
     BLOCK: 'BLOCK',
@@ -41,7 +42,7 @@ const Cst = {
 
   API: {
     Root: '/api',
-    IP: '127.0.0.1', // '0.0.0.0',
+    IP: '0.0.0.0',
     DefaultPort: 2100,
     Cmd: {
       Height: '/Height',
