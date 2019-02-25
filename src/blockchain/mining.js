@@ -38,14 +38,15 @@ const MineBlock = async (BlockChain) => {
   const PendingMessages = await Db.Find(CstDocs.PendingMessages, {})
 
   // create block
-  // TODO: POW / POS
   // TODO: set Max of TX in block
   const prevHash = await BlockChain.GetBestHash()
   const height = await BlockChain.GetHeight()
   const StartMintingTime = Date.now()
   const MintedBlock = Pow(prevHash, height + 1, Cst.StartDiff, PendingMessages, Date.now())
   const MintingTime = (Date.now() - StartMintingTime) / 1000.0
-  Debug(`${CstTxt.MiningFoundBlock} ${MintedBlock.Nonce} atemp's in ${MintingTime} sec`)
+  const HashSec = MintedBlock.Nonce / MintingTime / 1000
+
+  Debug(`${CstTxt.MiningFoundBlock} ${MintedBlock.Nonce} atemp's in ${MintingTime.toFixed(1)} sec = ${HashSec.toFixed(1)} kHash/s`)
   // const createdBlock = Block.Create(prevHash, height + 1, 0, Cst.StartDiff, PendingMessages, Date.now()) // eslint-disable-line max-len
   // save block to blockchain
   await BlockChain.Db.Add(CstDocs.Blockchain, MintedBlock)

@@ -47,14 +47,15 @@ class DummyBlockchain {
   }
 }
 
-it('Mine a block', async () => {
+// disabled test to prevent cpu load as jest runs automaticly in Visual Code
+it.skip('Mine a block', async () => {
   const TestBlockchain = new DummyBlockchain(false)
   const NewBlock = await Mining.MineBlock(TestBlockchain)
   expect(NewBlock).not.toBeNull()
   expect(Block.IsValid(NewBlock)).toBeTruthy()
 })
 
-it('Cannot mine if not sync', async () => {
+it.skip('Cannot mine if not sync', async () => {
   const TestBlockchain = new DummyBlockchain(true)
   const result = await Mining.MineBlock(TestBlockchain)
   expect(result).toBe(CstError.MineNotSync)
