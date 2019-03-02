@@ -116,8 +116,8 @@ class P2P {
           .then((result) => {
             if (result instanceof Block) {
               Debug('Incoming block successful evaluated')
-              // check if there's a relevant message for this wallet
-              this.Wallet.IncomingBlock(result, this.Db)
+              // // check if there's a relevant message for this wallet
+              // this.Wallet.IncomingBlock(result, this.Db)
             }
           })
           .catch(err => console.error(err))
@@ -151,7 +151,14 @@ class P2P {
       case CstP2P.MESSAGE:
         Debug('Incoming message')
         Incoming.Msg(msg.payload, this.BlockChain)
-          .then(() => Debug('Incoming message saved'))
+          .then((pendingMsg) => {
+            if (pendingMsg) {
+              // only forward received message when it's new for this node
+              // to prevent endless loop
+              Debug('Forward received message to peers')
+              this.Broadcast(CstP2P.MESSAGE, pendingMsg)
+            }
+          })
           .catch(err => console.error(err))
         break
 

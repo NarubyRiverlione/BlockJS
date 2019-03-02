@@ -164,19 +164,27 @@ const Block = async (inboundBlock, BlockChain) => {
   // needed list empty ->  process stored blocks
   Debug(CstTxt.IncomingBlockAllReceived)
   await ProcessReceivedBlocks(BlockChain)
+
+  // TODO: forward validated block to know P2P
   return (CstTxt.IncomingBlocksEvaluated)
 }
 
-// store incoming message as pending for block
-const Msg = (msg, BlockChain) => {
+// store incoming message as pending for block if this not already in the PendingMessage local db
+const Msg = async (msg, BlockChain) => {
   const message = Message.ParseFromDb(msg)
 
   // is the Transaction complete ?
   if (!Message.IsValid(message)) {
     return Promise.reject(new Error(CstError.SendNoValid))
   }
-  // save to local db for mining later
-  return message.Save(BlockChain.Db)
+  // check if incoming message is already stored
+  const filter = { Hash: message.Hash }
+  const alreadyStored = await BlockChain.Db.FindOne(CstDocs.PendingMessages, filter)
+  if (!alreadyStored) {
+    // save to local db for mining later
+    await message.Save(BlockChain.Db)
+    return message
+  }
+  return null
 }
-
 module.exports = { Hash, Block, Msg }
