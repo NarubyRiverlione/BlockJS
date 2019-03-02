@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
-const Genesis = require('../src/blockchain/Genesis')
-const Block = require('../src/blockchain/Block')
-const Message = require('../src/blockchain/Message')
+const Genesis = require('../src/blockchain/genesis')
+const Block = require('../src/blockchain/block')
+const Message = require('../src/blockchain/message')
 const { Cst, CstError } = require('../src/Const')
 
 const { Db: { Docs: CstDocs } } = Cst
@@ -16,7 +16,7 @@ const ValidBlock = Block.Create(null, 0, 0, 2, [TestMsg], Date.now())
 
 const GenesisBlock = () => {
   const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
-  return Block.Create(null, 0, Cst.GenesisNonce, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  return Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 
 class DummyDbWithGenesis {

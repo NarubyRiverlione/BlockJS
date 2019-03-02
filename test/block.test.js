@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
-const Block = require('../src/blockchain/Block')
-const Message = require('../src/blockchain/Message')
+const Block = require('../src/blockchain/block')
+const Message = require('../src/blockchain/message')
 const { Cst } = require('../src/Const')
 
 const TestContent = 'Test message'
@@ -155,7 +155,7 @@ it('Check prevhash: invalid, not first block without prevHash', async () => {
 })
 it('Check prevhash: valid,  first genesisblock = no prevHash', async () => {
   const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
-  const GenesisBlock = Block.Create(null, 0, 0, Cst.StartDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  const GenesisBlock = Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
   // console.log(GenesisBlock.Blockhash())
   const result = await GenesisBlock.CheckPrevHash()
   expect(result).toBeTruthy()
