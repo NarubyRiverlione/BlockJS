@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "startdb": "mongod --config ./mongod.conf",
-    "start": "node --inspect ./src/app.js",
+    "dev": "DEBUG=blockjs:* Port=3000 apiPort=3100 node --inspect ./src/app.js",
+    "start": "node ./src/app.js",
     "test": "jest",
     "stopdb": "mongo admin --eval 'db.shutdownServer()'",
     "lint": "eslint src/**/*.js --fix"

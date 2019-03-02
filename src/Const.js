@@ -8,6 +8,7 @@ const Cst = {
   GenesisHashMsg: '256100c3eaa459e608ffd425bab68e08b66a649b8da8c86306caef2da482e58d',
   GenesisMsgId: null,
   GenesisNonce: 0,
+  GenesisDiff: 2,
 
   StartDiff: 4,
   PrivateKeySize: 10,
