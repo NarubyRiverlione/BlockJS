@@ -60,6 +60,8 @@ class BlockChain {
   End() {
     this.Db.Close()
     this.P2P.Close()
+    Debug(CstTxt.Stopped)
+    process.exit()
   }
 
   constructor(Db, address, version = 1) {

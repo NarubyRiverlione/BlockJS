@@ -103,6 +103,19 @@ class Routes {
       const amount = blockchain.PeersDetail()
       res.status(200).json(amount)
     })
+    this.router.get(Cmd.FindMsgID, (req, res) => {
+      const { MsgId } = req.params
+      blockchain.FindMsgID(MsgId)
+        .then((result) => {
+          res.status(200).json({ result })
+        })
+        .catch(error => res.status(400).json({ error: error.message }))
+    })
+    this.router.get(Cmd.Stop, (req, res) => {
+      blockchain.End()
+      res.status(200).send(CstTxt.Stopped)
+    })
+
     // body: {Content : messageText, Id: messageID}
     this.router.post(Cmd.SendMsg, (req, res) => {
       const { Content, Id } = req.body
@@ -125,14 +138,7 @@ class Routes {
         .catch(error => res.status(400).json({ error: error.message }))
     })
 
-    this.router.get(Cmd.FindMsgID, (req, res) => {
-      const { MsgId } = req.params
-      blockchain.FindMsgID(MsgId)
-        .then((result) => {
-          res.status(200).json({ result })
-        })
-        .catch(error => res.status(400).json({ error: error.message }))
-    })
+
     // body: {remoteIP: ipv4, remotePort: port}
     this.router.post(Cmd.ConnectPeer, (req, res) => {
       const { remoteIP, remotePort } = req.body
