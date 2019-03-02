@@ -26,21 +26,26 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, 
     .catch(err => reject(err))
 })
 
-/* amount of blocks that need evaluation = only 1
+/* amount of blocks that need evaluation = only 1 AND neededHashes = 0
 --> this must be a new block on top of the blockchain
  */
 const CheckIfNewTopBlock = async (newBlock, BlockChain) => {
   const amountNeededEvaluation = await BlockChain.Db.CountDocs(CstDocs.IncomingBlocks)
+  const amountNeededHashes = BlockChain.NeededHashes.length
   // check if this is a new block in the chain
-  if (amountNeededEvaluation === 1) {
-    // new incoming block --> remove all pendingTX
-    // TODO: remove only pending TX that are in this block
-    await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
-
-    // incoming block needed to be the next block in the blockchain
+  if (amountNeededEvaluation === 1 && !amountNeededHashes) {
+    // incoming block needs to be the next block in the blockchain
     const bestHash = await BlockChain.GetBestHash()
     if (newBlock.PrevHash !== bestHash) {
       await RemoveIncomingBlock(newBlock.PrevHash, BlockChain.Db, CstTxt.IncomingBlockNotNext)
+      Debug('Incoming block isn`t top of blockchain, ignore block')
+    } else {
+      // new incoming block --> remove all pendingTX
+      // TODO: remove only pending TX that are in this block
+      Debug('Incoming block is top of blockchain, remove pending messages')
+      await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
+      // forward new block to peers
+      BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
     }
   }
 }
@@ -147,8 +152,6 @@ const Block = async (inboundBlock, BlockChain) => {
     // save block as incoming, to be evaluated when all needed blocks are received
     Debug(CstTxt.IncomingBlockStored)
     await BlockChain.Db.Add(CstDocs.IncomingBlocks, newBlock)
-    // forward block to peers
-    BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
   }
 
   // remove hash of stored block for needed list

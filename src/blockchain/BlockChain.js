@@ -292,8 +292,7 @@ class BlockChain {
     return new Promise((resolve, reject) => {
       this.Db.CountDocs(CstDocs.IncomingBlocks)
         .then((amountBlockNeedEvaluation) => {
-          if (amountBlockNeedEvaluation > 0) return resolve(true)
-          if (NeededHashes.length > 0) return resolve(true)
+          if (amountBlockNeedEvaluation > 0 || NeededHashes.length > 0) return resolve(true)
           return resolve(false)
         })
         .catch(err => reject(err))
