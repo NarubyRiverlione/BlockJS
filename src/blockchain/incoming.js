@@ -147,6 +147,8 @@ const Block = async (inboundBlock, BlockChain) => {
     // save block as incoming, to be evaluated when all needed blocks are received
     Debug(CstTxt.IncomingBlockStored)
     await BlockChain.Db.Add(CstDocs.IncomingBlocks, newBlock)
+    // forward block to peers
+    BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
   }
 
   // remove hash of stored block for needed list
