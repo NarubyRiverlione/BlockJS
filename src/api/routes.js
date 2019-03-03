@@ -138,7 +138,6 @@ class Routes {
         .catch(error => res.status(400).json({ error: error.message }))
     })
 
-
     // body: {remoteIP: ipv4, remotePort: port}
     this.router.post(Cmd.ConnectPeer, (req, res) => {
       const { remoteIP, remotePort } = req.body

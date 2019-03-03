@@ -76,6 +76,7 @@ const CstTxt = {
   PeersConnectedTitle: 'Connected peers:',
   Started: 'started',
   Stopped: 'Database connection closed, P2P connections closed',
+  P2Pclosed: 'Server stopped, all in/outgoing connections are closed',
   Port: 'port',
   Address: 'Address',
   Block: 'Block',
@@ -98,6 +99,16 @@ const CstTxt = {
   IncomingHashNeedsSync: 'This node needs syncing ! Wait for incoming inventory message',
   IncomingHashKnown: 'Incoming hash is known, create inventory message for peer',
   MiningFoundBlock: 'Found block with after ',
+  P2Plistening: 'Listening on port',
+  P2PincomingConnection: 'Incoming connection from',
+  P2PincomingConnectionPort: 'on port',
+  P2Pbroadcast: 'Broadcasting a',
+  P2Pmsg: 'p2p message',
+  P2PconnectedVersion: 'Connected to a peer on version',
+  P2PincomingBlock: 'Incoming block successful evaluated',
+  P2PconnectedBestHash: 'Connected peer best hash',
+  P2PalreadyConnected: 'Already connected to this peer',
+
 }
 
 const CstError = {
@@ -130,6 +141,8 @@ const CstError = {
   MsgNoFrom: 'ERROR message is not valid: no from address',
   msgHashInvalid: 'ERROR message hash is not valid for content',
   MineNotSync: 'Cannot mine a block, BlockChain node needs syncing',
+  P2PconnectNoIP: 'No remote IP address provided',
+  P2PconnectNoPort: 'No remote port provide',
 }
 
 

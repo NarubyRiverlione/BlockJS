@@ -3,7 +3,7 @@ const Debug = require('debug')('blockjs:p2p')
 const Block = require('./block.js')
 const Incoming = require('./incoming.js')
 
-const { Cst } = require('../Const.js')
+const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { P2P: CstP2P } = Cst
 
@@ -34,12 +34,12 @@ class P2P {
     this.IncomingConnections = []
 
     // start listening
-    this.Server.on('listening', () => { Debug(`Listening on port ${port}`) })
+    this.Server.on('listening', () => { Debug(`${CstTxt.P2Plistening} ${port}`) })
     // incoming connections -> setup message handle + send info of own peer
     this.SetupIncomingConnectionHandle()
     // stop server, disconnect all peers
     this.Server.on('close', () => {
-      Debug('Server stopped, all in/outgoing connections are closed')
+      Debug(CstTxt.P2Pclosed)
       this.IncomingConnections = []
       this.OutgoingConnections = []
     })
@@ -69,7 +69,7 @@ class P2P {
       peer.on('message', (message) => { this.MessageHandle(message, peer) })
 
       const { remoteAddress, remotePort } = req.connection
-      Debug(`Incoming connection from ${remoteAddress} on port ${remotePort}`)
+      Debug(`${CstTxt.P2PincomingConnection} ${remoteAddress} ${CstTxt.P2PincomingConnectionPort} ${remotePort}`)
       this.IncomingConnections.push({ url: `${remoteAddress}:${remotePort}` })
       // send Connected Msg
       peer.send(CreateP2Pmsg(CstP2P.CONNECTED, null))
@@ -84,7 +84,7 @@ class P2P {
 
   // send message to all connected peers (incoming) and connections (outgoing)
   Broadcast(type, payload) {
-    Debug(`Broadcast a ${type} message`)
+    Debug(`${CstTxt.P2Pbroadcast} ${type} ${CstTxt.P2Pmsg}`)
     const msg = CreateP2Pmsg(type, payload)
     this.Server.clients.forEach((peer) => {
       peer.send(msg)
@@ -108,14 +108,14 @@ class P2P {
         break// prevent endless loop
 
       case CstP2P.VERSION:
-        Debug(`Connected to peer version ${msg.payload}`)
+        Debug(`${CstTxt.P2PconnectedVersion} ${msg.payload}`)
         break
 
       case CstP2P.BLOCK:
         Incoming.Block(msg.payload, this.BlockChain)
           .then((result) => {
             if (result instanceof Block) {
-              Debug('Incoming block successful evaluated')
+              Debug(CstTxt.P2PincomingBlock)
               // // check if there's a relevant message for this wallet
               // this.Wallet.IncomingBlock(result, this.Db)
             }
@@ -124,7 +124,7 @@ class P2P {
         break
 
       case CstP2P.HASH:
-        Debug(`Connected peer best hash ${msg.payload}`)
+        Debug(`${CstTxt.P2PconnectedBestHash} ${msg.payload}`)
         Incoming.Hash(msg.payload, this.BlockChain)
           // send hashes that peers doesn't have
           .then((peerNeededHashes) => {
@@ -171,10 +171,15 @@ class P2P {
   Connect(remoteIP, remotePort) {
     return new Promise((resolve, reject) => {
       if (!remotePort) {
-        return reject(new Error('No remote IP'))
+        return reject(new Error(CstError.P2PconnectNoIP))
       }
       if (!remotePort) {
-        return reject(new Error('No remote port'))
+        return reject(new Error(CstError.P2PconnectNoPort))
+      }
+      const ConnectionUrl = `ws://${remoteIP}:${remotePort}`
+      const ExistingConnection = this.OutgoingConnections.find(conn => conn.url === ConnectionUrl)
+      if (ExistingConnection) {
+        return reject(new Error(`${CstTxt.P2PalreadyConnected} ${remoteIP} on port ${remotePort}`))
       }
 
       Debug(`Connecting to peer ${remoteIP} on port ${remotePort}`)
