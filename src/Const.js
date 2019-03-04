@@ -145,6 +145,8 @@ const CstError = {
   MineNotSync: 'Cannot mine a block, BlockChain node needs syncing',
   P2PconnectNoIP: 'No remote IP address provided',
   P2PconnectNoPort: 'No remote port provide',
+  CannotFindBlockForHash: 'Cannot find block with hash',
+  CannotGetBestHash: 'Cannot find best hash',
 }
 
 
