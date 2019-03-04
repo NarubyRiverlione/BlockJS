@@ -1,20 +1,18 @@
 # BlockJS (WIP)
 
-## Docker compose ##
-To setup the 2 containers use this docker-compose.yml
+## Install via Docker ##
+To setup the node & database containers use this `docker-compose.yml`
 ```
 version: "3"
 services:
- server:
-  build: 
-     context: .
+ node:
+  image: naruby/blockjs
   networks:
     - DbNet
     - default
   ports:
     - "2000:2000"   # P2P
-    - "2100:2100"   # API
-   # - "9229:9229"   # NodeJS Debug
+    - "2100:2100"   # API   
   environment:
     dbServer: database
   depends_on: 
