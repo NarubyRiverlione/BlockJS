@@ -65,6 +65,7 @@ const Cst = {
       SendMsg: '/SendMsg',
       Stop: '/Stop',
       Verify: '/Verify',
+      Help: '/Help',
     },
   },
 }
@@ -74,6 +75,7 @@ const CstTxt = {
   ApiName: 'BlockJS API',
   InfoTitle: 'BLOCKCHAIN INFO',
   PeerInfoTitle: 'PEER INFO',
+  Version: 'Version',
   PeersConnectedTitle: 'Connected peers:',
   Started: 'started',
   Stopped: 'Database connection closed, P2P connections closed',
@@ -86,6 +88,7 @@ const CstTxt = {
   LastHash: 'Last hash',
   Pending: 'Pending messages',
   Mining: 'Current mining',
+  ListCmds: 'API commands:',
   IncomingBlockInvalid: 'Incoming p2p block is not valid',
   IncomingBlockNotNext: 'Incoming block is not next block in non-sync mode --> ignore block',
   IncomingBlockAllReceived: 'Received all needed blocks, start evaluating them now',
@@ -151,5 +154,29 @@ const CstError = {
   PreviousHashNotInBlockchain: 'Previous hash is found in blockchain',
 }
 
+const CstHelp = {
+  [Cst.API.Cmd.Address]: 'Get own address',
+  [Cst.API.Cmd.AmountPeers]: 'Amount of connected peers',
+  [Cst.API.Cmd.BlockAtHeight]: 'Get block at specified height: /BlockAtHeight/:height',
+  [Cst.API.Cmd.Diff]: 'Show PoW difficulty',
+  [Cst.API.Cmd.CheckMsgExist]: 'Provide content, check if the message exists in the blockchain',
+  [Cst.API.Cmd.ConnectPeer]: 'Connect to provided remoteIP (and optional remotePort)',
+  [Cst.API.Cmd.FindMsgID]: 'Get message by Id',
+  [Cst.API.Cmd.GetBlockWithHash]: 'Get block of specified hash: /GetBlockWithHash/:hash',
+  [Cst.API.Cmd.Height]: 'Current height of the blockchain',
+  [Cst.API.Cmd.Info]: 'Information of the blockchain',
+  [Cst.API.Cmd.LastHash]: 'Last hash of the blockchain',
+  [Cst.API.Cmd.LastBlock]: 'Last block',
+  [Cst.API.Cmd.Mine]: 'Mine one block',
+  [Cst.API.Cmd.PendingAmount]: 'Amount of pending messages to be mined',
+  [Cst.API.Cmd.PendingAll]: 'Show all pending messages',
+  [Cst.API.Cmd.PeersDetails]: 'Show connected peers',
+  [Cst.API.Cmd.SendMsg]: 'Send a message, will be stored in the next block',
+  [Cst.API.Cmd.Stop]: 'Stop this node: close database connection and all P2P connections',
+  [Cst.API.Cmd.Verify]: 'Verify each block in the blockchain',
+  [Cst.API.Cmd.Help]: 'Show this help',
+}
 
-module.exports = { Cst, CstTxt, CstError }
+module.exports = {
+  Cst, CstTxt, CstError, CstHelp,
+}

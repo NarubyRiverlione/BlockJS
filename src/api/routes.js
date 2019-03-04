@@ -1,6 +1,8 @@
 const express = require('express')
 
-const { CstTxt, CstError, Cst } = require('../Const')
+const {
+  CstTxt, CstError, Cst, CstHelp,
+} = require('../Const')
 
 const { API: { Cmd } } = Cst
 
@@ -8,8 +10,16 @@ class Routes {
   constructor(blockchain) {
     this.router = express.Router()
 
-    this.router.get('/', (req, res) => {
-      res.status(200).send(`${CstTxt.ApiName} - ${blockchain.Version}`)
+    this.router.get(['/', Cmd.Help], (req, res) => {
+      const ListCommands = Object.keys(CstHelp).reduce((list, command) => list.concat(`${command} : ${CstHelp[command]}\n`),
+        '')
+      const HelpTxt = `
+${CstTxt.ApiName} - ${CstTxt.Version}: ${blockchain.Version}\n
+${CstTxt.ListCmds}
+------------------------------------------------\n
+${ListCommands}
+`
+      res.status(200).send(HelpTxt)
     })
     this.router.post('/', (req, res) => {
       res.status(200).json(req.body)
