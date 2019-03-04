@@ -40,7 +40,11 @@ const CheckIfNewTopBlock = async (newBlock, BlockChain) => {
       await RemoveIncomingBlock(newBlock.PrevHash, BlockChain.Db, CstTxt.IncomingBlockNotNext)
       Debug('Incoming block isn`t top of blockchain, ignore block')
     } else {
-      // new incoming block --> remove all pendingTX
+      /* incoming block is new top
+      --> remove all pendingMsgs
+      --> if mining, stop now as pendingMsgs are changed
+      */
+      BlockChain.SetMining(false)
       // TODO: remove only pending TX that are in this block
       Debug('Incoming block is top of blockchain, remove pending messages')
       await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
@@ -64,7 +68,10 @@ const EvaluateBlock = async (inboundBlock, BlockChain) => {
       --> yes: remove from incoming blocks as it doesn't need to be processed */
   const foundBlock = await BlockChain.GetBlockWithHash(blockhash)
   if (foundBlock) {
-    const removeKnownBlockResult = RemoveIncomingBlock(newBlock.PrevHash, Db, CstTxt.IncomingBlockAlreadyKnow)
+    const removeKnownBlockResult = RemoveIncomingBlock(
+      newBlock.PrevHash,
+      Db, CstTxt.IncomingBlockAlreadyKnow,
+    )
     return removeKnownBlockResult
   }
 

@@ -11,7 +11,6 @@ RUN yarn
 COPY src/ /app/src
 
 EXPOSE 2100 2000 
-#EXPOSE 9229 
 
 ENV NODE_ENV development
 ENV DEBUG blockjs:*

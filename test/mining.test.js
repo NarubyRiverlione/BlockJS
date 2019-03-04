@@ -30,10 +30,12 @@ class DummyP2P {
 }
 
 class DummyBlockchain {
-  constructor(syncNeeded) {
+  constructor(syncNeeded, testDiff = 1) {
     this.Db = new DummyDb()
     this.P2P = new DummyP2P()
     this.syncNeeded = syncNeeded
+    this.Mining = false
+    this.TestDiff = testDiff
   }
 
   CheckSyncingNeeded() { return this.syncNeeded }
@@ -45,9 +47,22 @@ class DummyBlockchain {
   GetHeight() {
     return 0
   }
+
+  SetMining(mining) {
+    this.Mining = mining
+  }
+
+  GetMining() {
+    return this.Mining
+  }
+
+
+  GetDiff() {
+    return this.TestDiff
+  }
 }
 
-// disabled test to prevent cpu load as jest runs automaticly in Visual Code
+// disabled test to prevent cpu load as jest runs automatically in Visual Code
 it.skip('Mine a block', async () => {
   const TestBlockchain = new DummyBlockchain(false)
   const NewBlock = await Mining.MineBlock(TestBlockchain)
@@ -55,8 +70,21 @@ it.skip('Mine a block', async () => {
   expect(Block.IsValid(NewBlock)).toBeTruthy()
 })
 
-it.skip('Cannot mine if not sync', async () => {
+it('Cannot mine if not sync', async () => {
   const TestBlockchain = new DummyBlockchain(true)
   const result = await Mining.MineBlock(TestBlockchain)
   expect(result).toBe(CstError.MineNotSync)
+})
+
+it.skip('Mining aborted = result is null', async () => {
+  const TestBlockchain = new DummyBlockchain(false, 10)
+  // abort after 50ms
+  jest.useFakeTimers()
+  setTimeout(() => {
+    console.log('ABORT MINING')
+    TestBlockchain.SetMining(false)
+  }, 5000)
+  //  jest.runAllTimers()
+  const result = await Mining.MineBlock(TestBlockchain)
+  expect(result).toBeNull()
 })

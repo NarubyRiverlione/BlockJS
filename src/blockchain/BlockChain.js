@@ -71,6 +71,7 @@ class BlockChain {
     this.P2P = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = []
     this.API = API(this)
+    this.Mining = false
 
     this.SSL_OPTIONS = {
       key: fs.readFileSync('./src/keys/ssl.key'),
@@ -80,36 +81,22 @@ class BlockChain {
   }
 
   // get info text with Height, Diff, hash, amount pending messages
-  GetInfo() {
-    return new Promise((resolve, reject) => {
-      const info = {}
-      this.GetHeight()
-        .then((height) => {
-          info.height = height
-          return this.GetDiff()
-        })
-        .then((diff) => {
-          info.diff = diff
-          return this.GetBestHash()
-        })
-        .then((hash) => {
-          info.hash = hash
-          return this.GetAmountOfPendingMsgs()
-        })
-        .then((amount) => {
-          info.amount = amount
-        })
-        .then(() => {
-          const infoText = `${CstTxt.Address}: ${this.Address}
-          ${CstTxt.Height}: ${info.height}
-          ${CstTxt.Diff}: ${info.diff}
-          ${CstTxt.LastHash}: ${info.hash}
-          ${CstTxt.Pending}: ${info.amount}`
-          return resolve(infoText)
-        })
-        .catch(err => reject(err))
-    })
+  async GetInfo() {
+    const height = await this.GetHeight()
+    const diff = await this.GetDiff()
+    const hash = await this.GetBestHash()
+    const amountPending = await this.GetAmountOfPendingMsgs()
+    const mining = this.GetMining()
+
+    const infoText = `${CstTxt.Address}: ${this.Address}
+          ${CstTxt.Height}: ${height}
+          ${CstTxt.Diff}: ${diff}
+          ${CstTxt.LastHash}: ${hash}
+          ${CstTxt.Pending}: ${amountPending}
+          ${CstTxt.Mining}: ${mining}`
+    return Promise.resolve(infoText)
   }
+
 
   // max height of blockchain
   GetHeight() {
@@ -179,7 +166,7 @@ class BlockChain {
       this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
         .catch(err => reject(err))
         .then((foundBlock) => {
-          if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}:  ${blockhash}`))
+          if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
           if (foundBlock.length === 0) return resolve(null)
           const block = Block.ParseFromDb(foundBlock[0])
           return resolve(block)
@@ -297,6 +284,16 @@ class BlockChain {
         })
         .catch(err => reject(err))
     })
+  }
+
+  // Set of clear Mining flag
+  SetMining(mining) {
+    this.Mining = mining
+  }
+
+  // Get  currently mining flag
+  GetMining() {
+    return this.Mining
   }
 }
 
