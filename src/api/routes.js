@@ -115,7 +115,13 @@ class Routes {
       blockchain.End()
       res.status(200).send(CstTxt.Stopped)
     })
-
+    this.router.get(Cmd.Verify, (req, res) => {
+      blockchain.Verify()
+        .then((result) => {
+          res.status(200).json({ result })
+        })
+        .catch(error => res.status(400).json({ error: error.message }))
+    })
     // body: {Content : messageText, Id: messageID}
     this.router.post(Cmd.SendMsg, (req, res) => {
       const { Content, Id } = req.body

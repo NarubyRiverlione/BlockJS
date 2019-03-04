@@ -119,11 +119,6 @@ class Block {
     }
     return true
   }
-
-  // AddToChain(blockchain) {
-  //   const newBlockchain = [].concat(...blockchain, this)
-  //   return newBlockchain
-  // }
 }
 
 module.exports = Block

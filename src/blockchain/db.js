@@ -77,6 +77,7 @@ class Db {
       const collection = this.db.collection(col)
       collection.find(filter).toArray()
         .catch((err) => {
+          console.error(err)
           const error = new Error(`${CstError.DbNotFind} ${CstError.DbFilter} "${filter}" ${CstError.DbToCollection} "${col}": ${err.message}" `)
           reject(error)
         })

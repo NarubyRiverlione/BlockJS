@@ -245,12 +245,6 @@ class BlockChain {
     return BlockWithoutID
   }
 
-  // create new block with all pending messages
-  async MineBlock() {
-    const newBlock = await Mining.MineBlock(this)
-    return newBlock
-  }
-
   // return all pending messages in json format
   async GetAllPendingMgs() {
     const pendingDbMsgs = await this.Db.Find(CstDocs.PendingMessages, {})
@@ -302,6 +296,36 @@ class BlockChain {
   // Get  currently mining flag
   GetMining() {
     return this.Mining
+  }
+
+  // create new block with all pending messages
+  async MineBlock() {
+    const newBlock = await Mining.MineBlock(this)
+    return newBlock
+  }
+
+  async Verify() {
+    try {
+      const AllBlocks = await this.Db.Find(CstDocs.Blockchain, {})
+
+      AllBlocks.forEach((block) => {
+        const TestBlock = Block.ParseFromDb(block)
+        const Valid = Block.IsValid(TestBlock)
+        if (!Valid) {
+          Debug(`${CstError.BlockInvalid} : ${block}`)
+          return false
+        }
+        const Prev = TestBlock.CheckPrevHash(this)
+        if (!Prev) {
+          Debug(`${CstError.PreviousHashNotInBlockchain} : ${TestBlock.Blockhash()}`)
+          return false
+        }
+      })
+      return true
+    } catch (error) {
+      console.error(error)
+      return false
+    }
   }
 }
 

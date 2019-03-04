@@ -64,6 +64,7 @@ const Cst = {
       PeersDetails: '/PeersDetails',
       SendMsg: '/SendMsg',
       Stop: '/Stop',
+      Verify: '/Verify',
     },
   },
 }
@@ -147,6 +148,7 @@ const CstError = {
   P2PconnectNoPort: 'No remote port provide',
   CannotFindBlockForHash: 'Cannot find block with hash',
   CannotGetBestHash: 'Cannot find best hash',
+  PreviousHashNotInBlockchain: 'Previous hash is found in blockchain',
 }
 
 

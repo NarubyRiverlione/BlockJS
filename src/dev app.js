@@ -14,7 +14,7 @@ let SpiceCoin
 BlockChain.Start(ServerPort, '127.0.0.1', DbPort, APIPort)
   .then((blockchain) => {
     SpiceCoin = blockchain
-    return SpiceCoin.GetInfo()
+    return SpiceCoin.Verify()
   })
   .then((info) => {
     Debug(info)
