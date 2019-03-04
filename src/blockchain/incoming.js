@@ -26,32 +26,17 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, 
     .catch(err => reject(err))
 })
 
-/* amount of blocks that need evaluation = only 1 AND neededHashes = 0
---> this must be a new block on top of the blockchain
+/* Blockchain is synced and incoming block
+--> check if prevHash of incoming block is last hash in block chain
+==> yes = add incoming as new top block ==> clear pending messages ==> top if currently mining
  */
-const CheckIfNewTopBlock = async (newBlock, BlockChain) => {
-  const amountNeededEvaluation = await BlockChain.Db.CountDocs(CstDocs.IncomingBlocks)
-  const amountNeededHashes = BlockChain.NeededHashes.length
-  // check if this is a new block in the chain
-  if (amountNeededEvaluation === 1 && !amountNeededHashes) {
-    // incoming block needs to be the next block in the blockchain
-    const bestHash = await BlockChain.GetBestHash()
-    if (newBlock.PrevHash !== bestHash) {
-      await RemoveIncomingBlock(newBlock.PrevHash, BlockChain.Db, CstTxt.IncomingBlockNotNext)
-      Debug('Incoming block isn`t top of blockchain, ignore block')
-    } else {
-      /* incoming block is new top
-      --> remove all pendingMsgs
-      --> if mining, stop now as pendingMsgs are changed
-      */
-      BlockChain.SetMining(false)
-      // TODO: remove only pending TX that are in this block
-      Debug('Incoming block is top of blockchain, remove pending messages')
-      await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
-      // forward new block to peers
-      BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
-    }
-  }
+const BlockIsNewTop = async (newBlock, BlockChain) => {
+  BlockChain.SetMining(false)
+  // TODO: remove only pending TX that are in this block
+  Debug('Incoming block is top of blockchain, remove pending messages')
+  await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
+  // forward new block to peers
+  BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
 }
 
 /* if block is needed or new on top of blockchain
@@ -75,10 +60,6 @@ const EvaluateBlock = async (inboundBlock, BlockChain) => {
     return removeKnownBlockResult
   }
 
-  /* only 1 block needs evaluation
-    --> this must be a new block on top of the blockchain */
-  await CheckIfNewTopBlock(newBlock, BlockChain)
-
   /* try get previous block to determine of block is known in the blockchain?  */
   const prevBlock = await BlockChain.GetBlockWithHash(newBlock.PrevHash)
   if (!prevBlock) {
@@ -86,6 +67,10 @@ const EvaluateBlock = async (inboundBlock, BlockChain) => {
     // probably the previous block at that time be know
     return (CstTxt.IncomingBlockPrevNotKnown)
   }
+
+  /* not syncing but received block = must be new top block */
+  if (!BlockChain.CheckSyncingNeeded) { await BlockIsNewTop(newBlock, BlockChain) }
+
   /* previous block is known, determine his height via previous block height */
   const prevHeight = await GetHeightOfBlock(prevBlock, Db)
   // new height = next height based on previous block
