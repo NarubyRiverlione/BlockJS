@@ -25,7 +25,7 @@ class Block {
       || !Number.isInteger(height)
       || !Number.isInteger(diff)
       || !Number.isInteger(timestamp)) {
-      Debug(new Error(CstError.BlockHeaderIncomplete))
+      Debug(CstError.BlockHeaderIncomplete)
       return null
     }
     // remove database _id property from messages
@@ -67,9 +67,13 @@ class Block {
     const ParsedBlock = Block.Create(
       PrevHash, Height, Nonce, Diff, messages, Timestamp, Version,
     )
+    if (!ParsedBlock) {
+      Debug(`${CstError.ParseBlock} : ${blockObj}`)
+      return null
+    }
     // verify saved block hash with calculated
     if (blockObj.Hash !== ParsedBlock.Blockhash()) {
-      Debug(`CstError.ParseBlockWrongHash: Saved=${blockObj.Hash} - Calced=${ParsedBlock.Hash}`)
+      Debug(`${CstError.ParseBlockWrongHash}: Saved=${blockObj.Hash} - Calculated=${ParsedBlock.Hash}`)
       return null
     }
     // all Block function now available
@@ -101,7 +105,7 @@ class Block {
   //  is type of Block + header valid + all messages valid
   static IsValid(checkBlock) {
     if (!(checkBlock instanceof Block)) {
-      Debug('block is not of type Block (loaded from db without cast?)')
+      Debug('ERROR block is not of type Block (loaded from db without cast?)')
       return false
     }
     // header complete ?

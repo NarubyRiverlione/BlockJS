@@ -86,14 +86,14 @@ class BlockChain {
     const diff = await this.GetDiff()
     const hash = await this.GetBestHash()
     const amountPending = await this.GetAmountOfPendingMsgs()
-    const mining = this.GetMining()
+
 
     const infoText = `${CstTxt.Address}: ${this.Address}
           ${CstTxt.Height}: ${height}
           ${CstTxt.Diff}: ${diff}
           ${CstTxt.LastHash}: ${hash}
           ${CstTxt.Pending}: ${amountPending}
-          ${CstTxt.Mining}: ${mining}`
+          ${CstTxt.Mining}: ${this.Mining}`
     return Promise.resolve(infoText)
   }
 
@@ -291,37 +291,52 @@ class BlockChain {
   // Set of clear Mining flag
   SetMining(mining) {
     this.Mining = mining
+    if (mining) this.MineBlock()
   }
 
-  // Get  currently mining flag
-  GetMining() {
-    return this.Mining
-  }
+  // // Get  currently mining flag
+  // GetMining() {
+  //   return this.Mining
+  // }
 
   // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this)
-    return newBlock
+    Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Blockhash()}`)
   }
 
   async Verify() {
     try {
       const AllBlocks = await this.Db.Find(CstDocs.Blockchain, {})
-
+      const KnowHashes = new Set()
+      let Ok = true
       AllBlocks.forEach((block) => {
         const TestBlock = Block.ParseFromDb(block)
+        if (!TestBlock) {
+          Debug(`${CstError.BlockInvalid} : ${block}`)
+          Ok = false
+        }
+
         const Valid = Block.IsValid(TestBlock)
         if (!Valid) {
           Debug(`${CstError.BlockInvalid} : ${block}`)
-          return false
+          Ok = false
         }
+
         const Prev = TestBlock.CheckPrevHash(this)
         if (!Prev) {
           Debug(`${CstError.PreviousHashNotInBlockchain} : ${TestBlock.Blockhash()}`)
-          return false
+          Ok = false
         }
+
+
+        if (KnowHashes.has(TestBlock.PrevHash)) {
+          Debug(`Invalid: multiple block have same previous hash ${TestBlock.PrevHash}, height : ${TestBlock.Height}`)
+          Ok = false
+        }
+        KnowHashes.add(TestBlock.PrevHash)
       })
-      return true
+      return Ok
     } catch (error) {
       console.error(error)
       return false
