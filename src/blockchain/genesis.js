@@ -2,13 +2,12 @@ const Debug = require('debug')('blockjs:genesis')
 
 const Message = require('./message.js')
 const Block = require('./block.js')
-// const ChainLink = require('./chainlink.js')
 const { Cst, CstError } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
-const CreateGenesisBlock = () => {
-  const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
+const CreateGenesisBlock = async () => {
+  const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
   return Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 
@@ -18,8 +17,8 @@ const CreateBlockchain = async (BlockChain) => {
     // create blockchain by adding genesis block
     const GenesisBlock = await CreateGenesisBlock()
     Debug('Save genesis in Db')
-    await BlockChain.Db.Add(CstDocs.Blockchain, GenesisBlock)
-    return Promise.resolve(true)
+    // await BlockChain.Db.Add(CstDocs.Blockchain, GenesisBlock)
+    return await GenesisBlock.Save(BlockChain.Db)
   } catch (err) {
     return Promise.reject(new Error(`${CstError.GenessisNotAdded} : ${err}`))
   }
@@ -28,15 +27,18 @@ const CreateBlockchain = async (BlockChain) => {
 const ExistInDb = async (BlockChain) => {
   try {
     const FirstBlocks = await BlockChain.Db.Find(CstDocs.Blockchain, { Height: 0 })
+
     if (FirstBlocks.length > 1) {
       return Promise.reject(new Error(`${CstError.MultiBlocks}`))
     }
     // no blocks in database = no genesis block (first run?)
     if (FirstBlocks.length === 0) { return await CreateBlockchain(BlockChain) }
     // check if first block is genesis block (verify hash = genesis hash)
-    const [FirstBlock] = FirstBlocks
-    const GenesisBlock = Block.ParseFromDb(FirstBlock)
-    if (GenesisBlock.Blockhash() !== Cst.GenesisHashBlock) {
+    const [FirstDbBlock] = FirstBlocks
+    const FirstBlock = await Block.ParseFromDb(FirstDbBlock)
+    const FirstBlockHash = await FirstBlock.GetBlockHash()
+    // debugger
+    if (FirstBlockHash !== Cst.GenesisHashBlock) {
       return Promise.reject(new Error(CstError.GenessisNotFirst))
     }
     return Promise.resolve(true)

@@ -118,14 +118,13 @@ class BlockChain {
 
   // hash of last block
   GetBestHash() {
-    return new Promise((resolve, reject) => {
-      this.GetLastBlock()
-        .catch(err => reject(err))
-        .then((lastblockInDB) => {
-          const lastBlock = Block.ParseFromDb(lastblockInDB)
-          // Block hash function now available
-          return resolve(lastBlock.Blockhash())
-        })
+    return new Promise(async (resolve, reject) => {
+      try {
+        const lastBlock = await this.GetLastBlock()
+        if (!lastBlock) { return reject(new Error('ERROR cannot read or parse first block from db')) }
+        const BestHash = await lastBlock.GetBlockHash()
+        return resolve(BestHash)
+      } catch (err) { return reject(err) }
     })
   }
 
@@ -134,14 +133,17 @@ class BlockChain {
     return this.Db.CountDocs(CstDocs.PendingMessages)
   }
 
-  // get last block
+  // get last block from db and parse it
   GetLastBlock() {
-    return new Promise((resolve, reject) => {
-      this.GetHeight()
-        .catch(err => reject(err))
-        .then(maxHeight => this.Db.Find(CstDocs.Blockchain, { Height: maxHeight }))
-        .then(foundBlocksAtHeight => Block.ParseFromDb(foundBlocksAtHeight[0]))
-        .then(block => resolve(block))
+    return new Promise(async (resolve, reject) => {
+      try {
+        const maxHeight = await this.GetHeight()
+        const foundBlocksAtHeight = await this.Db.Find(CstDocs.Blockchain, { Height: maxHeight })
+        const block = await Block.ParseFromDb(foundBlocksAtHeight[0])
+        const blockhash = await block.GetBlockHash()
+        const shownBlock = { ...block, blockhash }
+        return resolve(shownBlock)
+      } catch (err) { return reject(err) }
     })
   }
 
@@ -164,13 +166,13 @@ class BlockChain {
   GetBlockWithHash(blockhash) {
     return new Promise((resolve, reject) => {
       this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
-        .catch(err => reject(err))
         .then((foundBlock) => {
           if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
           if (foundBlock.length === 0) return resolve(null)
-          const block = Block.ParseFromDb(foundBlock[0])
-          return resolve(block)
+          return Block.ParseFromDb(foundBlock[0])
         })
+        .then(block => resolve(block))
+        .catch(err => reject(err))
     })
   }
 
@@ -190,7 +192,8 @@ class BlockChain {
         break
       }
       // add hash to between array
-      betweenHashes.push(prevBlock.Blockhash())
+      const prevHash = await prevBlock.GetBlockHash() // eslint-disable-line no-await-in-loop
+      betweenHashes.push(prevHash)
       getHash = prevBlock.PrevHash
     }
     return betweenHashes
@@ -294,38 +297,36 @@ class BlockChain {
     if (mining) this.MineBlock()
   }
 
-  // // Get  currently mining flag
-  // GetMining() {
-  //   return this.Mining
-  // }
-
   // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this)
-    Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Blockhash()}`)
+    const hash = await newBlock.GetBlockHash()
+    Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${hash}`)
   }
 
+  // verify all block in the blockchain
   async Verify() {
     try {
       const AllBlocks = await this.Db.Find(CstDocs.Blockchain, {})
       const KnowHashes = new Set()
       let Ok = true
-      AllBlocks.forEach((block) => {
-        const TestBlock = Block.ParseFromDb(block)
+      AllBlocks.forEach(async (block) => {
+        const TestBlock = await Block.ParseFromDb(block)
         if (!TestBlock) {
           Debug(`${CstError.BlockInvalid} : ${block}`)
           Ok = false
         }
 
-        const Valid = Block.IsValid(TestBlock)
+        const Valid = await Block.IsValid(TestBlock)
         if (!Valid) {
           Debug(`${CstError.BlockInvalid} : ${block}`)
           Ok = false
         }
 
-        const Prev = TestBlock.CheckPrevHash(this)
+        const Prev = await TestBlock.CheckPrevHash(this)
         if (!Prev) {
-          Debug(`${CstError.PreviousHashNotInBlockchain} : ${TestBlock.Blockhash()}`)
+          const blockhash = await TestBlock.GetBlockHash()
+          Debug(`${CstError.PreviousHashNotInBlockchain} : ${blockhash}`)
           Ok = false
         }
 

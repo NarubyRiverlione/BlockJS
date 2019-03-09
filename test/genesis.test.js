@@ -9,18 +9,23 @@ const { Db: { Docs: CstDocs } } = Cst
 const TestContent = 'Test message'
 const TestFromAddress = 'Azerty123456789'
 
-const TestMsg = Message.Create(TestFromAddress, TestContent)
 
-const ValidBlock = Block.Create(null, 0, 0, 2, [TestMsg], Date.now())
-
-
-const GenesisBlock = () => {
-  const GenesisMsg = Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
+const CreateGenesisBlock = async () => {
+  const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
   return Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
 }
 
 class DummyDbWithGenesis {
-  Find() { return Promise.resolve([GenesisBlock()]) }
+  Find() {
+    return new Promise((resolve) => {
+      CreateGenesisBlock()
+        .then((GenesisBlock) => {
+          const DbFirstBlock = { ...GenesisBlock }
+          DbFirstBlock.Hash = Cst.GenesisHashBlock
+          resolve([DbFirstBlock])
+        })
+    })
+  }
 }
 
 class DummyDbWithoutGenesis {
@@ -33,7 +38,7 @@ class DummyDbWithoutGenesis {
     return Promise.reject()
   }
 }
-class DummyDbDoubleHieght0 {
+class DummyDbDoubleHeight0 {
   Find() {
     return Promise.resolve([1, 2])
   }
@@ -41,7 +46,12 @@ class DummyDbDoubleHieght0 {
 
 class DummyDbHeight0NotGenessis {
   Find() {
-    return Promise.resolve([ValidBlock])
+    return new Promise(async (resolve) => {
+      const TestMsg = await Message.Create(TestFromAddress, TestContent)
+      const DbValidBlock = Block.Create(null, 0, 0, 2, [TestMsg], 1552063321)
+      DbValidBlock.Hash = await DbValidBlock.GetBlockHash()
+      resolve([DbValidBlock])
+    })
   }
 }
 class DummyDbGenesisFindFail {
@@ -64,7 +74,7 @@ class DummyBlockchain {
         this.Db = new DummyDbWithoutGenesis()
         break
       case 'BlockChainDoubleHeight0':
-        this.Db = new DummyDbDoubleHieght0()
+        this.Db = new DummyDbDoubleHeight0()
         break
       case 'BlockChainHeight0NotGenessis':
         this.Db = new DummyDbHeight0NotGenessis()
@@ -83,6 +93,7 @@ class DummyBlockchain {
 
 it('Verify existing genesis block', async () => {
   const BlockChainWithGenesiss = new DummyBlockchain('BlockChainWithGenesiss')
+
   const result = await Genesis.ExistInDb(BlockChainWithGenesiss)
   expect(result).toBeTruthy()
 })
@@ -119,11 +130,13 @@ it('Blockchain with 2 blocks at height 0', async () => {
   }
 })
 
+
 it('Blockchain with first blocks is not Genesis', async () => {
   const BlockChainWrongFirstBlock = new DummyBlockchain('BlockChainHeight0NotGenessis')
+
   try {
     await Genesis.ExistInDb(BlockChainWrongFirstBlock)
   } catch (error) {
-    expect(error).toEqual(new Error(`${CstError.GenessisNotFirst}`))
+    expect(error.message).toEqual(`${CstError.GenessisNotFirst}`)
   }
 })

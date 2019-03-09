@@ -16,10 +16,10 @@ const CreateTarget = (diff) => {
 }
 
 // Proof-of-work: find hash that starts with the target
-const Pow = (Target, prevHash, height, nonce, diff, PendingMessages, Timestamp) => {
-  // setImmediate(() => { })
+const Pow = async (Target, prevHash, height, nonce, diff, PendingMessages, Timestamp) => {
   const TestBlock = Block.Create(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
-  const TestTarget = TestBlock.Blockhash().slice(0, diff)
+  const TestHash = await TestBlock.GetBlockHash()
+  const TestTarget = TestHash.slice(0, diff)
   if (TestTarget === Target) {
     console.log('Found it')
     return TestBlock
@@ -64,14 +64,15 @@ const MineBlock = async (BlockChain) => {
     Debug(CstTxt.MiningAborted)
     return null
   }
-  // save block to blockchain
-  await BlockChain.Db.Add(CstDocs.Blockchain, CreatedBlock)
-
   // clear flag currently mining
   BlockChain.SetMining(false)
 
   // broadcast new block
   BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, CreatedBlock)
+
+  // save block to blockchain
+  const result = await CreatedBlock.Save(Db)
+  if (!result) return null
 
   // clear pending messages
   // TODO: only remove msg's that are added in BlockChain block (once Max of TX are set)

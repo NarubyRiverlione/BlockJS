@@ -1,10 +1,12 @@
 
 const Cst = {
+  HashAlgorithm: 'sha256',
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_707d6653b0b81d679313',
-  GenesisHashBlock: 'b56b73b6b14995683fc30e18dc86c40d1f371a9cd05f0f3aa056bc3426597597',
-  GenesisHashMessages: '4fc18ba6223bb2301064867f903f29b39866f680144f2aff50863e64a12abb90',
+  GenesisHashBlock: 'fb03bf74b2098bebf80b8a0d56db4797cc759675143fef7976fbcb581370c557',
+  // 'b56b73b6b14995683fc30e18dc86c40d1f371a9cd05f0f3aa056bc3426597597',
+  GenesisHashMessages: '275b33385206d579b0fd185db9bfae1ffc3f844e452235db212e9de2d262b66f',
   GenesisHashMsg: '256100c3eaa459e608ffd425bab68e08b66a649b8da8c86306caef2da482e58d',
   GenesisMsgId: null,
   GenesisNonce: 0,

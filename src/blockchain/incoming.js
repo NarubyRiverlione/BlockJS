@@ -8,8 +8,9 @@ const { Cst, CstTxt, CstError } = require('../Const.js')
 const { Db: { Docs: CstDocs } } = Cst
 
 // find the height of a block in the blockchain
-const GetHeightOfBlock = (block, db) => new Promise((resolve, reject) => {
-  db.Find(CstDocs.Blockchain, { Hash: block.Blockhash() })
+const GetHeightOfBlock = (block, db) => new Promise(async (resolve, reject) => {
+  const hash = await block.GetBlockHash()
+  db.Find(CstDocs.Blockchain, { Hash: hash })
     .catch(err => reject(err))
     .then((foundLink) => {
       if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
@@ -53,7 +54,7 @@ const CheckIfBlockIsNewTop = async (newBlock, BlockChain) => {
 const EvaluateBlock = async (inboundBlock, BlockChain) => {
   const newBlock = Blocks.ParseFromDb(inboundBlock)
   if (!newBlock) return (CstError.ParseBlock)
-  const blockhash = newBlock.Blockhash()
+  const blockhash = await newBlock.GetBlockHash()
   const { Db } = BlockChain
 
   /*  check if block is already in blockchain
@@ -153,7 +154,7 @@ const Block = async (inboundBlock, BlockChain) => {
   }
 
   // remove hash of stored block for needed list
-  const newHash = newBlock.Blockhash()
+  const newHash = await newBlock.GetBlockHash()
   const updatedNeeded = BlockChain.NeededHashes.filter(needed => needed !== newHash)
 
   // update NeededHashes

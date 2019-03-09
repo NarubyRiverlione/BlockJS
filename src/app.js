@@ -1,3 +1,5 @@
+process.env['UV_THREADPOOL_SIZE'] = 128
+
 const Debug = require('debug')('blockjs:app')
 const Sentry = require('@sentry/node')
 const { Cst, CstTxt } = require('./Const.js')
@@ -9,6 +11,7 @@ const DbServer = process.env.dbServer
 const ServerPort = parseInt(process.env.Port, 10) || Cst.DefaultPort
 const DbPort = parseInt(process.env.dbPort, 10) || Cst.DbPort
 const APIPort = parseInt(process.env.apiPort, 10) || Cst.API.DefaultPort
+
 
 BlockChain.Start(ServerPort, DbServer, DbPort, APIPort)
   .then((blockchain) => { Debug(`${CstTxt.BlockchainVersion} ${blockchain.Version} ${CstTxt.Started} !`) })
