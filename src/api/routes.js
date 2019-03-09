@@ -138,10 +138,9 @@ ${ListCommands}
     // body: {Content : messageText, Id: messageID}
     this.router.post(Cmd.SendMsg, (req, res) => {
       const { Content, Id } = req.body
-      const msg = blockchain.CreateMsg(Content, Id)
-      blockchain.SendMsg(msg)
-        .then((result) => {
-          if (result) {
+      blockchain.SendMsg(Content, Id)
+        .then((msg) => {
+          if (msg) {
             res.status(200).json({ msg })
           } else { res.status(400).send('error') }
         })

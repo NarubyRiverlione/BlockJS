@@ -36,6 +36,8 @@ const ExistInDb = async (BlockChain) => {
     // check if first block is genesis block (verify hash = genesis hash)
     const [FirstDbBlock] = FirstBlocks
     const FirstBlock = await Block.ParseFromDb(FirstDbBlock)
+    if (!FirstBlock) return Promise.reject(new Error(CstError.ParseBlock))
+    // debugger
     const FirstBlockHash = await FirstBlock.GetBlockHash()
     // debugger
     if (FirstBlockHash !== Cst.GenesisHashBlock) {
@@ -43,6 +45,7 @@ const ExistInDb = async (BlockChain) => {
     }
     return Promise.resolve(true)
   } catch (err) {
+    Debug(err.message)
     return Promise.reject(new Error(`${CstError.GenessisNotAdded}`))
   }
 }

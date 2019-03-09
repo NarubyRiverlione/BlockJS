@@ -33,13 +33,14 @@ class Db {
 
   Add(col, data) {
     return new Promise((resolve, reject) => {
-      this.db.collection(col).insertOne(data)
+      const SaveData = { ...data } // make a copy to prevent mutation by adding _id
+      this.db.collection(col).insertOne(SaveData)
         .then((result) => {
           Debug(`Added ${col} in db`)
           return resolve(result)
         })
         .catch((err) => {
-          const error = `${CstError.BlockInvalid} ${err} ${CstError.DbToCollection} "${col}"  ${CstError.DbData} "${data}"`
+          const error = `${CstError.BlockInvalid} ${err} ${CstError.DbToCollection} "${col}"  ${CstError.DbData} "${SaveData}"`
           return reject(error)
         })
     })

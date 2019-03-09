@@ -51,13 +51,13 @@ const MineBlock = async (BlockChain) => {
   // target is consecutive numbers
   const Target = CreateTarget(diff)
   const nonce = 0
-  const CreatedBlock = Pow(Target, prevHash, height + 1, nonce, diff, PendingMessages, Timestamp)
+  const CreatedBlock = await Pow(Target, prevHash, height + 1, nonce, diff, PendingMessages, Timestamp)
   // const CreatedBlock = await Pow(PendingMessages, BlockChain)
-
   const CreatingTime = (Date.now() - StartMintingTime) / 1000.0
   const HashSec = CreatedBlock.Nonce / CreatingTime / 1000
 
   Debug(`${CstTxt.MiningFoundBlock} after ${CreatedBlock.Nonce} attempts in ${CreatingTime.toFixed(1)} sec = ${HashSec.toFixed(1)} kHash/s`)
+  // debugger
 
   // check if mining was aborted (ex. a new block was received via p2p)
   if (!BlockChain.Mining) {

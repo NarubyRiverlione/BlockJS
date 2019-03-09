@@ -25,10 +25,12 @@ class Message {
   }
 
   static async Create(fromAddress, content, id) {
-    // make a dummy message without hash to calculate... the hash
-    const MsgWithoutHash = new Message(fromAddress, null, id)
-    const MsgHash = await MsgWithoutHash.GetMsgHash(content)
-    return new Message(fromAddress, MsgHash, id)
+    try {
+      // make a dummy message without hash to calculate... the hash
+      const MsgWithoutHash = new Message(fromAddress, null, id)
+      const MsgHash = await MsgWithoutHash.GetMsgHash(content)
+      return new Message(fromAddress, MsgHash, id)
+    } catch (err) { Debug(err.message); return null }
   }
 
   async GetMsgHash(content) {

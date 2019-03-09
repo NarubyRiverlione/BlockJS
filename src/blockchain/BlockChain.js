@@ -120,9 +120,10 @@ class BlockChain {
   GetBestHash() {
     return new Promise(async (resolve, reject) => {
       try {
+        // GetLastBlock will calculed and add the blockhash
         const lastBlock = await this.GetLastBlock()
         if (!lastBlock) { return reject(new Error('ERROR cannot read or parse first block from db')) }
-        const BestHash = await lastBlock.GetBlockHash()
+        const BestHash = lastBlock.Hash
         return resolve(BestHash)
       } catch (err) { return reject(err) }
     })
@@ -140,39 +141,38 @@ class BlockChain {
         const maxHeight = await this.GetHeight()
         const foundBlocksAtHeight = await this.Db.Find(CstDocs.Blockchain, { Height: maxHeight })
         const block = await Block.ParseFromDb(foundBlocksAtHeight[0])
-        const blockhash = await block.GetBlockHash()
-        const shownBlock = { ...block, blockhash }
-        return resolve(shownBlock)
+        const blockWithHases = await block.AddHashes()
+        return resolve(blockWithHases)
       } catch (err) { return reject(err) }
     })
   }
 
   // get block at specific height
   GetBlockAtHeight(atHeight) {
-    return new Promise((resolve, reject) => {
-      this.Db.Find(CstDocs.Blockchain, { Height: atHeight })
-        .catch(err => reject(err))
-        .then((foundBlock) => {
-          if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHeigh} ${atHeight}`))
-          if (foundBlock.length === 0) return resolve(null)
-          Debug(`Loaded block with hash ${foundBlock[0].Hash} for height ${atHeight}`)
-          const block = Block.ParseFromDb(foundBlock[0])
-          return resolve(block)
-        })
+    return new Promise(async (resolve, reject) => {
+      try {
+        const foundBlock = await this.Db.Find(CstDocs.Blockchain, { Height: atHeight })
+        if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHeigh} ${atHeight}`))
+        if (foundBlock.length === 0) return resolve(null)
+        Debug(`Loaded block with hash ${foundBlock[0].Hash} for height ${atHeight}`)
+        const block = await Block.ParseFromDb(foundBlock[0])
+        const blockWithHases = await block.AddHashes()
+        return resolve(blockWithHases)
+      } catch (err) { return reject(err) }
     })
   }
 
   // get block with specific block hash
   GetBlockWithHash(blockhash) {
-    return new Promise((resolve, reject) => {
-      this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
-        .then((foundBlock) => {
-          if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
-          if (foundBlock.length === 0) return resolve(null)
-          return Block.ParseFromDb(foundBlock[0])
-        })
-        .then(block => resolve(block))
-        .catch(err => reject(err))
+    return new Promise(async (resolve, reject) => {
+      try {
+        const foundBlock = await this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
+        if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
+        if (foundBlock.length === 0) return resolve(null)
+        const block = await Block.ParseFromDb(foundBlock[0])
+        const blockWithHases = await block.AddHashes()
+        return resolve(blockWithHases)
+      } catch (err) { return reject(err) }
     })
   }
 
@@ -199,35 +199,30 @@ class BlockChain {
     return betweenHashes
   }
 
-  // promise of create Message
-  CreateMsg(content, Id) {
-    return Message.Create(this.Address, content, Id)
-  }
-
   // add a message to the pending Messages
-  async SendMsg(message) {
-    // copy message because db save will mutated it (add _id)
-    const msg = Message.ParseFromDb(message)
-    // is msg a Message object ?
-    if (msg instanceof Message === false) { return (new Error(CstError.SendNotMsg)) }
-    // is the Message object not empty ?
-    if (Object.keys(msg).length === 0) { return (new Error(CstError.SendNoContent)) }
-    // is the Message complete ?
-    const valid = await Message.IsValid(msg)
-    if (!valid) { return (new Error(CstError.SendNoValid)) }
-
-    // add message to pending pool
-    await msg.Save(this.Db)
-    // broadcast new pending message to peers
-    this.P2P.Broadcast(Cst.P2P.MESSAGE, message)
-    return true
+  async SendMsg(Content, Id) {
+    try {
+      const msg = await Message.Create(this.Address, Content, Id)
+      // is msg a Message object ?
+      if (msg instanceof Message === false) { return (new Error(CstError.SendNotMsg)) }
+      // is the Message object not empty ?
+      if (Object.keys(msg).length === 0) { return (new Error(CstError.SendNoContent)) }
+      // is the Message complete ?
+      const valid = await Message.IsValid(msg)
+      if (!valid) { return (new Error(CstError.SendNoValid)) }
+      // add message to pending pool
+      await msg.Save(this.Db)
+      // broadcast new pending message to peers
+      this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
+      return msg
+    } catch (err) { Debug(err.message); return null }
   }
 
   // find a message in the blockchain, return Block
   // default search from own address
   async FindMsg(Content, FromAddress = this.Address, Id = null) {
     // create Message to get the message hash
-    const msg = Message.Create(FromAddress, Content, Id)
+    const msg = await Message.Create(FromAddress, Content, Id)
     const filter = { 'Messages.Hash': msg.Hash }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)

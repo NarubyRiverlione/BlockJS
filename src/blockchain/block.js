@@ -92,32 +92,33 @@ class Block {
   // create instance of Block with db data
   // verify saved block hash, hash can only be correct of header is complete
   static async ParseFromDb(blockObj) {
-    // remove database _id property from messages
-    const messages = blockObj.Messages
-      ? blockObj.Messages.map(msg => Message.ParseFromDb(msg))
-      : null
+    try {
+      // remove database _id property from messages
+      const messages = blockObj.Messages
+        ? blockObj.Messages.map(msg => Message.ParseFromDb(msg))
+        : null
 
-    const {
-      PrevHash, Height, Nonce, Diff, Timestamp, Version, Hash,
-    } = blockObj
+      const {
+        PrevHash, Height, Nonce, Diff, Timestamp, Version, Hash,
+      } = blockObj
 
-    const ParsedBlock = Block.Create(PrevHash, Height, Nonce, Diff, messages, Timestamp, Version)
-    if (!ParsedBlock) {
-      Debug(`${CstError.ParseBlock} : ${blockObj}`)
-      // debugger
-      return null
-    }
-    // verify saved block hash with calculated
-    const testHash = await ParsedBlock.GetBlockHash()
-    if (Hash !== testHash) {
-      Debug(`${CstError.ParseBlockWrongHash}: Saved=${Hash} - Calculated=${testHash}`)
-      debugger
-      return null
-    }
-    // TODO verify MsgHash
-
-    // all Block function now available
-    return ParsedBlock
+      const ParsedBlock = Block.Create(PrevHash, Height, Nonce, Diff, messages, Timestamp, Version)
+      if (!ParsedBlock) {
+        Debug(`${CstError.ParseBlock} : ${blockObj}`)
+        // debugger
+        return null
+      }
+      // verify saved block hash with calculated
+      const testHash = await ParsedBlock.GetBlockHash()
+      if (Hash !== testHash) {
+        Debug(`${CstError.ParseBlockWrongHash}: Saved=${Hash} - Calculated=${testHash}`)
+        // debugger
+        return null
+      }
+      // TODO verify MsgHash
+      // all Block function now available
+      return ParsedBlock
+    } catch (err) { Debug(err.message); return null }
   }
 
   // save block and calculated Blockhash en MessagesHash
@@ -149,6 +150,16 @@ class Block {
     } catch (err) {
       return false
     }
+  }
+
+  // add BlockHash and MessagesHash
+  async AddHashes() {
+    try {
+      const blockhash = await this.GetBlockHash()
+      const msgshash = await this.GetMsgsHash()
+      const BlockWithHashes = { ...this, Hash: blockhash, MessagesHash: msgshash }
+      return BlockWithHashes
+    } catch (err) { Debug(err.message); return null }
   }
 
   //  is type of Block + header valid + all messages valid
