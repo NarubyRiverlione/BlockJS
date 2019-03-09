@@ -8,12 +8,12 @@ const { Cst, CstTxt, CstError } = require('../Const.js')
 const { Db: { Docs: CstDocs } } = Cst
 
 // find the height of a block in the blockchain
-const GetHeightOfBlock = (block, db) => new Promise(async (resolve, reject) => {
-  const hash = await block.GetBlockHash()
+const GetHeightOfBlock = (hash, db) => new Promise(async (resolve, reject) => {
+  // const hash = await block.GetBlockHash()
   db.Find(CstDocs.Blockchain, { Hash: hash })
     .catch(err => reject(err))
     .then((foundLink) => {
-      if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${block.Blockchain()}`))
+      if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${hash}`))
       if (foundLink.length === 0) return resolve(null)
       return resolve(foundLink[0].Height)
     })
@@ -52,45 +52,55 @@ const CheckIfBlockIsNewTop = async (newBlock, BlockChain) => {
 --> remove in db collection IncomingBlocks
 */
 const EvaluateBlock = async (inboundBlock, BlockChain) => {
-  const newBlock = Blocks.ParseFromDb(inboundBlock)
-  if (!newBlock) return (CstError.ParseBlock)
-  const blockhash = await newBlock.GetBlockHash()
-  const { Db } = BlockChain
+  try {
+    const newBlock = await Blocks.ParseFromDb(inboundBlock)
+    // console.log(`stored incoming block claimed height of ${newBlock.Height}`)
 
-  /*  check if block is already in blockchain
-      --> yes: remove from incoming blocks as it doesn't need to be processed */
-  const foundBlock = await BlockChain.GetBlockWithHash(blockhash)
-  if (foundBlock) {
-    const removeKnownBlockResult = RemoveIncomingBlock(
-      newBlock.PrevHash,
-      Db, CstTxt.IncomingBlockAlreadyKnow,
-    )
-    return removeKnownBlockResult
-  }
+    if (!newBlock) return (CstError.ParseBlock)
+    const blockhash = await newBlock.GetBlockHash()
+    const { Db } = BlockChain
+    // console.log(`stored incoming blockhash ${blockhash}`)
 
-  /* try get previous block to determine of block is known in the blockchain?  */
-  const prevBlock = await BlockChain.GetBlockWithHash(newBlock.PrevHash)
-  if (!prevBlock) {
-    // reevaluated when other incoming blocks are evaluated (and added)
-    // probably the previous block at that time be know
-    return (CstTxt.IncomingBlockPrevNotKnown)
-  }
+    /*  check if block is already in blockchain
+        --> yes: remove from incoming blocks as it doesn't need to be processed */
+    const foundBlock = await BlockChain.GetBlockWithHash(blockhash)
+    if (foundBlock) {
+      Debug('Have already this incoming block, skip evaluation')
+      const removeKnownBlockResult = RemoveIncomingBlock(
+        newBlock.PrevHash,
+        Db, CstTxt.IncomingBlockAlreadyKnow,
+      )
+      return removeKnownBlockResult
+    }
 
-  await CheckIfBlockIsNewTop(newBlock, BlockChain)
+    /* try get previous block to determine of block is known in the blockchain?  */
+    const prevBlock = await BlockChain.GetBlockWithHash(newBlock.PrevHash)
+    if (!prevBlock) {
+      // reevaluated when other incoming blocks are evaluated (and added)
+      // probably the previous block at that time be know
+      return (CstTxt.IncomingBlockPrevNotKnown)
+    }
+    Debug('check if top')
+    await CheckIfBlockIsNewTop(newBlock, BlockChain)
 
-  /* previous block is known, determine his height via previous block height */
-  const prevHeight = await GetHeightOfBlock(prevBlock, Db)
-  // new height = next height based on previous block
-  const newHeight = prevHeight + 1
-  Debug(`${CstTxt.IncomingBlockNewHeight} ${newHeight}`)
-  newBlock.Height = newHeight
-  // add block to the blockchain
-  await Db.Add(CstDocs.Blockchain, newBlock)
+    /* previous block is known, determine his height via previous block height */
+    const prevHeight = await GetHeightOfBlock(prevBlock.Hash, Db)
+    Debug(`Previous height is ${prevHeight}`)
+    // new height = next height based on previous block
+    const newHeight = prevHeight + 1
+    Debug(`${CstTxt.IncomingBlockNewHeight} ${newHeight}`)
+    newBlock.Height = newHeight
+    // add block to the blockchain
+    // await Db.Add(CstDocs.Blockchain, newBlock)
+    Debug('save block in blockchain')
+    await newBlock.Save(Db)
 
-  /* remove block from incoming list, return resolved message */
-  const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db,
-    (`${CstTxt.Block} ${blockhash} ${CstTxt.IncomingBlockAdded}`))
-  return removeResult
+    /* remove block from incoming list, return resolved message */
+    Debug('remove block from incoming')
+    const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db,
+      (`${CstTxt.Block} ${blockhash} ${CstTxt.IncomingBlockAdded}`))
+    return removeResult
+  } catch (err) { Debug(err.message); return err }
 }
 
 // all needed block are stored, now process them (check prevHash,..)
@@ -137,10 +147,13 @@ const Hash = async (inboundHash, BlockChain) => {
 
 // store incoming block until all requests are received, the process block(s)
 const Block = async (inboundBlock, BlockChain) => {
-  const newBlock = Blocks.ParseFromDb(inboundBlock)
-  if (!newBlock || !Blocks.IsValid(newBlock)) {
+  const parsedBlock = await Blocks.ParseFromDb(inboundBlock)
+  const Valid = await Blocks.IsValid(parsedBlock)
+  if (!parsedBlock || !Valid) {
     return (new Error(CstTxt.IncomingBlockInvalid))
   }
+  // add hashes to they will be saved in IncomingBlocks
+  const newBlock = await parsedBlock.AddHashes()
 
   // check if incoming block is already stored
   const filter = { PrevHash: newBlock.PrevHash }
@@ -154,8 +167,8 @@ const Block = async (inboundBlock, BlockChain) => {
   }
 
   // remove hash of stored block for needed list
-  const newHash = await newBlock.GetBlockHash()
-  const updatedNeeded = BlockChain.NeededHashes.filter(needed => needed !== newHash)
+  // const newHash = await newBlock.GetBlockHash()
+  const updatedNeeded = BlockChain.NeededHashes.filter(needed => needed !== newBlock.Hash)
 
   // update NeededHashes
   BlockChain.UpdateNeededHashes(updatedNeeded)

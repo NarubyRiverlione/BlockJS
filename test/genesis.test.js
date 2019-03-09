@@ -117,6 +117,7 @@ it('New blockchain without genesis: find failed in db', async () => {
   try {
     await Genesis.ExistInDb(BlockChainWithoutGenesisFindFailed)
   } catch (error) {
+    debugger
     expect(error).toEqual(new Error(`${CstError.GenessisNotAdded}`))
   }
 })

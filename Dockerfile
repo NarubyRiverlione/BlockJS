@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:latest
 LABEL version="3.0"
 LABEL description="Blockchain via node.js & MongoDb"
 
@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY package.json package.json
 COPY yarn.lock yarn.lock
-RUN yarn
+RUN yarn --production
 
 COPY src/ /app/src
 

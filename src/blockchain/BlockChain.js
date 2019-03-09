@@ -179,22 +179,21 @@ class BlockChain {
   // get all hashes between best hash and specified hash
   async GetHashesFromBestTo(toHash) {
     const betweenHashes = []
-    let getHash = await this.GetBestHash()
-    if (!getHash) {
+    let BestHash = await this.GetBestHash()
+    if (!BestHash) {
       Debug(`${CstError.CannotGetBestHash}`)
       return null
     }
 
-    while (getHash !== toHash) {
-      const prevBlock = await this.GetBlockWithHash(getHash) // eslint-disable-line no-await-in-loop
+    while (BestHash !== toHash) {
+      const prevBlock = await this.GetBlockWithHash(BestHash) // eslint-disable-line no-await-in-loop
       if (!prevBlock) {
-        Debug(`${CstError.CannotFindBlockForHash} : ${getHash}`)
+        Debug(`${CstError.CannotFindBlockForHash} : ${BestHash}`)
         break
       }
       // add hash to between array
-      const prevHash = await prevBlock.GetBlockHash() // eslint-disable-line no-await-in-loop
-      betweenHashes.push(prevHash)
-      getHash = prevBlock.PrevHash
+      betweenHashes.push(prevBlock.Hash)
+      BestHash = prevBlock.PrevHash
     }
     return betweenHashes
   }
