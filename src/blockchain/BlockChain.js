@@ -93,7 +93,8 @@ class BlockChain {
           ${CstTxt.Diff}: ${diff}
           ${CstTxt.LastHash}: ${hash}
           ${CstTxt.Pending}: ${amountPending}
-          ${CstTxt.Mining}: ${this.Mining}`
+          ${CstTxt.Mining}: ${this.Mining}
+          ${CstTxt.Syncing}: ${this.Syncing()}`
     return Promise.resolve(infoText)
   }
 
@@ -108,7 +109,9 @@ class BlockChain {
   }
 
   // current diff = diff of last block
+  // TODO changing diff
   GetDiff() {
+    // return Promise.resolve(4)
     return new Promise((resolve, reject) => {
       this.GetLastBlock()
         .catch(err => reject(err))
@@ -270,17 +273,20 @@ class BlockChain {
     this.NeededHashes = needed
   }
 
-  CheckSyncingNeeded() {
-    const { NeededHashes } = this
-    return new Promise((resolve, reject) => {
-      this.Db.CountDocs(CstDocs.IncomingBlocks)
-        .then((amountBlockNeedEvaluation) => {
-          if (amountBlockNeedEvaluation > 0 || NeededHashes.length > 0) return resolve(true)
-          return resolve(false)
-        })
-        .catch(err => reject(err))
-    })
+  Syncing() {
+    return this.NeededHashes.length > 0
   }
+  // CheckSyncingNeeded() {
+  //   const { NeededHashes } = this
+  //   return new Promise((resolve, reject) => {
+  //     this.Db.CountDocs(CstDocs.IncomingBlocks)
+  //       .then((amountBlockNeedEvaluation) => {
+  //         if (amountBlockNeedEvaluation > 0 || NeededHashes.length > 0) return resolve(true)
+  //         return resolve(false)
+  //       })
+  //       .catch(err => reject(err))
+  //   })
+  // }
 
   // Set of clear Mining flag
   SetMining(mining) {
@@ -291,7 +297,7 @@ class BlockChain {
   // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this)
-    Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Hash}`)
+    if (newBlock) { Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Hash}`) }
   }
 
   // verify all block in the blockchain

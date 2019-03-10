@@ -102,11 +102,9 @@ ${ListCommands}
     })
     this.router.get(Cmd.Mine, (req, res) => {
       const Start = Boolean(JSON.parse(req.params.start))
+      console.log(`Received command to ${Start ? 'start' : 'stop'} mining`)
       blockchain.SetMining(Start)
       res.status(200).send(`${CstTxt.Mining} : ${Start}`)
-      // blockchain.MineBlock()
-      //   .then((result) => { res.status(200).send({ result }) })
-      //   .catch(error => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.AmountPeers, (req, res) => {
       const amount = blockchain.ConnectionCount()
