@@ -120,7 +120,7 @@ class BlockChain {
   GetBestHash() {
     return new Promise(async (resolve, reject) => {
       try {
-        // GetLastBlock will calculed and add the blockhash
+        // GetLastBlock will calculated and add the block hash
         const lastBlock = await this.GetLastBlock()
         if (!lastBlock) { return reject(new Error('ERROR cannot read or parse first block from db')) }
         const BestHash = lastBlock.Hash
@@ -141,8 +141,7 @@ class BlockChain {
         const maxHeight = await this.GetHeight()
         const foundBlocksAtHeight = await this.Db.Find(CstDocs.Blockchain, { Height: maxHeight })
         const block = await Block.ParseFromDb(foundBlocksAtHeight[0])
-        const blockWithHases = await block.AddHashes()
-        return resolve(blockWithHases)
+        return resolve(block)
       } catch (err) { return reject(err) }
     })
   }
@@ -156,8 +155,7 @@ class BlockChain {
         if (foundBlock.length === 0) return resolve(null)
         Debug(`Loaded block with hash ${foundBlock[0].Hash} for height ${atHeight}`)
         const block = await Block.ParseFromDb(foundBlock[0])
-        const blockWithHases = await block.AddHashes()
-        return resolve(blockWithHases)
+        return resolve(block)
       } catch (err) { return reject(err) }
     })
   }
@@ -170,8 +168,7 @@ class BlockChain {
         if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
         if (foundBlock.length === 0) return resolve(null)
         const block = await Block.ParseFromDb(foundBlock[0])
-        const blockWithHases = await block.AddHashes()
-        return resolve(blockWithHases)
+        return resolve(block)
       } catch (err) { return reject(err) }
     })
   }
@@ -294,8 +291,7 @@ class BlockChain {
   // create new block with all pending messages
   async MineBlock() {
     const newBlock = await Mining.MineBlock(this)
-    const hash = await newBlock.GetBlockHash()
-    Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${hash}`)
+    Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Hash}`)
   }
 
   // verify all block in the blockchain
@@ -319,8 +315,7 @@ class BlockChain {
 
         const Prev = await TestBlock.CheckPrevHash(this)
         if (!Prev) {
-          const blockhash = await TestBlock.GetBlockHash()
-          Debug(`${CstError.PreviousHashNotInBlockchain} : ${blockhash}`)
+          Debug(`${CstError.PreviousHashNotInBlockchain} : ${TestBlock.Hash}`)
           Ok = false
         }
 

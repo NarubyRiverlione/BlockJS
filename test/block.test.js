@@ -21,8 +21,8 @@ const Init = async () => {
   const TestMsg = await Message.Create(TestFromAddress, TestContent)
   const TestMsg2 = await Message.Create(TestFromAddress, TestContent)
 
-  const ValidBlock = Block.Create(123, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
-  const SavedBlockHash = await ValidBlock.GetBlockHash()
+  const ValidBlock = await Block.Create(123, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
+  const SavedBlockHash = ValidBlock.Hash
   const SavedMgsHash = ValidBlock.HashMessages
   return {
     TestMsg, TestMsg2, ValidBlock, SavedMgsHash, SavedBlockHash,
@@ -34,8 +34,9 @@ it('Valid block creation: block with 2 messages', async () => {
   const TestBlock = await Block.IsValid(TestData.ValidBlock)
   expect(TestBlock).toBeTruthy()
 })
+
 it('Valid block: without messages', async () => {
-  const BlockWithoutMsg = Block.Create(null, 0, 0, 2, null, Date.now())
+  const BlockWithoutMsg = await Block.Create(null, 0, 0, 2, null, Date.now())
   expect(await Block.IsValid(BlockWithoutMsg)).toBeTruthy()
 })
 
@@ -43,14 +44,14 @@ it('InValid block: not a Block type', async () => {
   expect(await Block.IsValid(NotBlock)).toBeFalsy()
 })
 it('Invalid block detection: header invalid with string as nonce', async () => {
-  const BlockWithoutHeaders = Block.Create('ggrr', 2, 'rrr')
+  const BlockWithoutHeaders = await Block.Create('ggrr', 2, 'rrr')
   expect(await Block.IsValid(BlockWithoutHeaders)).toBeFalsy()
   expect(BlockWithoutHeaders).toBeNull()
 })
 it('Invalid block detection: no nonce', async () => {
   const TestData = await Init()
   const { TestMsg, TestMsg2 } = TestData
-  const BlockWithoutNonce = Block.Create(null, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
+  const BlockWithoutNonce = await Block.Create(null, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
   BlockWithoutNonce.Nonce = null
   expect(BlockWithoutNonce instanceof Block).toBeTruthy()
   expect(await Block.IsValid(BlockWithoutNonce)).toBeFalsy()
@@ -61,7 +62,8 @@ it('Invalid block: invalid message', async () => {
   const InvalidMsg = { Hash: 123 } // invalid: no from address
   expect(await Message.IsValid(InvalidMsg)).toBeFalsy()
 
-  const InvalidBlock = Block.Create(null, 0, 0, 2, [TestMsg, InvalidMsg, TestMsg2], Date.now())
+  const InvalidBlock = await Block.Create(null, 0, 0, 2,
+    [TestMsg, InvalidMsg, TestMsg2], Date.now())
   expect(await Block.IsValid(InvalidBlock)).toBeFalsy()
 })
 
@@ -164,8 +166,8 @@ it('Check prevhash: correct is in the blockchain', async () => {
   const { ValidBlock } = TestData
 
   class DummyBlockChain {
-    GetBlockWithHash() {
-      return Promise.resolve(Block.Create(null, 0, 0, 2, [], Date.now()))
+    async GetBlockWithHash() {
+      return Promise.resolve(await Block.Create(null, 0, 0, 2, [], Date.now()))
     }
   }
 
@@ -201,7 +203,7 @@ it('Check prevhash: invalid error during search in the blockchain', async () => 
 it('Check prevhash: invalid, not first block without prevHash', async () => {
   const TestData = await Init()
   const { TestMsg } = TestData
-  const TestBlock = Block.Create(null, 5, 0, 2, [TestMsg], Date.now())
+  const TestBlock = await Block.Create(null, 5, 0, 2, [TestMsg], Date.now())
   class DummyBlockChain {
     GetBlockWithHash() { return Promise.reject() }
   }
@@ -212,7 +214,8 @@ it('Check prevhash: invalid, not first block without prevHash', async () => {
 
 it('Check prevhash: valid,  first genesisblock = no prevHash', async () => {
   const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
-  const GenesisBlock = Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  const GenesisBlock = await Block.Create(null, 0, Cst.GenesisNonce,
+    Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
 
   class DummyBlockChain {
     GetBlockWithHash() { return Promise.resolve() }

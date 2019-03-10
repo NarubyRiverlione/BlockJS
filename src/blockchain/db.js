@@ -36,7 +36,7 @@ class Db {
       const SaveData = { ...data } // make a copy to prevent mutation by adding _id
       this.db.collection(col).insertOne(SaveData)
         .then((result) => {
-          Debug(`Added ${col} in db`)
+          Debug(`Added in db to the ${col}`)
           return resolve(result)
         })
         .catch((err) => {

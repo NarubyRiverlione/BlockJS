@@ -12,7 +12,9 @@ const TestFromAddress = 'Azerty123456789'
 
 const CreateGenesisBlock = async () => {
   const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
-  return Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  const GenesisBlock = await Block.Create(null, 0, Cst.GenesisNonce,
+    Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  return GenesisBlock
 }
 
 class DummyDbWithGenesis {
@@ -48,7 +50,7 @@ class DummyDbHeight0NotGenessis {
   Find() {
     return new Promise(async (resolve) => {
       const TestMsg = await Message.Create(TestFromAddress, TestContent)
-      const DbValidBlock = Block.Create(null, 0, 0, 2, [TestMsg], 1552063321)
+      const DbValidBlock = await Block.Create(null, 0, 0, 2, [TestMsg], 1552063321)
       DbValidBlock.Hash = await DbValidBlock.GetBlockHash()
       resolve([DbValidBlock])
     })
@@ -56,7 +58,7 @@ class DummyDbHeight0NotGenessis {
 }
 class DummyDbGenesisFindFail {
   Find() {
-    return Promise.reject()
+    return Promise.reject(new Error('ERROR finding'))
   }
 }
 class DummyDbGenesisAddFail {
@@ -117,7 +119,6 @@ it('New blockchain without genesis: find failed in db', async () => {
   try {
     await Genesis.ExistInDb(BlockChainWithoutGenesisFindFailed)
   } catch (error) {
-    debugger
     expect(error).toEqual(new Error(`${CstError.GenessisNotAdded}`))
   }
 })

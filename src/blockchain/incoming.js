@@ -29,43 +29,47 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, 
 
 /* Blockchain is synced and incoming block
 --> check if prevHash of incoming block is last hash in block chain
-==> yes = add incoming as new top block ==> clear pending messages ==> top if currently mining
+YES:
+==> add incoming as new top block in local blockchain copy
+==> clear pending messages collection
+==> stop mining as pending messages are in the new block
+==> forward block to know peers
  */
 const CheckIfBlockIsNewTop = async (newBlock, BlockChain) => {
+  Debug('--- Check if incoming block is the new top')
   const amountNeededEvaluation = await BlockChain.Db.CountDocs(CstDocs.IncomingBlocks)
   const amountNeededHashes = BlockChain.NeededHashes.length
   // check if this is a new block in the chain
-  if (amountNeededEvaluation === 1 && amountNeededHashes === 0) {
-    Debug('Incoming block is new top of blockchain')
-    Debug('-- Stop mining')
+  if (amountNeededEvaluation === 0 && amountNeededHashes === 0) {
+    Debug('---- Incoming block is new top of blockchain')
+    Debug('---- Stop mining')
     BlockChain.SetMining(false)
     // TODO: remove only pending TX that are in this block
-    Debug('-- Clear all pending messages')
+    Debug('---- Clear all pending messages')
     await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
     // forward new block to peers
+    Debug('---- Forward the block to all new peers')
     BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
   }
 }
 
-/* if block is needed or new on top of blockchain
+/* evaluate a block: is this a needed block during sync or the new top of blockchain
 --> add to blockchain
 --> remove in db collection IncomingBlocks
 */
 const EvaluateBlock = async (inboundBlock, BlockChain) => {
   try {
     const newBlock = await Blocks.ParseFromDb(inboundBlock)
-    // console.log(`stored incoming block claimed height of ${newBlock.Height}`)
 
     if (!newBlock) return (CstError.ParseBlock)
-    const blockhash = await newBlock.GetBlockHash()
     const { Db } = BlockChain
-    // console.log(`stored incoming blockhash ${blockhash}`)
+
 
     /*  check if block is already in blockchain
         --> yes: remove from incoming blocks as it doesn't need to be processed */
-    const foundBlock = await BlockChain.GetBlockWithHash(blockhash)
+    const foundBlock = await BlockChain.GetBlockWithHash(newBlock.Hash)
     if (foundBlock) {
-      Debug('Have already this incoming block, skip evaluation')
+      Debug('-- Have already this incoming block, skip evaluation')
       const removeKnownBlockResult = RemoveIncomingBlock(
         newBlock.PrevHash,
         Db, CstTxt.IncomingBlockAlreadyKnow,
@@ -80,32 +84,33 @@ const EvaluateBlock = async (inboundBlock, BlockChain) => {
       // probably the previous block at that time be know
       return (CstTxt.IncomingBlockPrevNotKnown)
     }
-    Debug('check if top')
+
     await CheckIfBlockIsNewTop(newBlock, BlockChain)
 
     /* previous block is known, determine his height via previous block height */
     const prevHeight = await GetHeightOfBlock(prevBlock.Hash, Db)
-    Debug(`Previous height is ${prevHeight}`)
+    Debug(`-- Previous height is ${prevHeight}`)
     // new height = next height based on previous block
     const newHeight = prevHeight + 1
-    Debug(`${CstTxt.IncomingBlockNewHeight} ${newHeight}`)
+    Debug(`-- ${CstTxt.IncomingBlockNewHeight} ${newHeight}`)
     newBlock.Height = newHeight
     // add block to the blockchain
     // await Db.Add(CstDocs.Blockchain, newBlock)
-    Debug('save block in blockchain')
+    Debug('-- save block in blockchain')
     await newBlock.Save(Db)
 
     /* remove block from incoming list, return resolved message */
-    Debug('remove block from incoming')
+    Debug('-- remove block from IncomingBlocks')
     const removeResult = await RemoveIncomingBlock(newBlock.PrevHash, Db,
-      (`${CstTxt.Block} ${blockhash} ${CstTxt.IncomingBlockAdded}`))
+      (`-- ${CstTxt.Block} ${newBlock.Hash} ${CstTxt.IncomingBlockAdded}`))
     return removeResult
   } catch (err) { Debug(err.message); return err }
 }
 
-// all needed block are stored, now process them (check prevHash,..)
-// recursive until all blocks are evaluated
+// all needed block are stored
+// now evaluate them (check prevHash,.., store valid block in local blockchain copy)
 const ProcessReceivedBlocks = async (BlockChain) => {
+  // recursive until all blocks are evaluated
   const processBlocksPromise = []
 
   const inboundBlocks = await BlockChain.Db.Find(CstDocs.IncomingBlocks, {})
@@ -115,14 +120,14 @@ const ProcessReceivedBlocks = async (BlockChain) => {
 
   Promise.all(processBlocksPromise)
     .then(async (result) => {
-      Debug(`${CstTxt.IncomingBlockProcessResult} ${result}`)
+      Debug(`- ${CstTxt.IncomingBlockProcessResult} ${result}`)
       // check if syncing is done (all blocks are evaluated)
       const syncing = await BlockChain.CheckSyncingNeeded()
       if (syncing) {
-        Debug(CstTxt.IncomingBlockReprocess)
+        Debug(`- ${CstTxt.IncomingBlockReprocess}`)
         ProcessReceivedBlocks(BlockChain)
       } else {
-        Debug(CstTxt.IncomingBlockAllProcessed)
+        Debug(`- ${CstTxt.IncomingBlockAllProcessed}`)
       }
     })
     .catch(err => console.error(err))
@@ -147,13 +152,11 @@ const Hash = async (inboundHash, BlockChain) => {
 
 // store incoming block until all requests are received, the process block(s)
 const Block = async (inboundBlock, BlockChain) => {
-  const parsedBlock = await Blocks.ParseFromDb(inboundBlock)
-  const Valid = await Blocks.IsValid(parsedBlock)
-  if (!parsedBlock || !Valid) {
+  const newBlock = await Blocks.ParseFromDb(inboundBlock)
+  const Valid = await Blocks.IsValid(newBlock)
+  if (!newBlock || !Valid) {
     return (new Error(CstTxt.IncomingBlockInvalid))
   }
-  // add hashes to they will be saved in IncomingBlocks
-  const newBlock = await parsedBlock.AddHashes()
 
   // check if incoming block is already stored
   const filter = { PrevHash: newBlock.PrevHash }
@@ -167,23 +170,19 @@ const Block = async (inboundBlock, BlockChain) => {
   }
 
   // remove hash of stored block for needed list
-  // const newHash = await newBlock.GetBlockHash()
   const updatedNeeded = BlockChain.NeededHashes.filter(needed => needed !== newBlock.Hash)
-
-  // update NeededHashes
   BlockChain.UpdateNeededHashes(updatedNeeded)
+
   // still need other block before they can be evaluated ?
-  Debug(`Still need  ${updatedNeeded.length} blocks`)
   if (updatedNeeded.length !== 0) {
-    return (CstTxt.IncomingBlockStored)
+    return (`Still need  ${updatedNeeded.length} blocks, wait for evaluating them`)
   }
 
   // needed list empty ->  process stored blocks
   Debug(CstTxt.IncomingBlockAllReceived)
   await ProcessReceivedBlocks(BlockChain)
 
-  // TODO: forward validated block to know P2P
-  return (CstTxt.IncomingBlocksEvaluated)
+  return (CstTxt.IncomingBlocksEvaluatedDone)
 }
 
 // store incoming message as pending for block if this not already in the PendingMessage local db

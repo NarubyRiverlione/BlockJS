@@ -28,7 +28,7 @@ const IsHeaderComplete = (block => block.PrevHash !== undefined
 )
 
 class Block {
-  static Create(prevHash, height, nonce, diff, messages, timestamp, version = 1) {
+  static async Create(prevHash, height, nonce, diff, messages, timestamp, version = 1) {
     // PrevHash can be null = Genesis block
     // other header properties must be a Number
     if (
@@ -45,7 +45,11 @@ class Block {
       ? messages.map(msg => Message.ParseFromDb(msg))
       : null
 
-    return new Block(prevHash, height, nonce, diff, msgs, timestamp, version)
+    const NewBlock = new Block(prevHash, height, nonce, diff, msgs, timestamp, version)
+
+    NewBlock.Hash = await NewBlock.GetBlockHash()
+    NewBlock.MessagesHash = await NewBlock.GetMsgsHash()
+    return NewBlock
   }
 
   constructor(prevHash, height, nonce, diff, messages, timestamp, version) {
@@ -56,14 +60,16 @@ class Block {
     this.Version = version
     this.Timestamp = timestamp
     this.Messages = messages
+    this.Hash = null // cannot calculated async in constructor
+    this.MessagesHash = null // cannot calculated async in constructor
   }
 
   async GetMsgsHash() {
     try {
-      const AllMsgHasgh = this.Messages ? this.Messages.reduce((acc, msg) => acc.concat(msg.Hash), '') : ''
+      const AllMsgHashes = this.Messages ? this.Messages.reduce((acc, msg) => acc.concat(msg.Hash), '') : ''
       // const AllMsgAsString = JSON.stringify(this.Messages)
       // debugger
-      return await CalcHash(AllMsgHasgh)
+      return await CalcHash(AllMsgHashes)
     } catch (err) {
       /* istanbul ignore next */
       Debug(err.messages)
@@ -102,32 +108,31 @@ class Block {
         PrevHash, Height, Nonce, Diff, Timestamp, Version, Hash,
       } = blockObj
 
-      const ParsedBlock = Block.Create(PrevHash, Height, Nonce, Diff, messages, Timestamp, Version)
+      const ParsedBlock = await Block.Create(PrevHash, Height, Nonce, Diff, messages, Timestamp, Version)
       if (!ParsedBlock) {
         Debug(`${CstError.ParseBlock} : ${blockObj}`)
         // debugger
         return null
       }
       // verify saved block hash with calculated
-      const testHash = await ParsedBlock.GetBlockHash()
-      if (Hash !== testHash) {
-        Debug(`${CstError.ParseBlockWrongHash}: Saved=${Hash} - Calculated=${testHash}`)
+      if (Hash !== ParsedBlock.Hash) {
+        Debug(`${CstError.ParseBlockWrongHash}: Saved=${Hash} <-> Calculated=${ParsedBlock.Hash}`)
         // debugger
         return null
       }
       // TODO verify MsgHash
-      // all Block function now available
+      // all Block functions are now available
       return ParsedBlock
     } catch (err) { Debug(err.message); return null }
   }
 
-  // save block and calculated Blockhash en MessagesHash
+  // add block to the Blockchain collection
   async Save(db) {
     try {
-      const Hash = await this.GetBlockHash()
-      const HashMessages = await this.GetMsgsHash()
-      const DbBlock = { ...this, Hash, HashMessages }
-      const result = await db.Add(Cst.Db.Docs.Blockchain, DbBlock)
+      // const Hash = await this.GetBlockHash()
+      // const HashMessages = await this.GetMsgsHash()
+      // const DbBlock = { ...this, Hash, HashMessages }
+      const result = await db.Add(Cst.Db.Docs.Blockchain, this)
       return result
     } catch (err) {
       Debug(err.messages)
@@ -135,13 +140,12 @@ class Block {
     }
   }
 
-  // check if Prevhash is a block hash in the blockchain
+  // check if previous hash is a block in the blockchain
   async CheckPrevHash(blockchain) {
     try {
       if (this.PrevHash === null) {
         // only first block shouldn't have a prevHash
-        const hash = await this.GetBlockHash()
-        if (this.Height !== 0 || hash !== Cst.GenesisHashBlock) return false
+        if (this.Height !== 0 || this.Hash !== Cst.GenesisHashBlock) return false
         return true
       }
       const PrevBlock = await blockchain.GetBlockWithHash(this.prevHash)
@@ -152,15 +156,15 @@ class Block {
     }
   }
 
-  // add BlockHash and MessagesHash
-  async AddHashes() {
-    try {
-      const blockhash = await this.GetBlockHash()
-      const msgshash = await this.GetMsgsHash()
-      const BlockWithHashes = { ...this, Hash: blockhash, MessagesHash: msgshash }
-      return BlockWithHashes
-    } catch (err) { Debug(err.message); return null }
-  }
+  // // add BlockHash and MessagesHash
+  // async AddHashes() {
+  //   try {
+  //     const blockhash = await this.GetBlockHash()
+  //     const msgshash = await this.GetMsgsHash()
+  //     const BlockWithHashes = { ...this, Hash: blockhash, MessagesHash: msgshash }
+  //     return BlockWithHashes
+  //   } catch (err) { Debug(err.message); return null }
+  // }
 
   //  is type of Block + header valid + all messages valid
   static async IsValid(checkBlock) {

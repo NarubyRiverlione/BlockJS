@@ -17,11 +17,10 @@ const CreateTarget = (diff) => {
 
 // Proof-of-work: find hash that starts with the target
 const Pow = async (Target, prevHash, height, nonce, diff, PendingMessages, Timestamp) => {
-  const TestBlock = Block.Create(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
-  const TestHash = await TestBlock.GetBlockHash()
-  const TestTarget = TestHash.slice(0, diff)
+  const TestBlock = await Block.Create(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
+  const TestTarget = TestBlock.Hash.slice(0, diff)
   if (TestTarget === Target) {
-    console.log('Found it')
+    Debug(CstTxt.MiningFound)
     return TestBlock
   }
   return Pow(Target, prevHash, height, nonce + 1, diff, PendingMessages, Timestamp)
@@ -32,9 +31,6 @@ const Pow = async (Target, prevHash, height, nonce, diff, PendingMessages, Times
 const MineBlock = async (BlockChain) => {
   const syncing = await BlockChain.CheckSyncingNeeded()
   if (syncing) return (CstError.MineNotSync)
-
-  // // set flag currently mining
-  // BlockChain.SetMining(true)
 
   const { Db } = BlockChain
   const PendingMessages = await Db.Find(CstDocs.PendingMessages, {})
@@ -51,7 +47,8 @@ const MineBlock = async (BlockChain) => {
   // target is consecutive numbers
   const Target = CreateTarget(diff)
   const nonce = 0
-  const CreatedBlock = await Pow(Target, prevHash, height + 1, nonce, diff, PendingMessages, Timestamp)
+  const CreatedBlock = await Pow(Target, prevHash, height + 1,
+    nonce, diff, PendingMessages, Timestamp)
   // const CreatedBlock = await Pow(PendingMessages, BlockChain)
   const CreatingTime = (Date.now() - StartMintingTime) / 1000.0
   const HashSec = CreatedBlock.Nonce / CreatingTime / 1000
@@ -67,7 +64,7 @@ const MineBlock = async (BlockChain) => {
   // clear flag currently mining
   BlockChain.SetMining(false)
 
-  // broadcast new block
+  // broadcast new block to all known peers
   BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, CreatedBlock)
 
   // save block to blockchain

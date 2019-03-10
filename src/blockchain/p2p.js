@@ -18,6 +18,7 @@ const CreateP2Pmsg = (type, payload) => JSON.stringify({ type, payload })
 
 const AskNeededBlocks = (neededHashes, peer) => {
   neededHashes.forEach((hash) => {
+    Debug(`${CstTxt.P2PaskForAblock} ${hash}`)
     peer.send(CreateP2Pmsg(CstP2P.GETBLOCK, hash))
   })
 }
@@ -97,8 +98,6 @@ class P2P {
   // evaluate message
   MessageHandle(message, peer) {
     const msg = JSON.parse(message)
-    // Debug(`Received: "${msg.type} from peer `) // ${remoteIP}`)
-    // Debug(JSON.stringify(msg.payload))
 
     switch (msg.type) {
       case CstP2P.RECEIVED:
@@ -107,55 +106,69 @@ class P2P {
       case CstP2P.CONNECTED:
         break// prevent endless loop
 
+      // received version of peer
       case CstP2P.VERSION:
         Debug(`${CstTxt.P2PconnectedVersion} ${msg.payload}`)
         break
 
+      /* received a block
+      --> evaluate block to deicide if to add it in or blockchain copy
+       --> if it's a new top block it will be forwarded to all known peers
+       (in the CheckIfBlockIsNewTop function in incoming.js) */
       case CstP2P.BLOCK:
+        Debug(CstTxt.P2PincomingBlock)
         Incoming.Block(msg.payload, this.BlockChain)
           .then((result) => {
             if (result instanceof Block) {
-              Debug(CstTxt.P2PincomingBlock)
-              // // check if there's a relevant message for this wallet
-              // this.Wallet.IncomingBlock(result, this.Db)
-            }
+              Debug(CstTxt.P2PincomingBlockDone)
+            } else (Debug(result))
           })
           .catch(err => console.error(err))
         break
 
+      // received (best) hash of a peer
+      // --> send INV message to peer with hash he doesn't have
       case CstP2P.HASH:
         Debug(`${CstTxt.P2PconnectedBestHash} ${msg.payload}`)
         Incoming.Hash(msg.payload, this.BlockChain)
           // send hashes that peers doesn't have
           .then((peerNeededHashes) => {
-            Debug(`Send Inv with ${peerNeededHashes.length} hashes to peer`)
+            Debug(`${CstTxt.P2PsendInv} ${peerNeededHashes.length} ${CstTxt.P2PsendInv2}`)
             peer.send(CreateP2Pmsg(CstP2P.INVENTORY, peerNeededHashes))
           })
           .catch(err => console.error(err))
         break
 
+      // received hashes a peer has and this node not yet
+      // --> ask voor each needed block via sending a GETBLOCK message
       case CstP2P.INVENTORY:
+        Debug(`${CstTxt.P2Pinv} ${msg.payload.length} hashes`)
         // save needed hashes
         this.BlockChain.NeededHashes = this.BlockChain.NeededHashes.concat(msg.payload)
         // ask for blocks with  hashes that are available with this connected peer
         AskNeededBlocks(msg.payload, peer)
         break
 
+      // received request for a block
+      // --> send the block via a BLOCK message
       case CstP2P.GETBLOCK:
-        Debug(`Peer asked for block with hash ${msg.payload}`)
+        Debug(`${CstTxt.P2PgetBlock} ${msg.payload}`)
         this.BlockChain.GetBlockWithHash(msg.payload)
           .then(block => peer.send(CreateP2Pmsg(CstP2P.BLOCK, block)))
           .catch(err => console.error(err))
         break
 
+      // received a pending message
+      // --> store in the PendingMessage collection for mining later
+      // --> forward the pending message to all know peers
       case CstP2P.MESSAGE:
-        Debug('Incoming message')
+        Debug(Cst.P2PpendingMsg)
         Incoming.Msg(msg.payload, this.BlockChain)
           .then((pendingMsg) => {
             if (pendingMsg) {
               // only forward received message when it's new for this node
               // to prevent endless loop
-              Debug('Forward received message to peers')
+              Debug(CstTxt.P2PpendingMsgForward)
               this.Broadcast(CstP2P.MESSAGE, pendingMsg)
             }
           })

@@ -7,8 +7,12 @@ const { Cst, CstError } = require('../Const.js')
 const { Db: { Docs: CstDocs } } = Cst
 
 const CreateGenesisBlock = async () => {
-  const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
-  return Block.Create(null, 0, Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
+  try {
+    const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
+    return await Block.Create(null, 0,
+      Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg],
+      Cst.GenesisTimestamp)
+  } catch (err) { Debug(err.message); return null }
 }
 
 
@@ -17,37 +21,40 @@ const CreateBlockchain = async (BlockChain) => {
     // create blockchain by adding genesis block
     const GenesisBlock = await CreateGenesisBlock()
     Debug('Save genesis in Db')
-    // await BlockChain.Db.Add(CstDocs.Blockchain, GenesisBlock)
     return await GenesisBlock.Save(BlockChain.Db)
   } catch (err) {
     return Promise.reject(new Error(`${CstError.GenessisNotAdded} : ${err}`))
   }
 }
 
-const ExistInDb = async (BlockChain) => {
-  try {
-    const FirstBlocks = await BlockChain.Db.Find(CstDocs.Blockchain, { Height: 0 })
+const ExistInDb = BlockChain => (
+  new Promise(async (resolve, reject) => {
+    try {
+      const FirstBlocks = await BlockChain.Db.Find(CstDocs.Blockchain, { Height: 0 })
 
-    if (FirstBlocks.length > 1) {
-      return Promise.reject(new Error(`${CstError.MultiBlocks}`))
+      if (FirstBlocks.length > 1) {
+        return reject(new Error(`${CstError.MultiBlocks}`))
+      }
+      // no blocks in database = no genesis block (first run?)
+      if (FirstBlocks.length === 0) {
+        const result = await CreateBlockchain(BlockChain)
+        return resolve(result)
+      }
+
+      // check if first block is genesis block (verify hash = genesis hash)
+      const [FirstDbBlock] = FirstBlocks
+      const FirstBlock = await Block.ParseFromDb(FirstDbBlock)
+      if (!FirstBlock) return reject(new Error(CstError.ParseBlock))
+
+      if (FirstBlock.Hash !== Cst.GenesisHashBlock) {
+        return reject(new Error(CstError.GenessisNotFirst))
+      }
+      return resolve(true)
+    } catch (err) {
+      Debug(err.message)
+      return reject(new Error(`${CstError.GenessisNotAdded}`))
     }
-    // no blocks in database = no genesis block (first run?)
-    if (FirstBlocks.length === 0) { return await CreateBlockchain(BlockChain) }
-    // check if first block is genesis block (verify hash = genesis hash)
-    const [FirstDbBlock] = FirstBlocks
-    const FirstBlock = await Block.ParseFromDb(FirstDbBlock)
-    if (!FirstBlock) return Promise.reject(new Error(CstError.ParseBlock))
-    // debugger
-    const FirstBlockHash = await FirstBlock.GetBlockHash()
-    // debugger
-    if (FirstBlockHash !== Cst.GenesisHashBlock) {
-      return Promise.reject(new Error(CstError.GenessisNotFirst))
-    }
-    return Promise.resolve(true)
-  } catch (err) {
-    Debug(err.message)
-    return Promise.reject(new Error(`${CstError.GenessisNotAdded}`))
-  }
-}
+  })
+)
 
 module.exports = { ExistInDb, CreateBlockchain }
