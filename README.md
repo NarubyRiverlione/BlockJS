@@ -1,11 +1,12 @@
 # BlockJS (WIP)
 
+
 ## Install via Docker ##
 To setup the node & database containers use this `docker-compose.yml`
 ```
 version: "3"
 services:
- node:
+ blockjs:
   image: naruby/blockjs
   networks:
     - DbNet
@@ -33,7 +34,7 @@ networks:
 ## Why oh why ##
 Yes I know, yet an other blockchain project…
 
-There are indeed already many great articles about blockchain with javascript, I’ve reference some of them at the end. But all the once I found don’t have persistent storage. Every time you restart the node application a new blockchain is forged with a genesis block. Each consecutive mined block is stored only in memory. This is my challenge: make persistent blockchain with javascript.
+There are indeed already many great articles about blockchain with javascript, But all the once I found don’t have persistent storage. Every time you restart the node application a new blockchain is forged with a genesis block. Each consecutive mined block is stored only in memory. This is my challenge: make persistent blockchain with javascript.
 
 
 (start reading speed X5)
