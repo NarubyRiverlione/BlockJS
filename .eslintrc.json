@@ -14,7 +14,13 @@
   "rules": {
     "no-underscore-dangle": "off",
     "no-unused-vars": "warn",
-    "max-len": "warn",
+    "max-len": [
+      "warn",
+      {
+        "code": 120,
+        "comments": 150
+      }
+    ],
     "indent": [
       "warn",
       2,
@@ -41,7 +47,7 @@
       "warn",
       {
         "allow": [
-          "warn",
+          "off",
           "error"
         ]
       }

@@ -276,17 +276,7 @@ class BlockChain {
   Syncing() {
     return this.NeededHashes.length > 0
   }
-  // CheckSyncingNeeded() {
-  //   const { NeededHashes } = this
-  //   return new Promise((resolve, reject) => {
-  //     this.Db.CountDocs(CstDocs.IncomingBlocks)
-  //       .then((amountBlockNeedEvaluation) => {
-  //         if (amountBlockNeedEvaluation > 0 || NeededHashes.length > 0) return resolve(true)
-  //         return resolve(false)
-  //       })
-  //       .catch(err => reject(err))
-  //   })
-  // }
+
 
   // Set of clear Mining flag
   SetMining(mining) {

@@ -8,10 +8,11 @@ const { Cst, CstError, CstTxt } = require('../Const.js')
 const { P2P: CstP2P } = Cst
 
 /*
-inbound HashMsg -> send InvMsg([received Hash ... best hash])
-inbound InvMsg(neededHashes) ->  AskNeededBlocks:  send x GetBlockMsg(hash)
-inbound GetBlockMsg(hash) -> SendBlockMsg(hash)
-inbound BlockMsg(block) ->IncomingBlock(block):  add to local blockchain
+HASH: inbound HashMsg -> send InvMsg([received Hash ... best hash])
+INV: inbound InvMsg(neededHashes) ->  AskNeededBlocks:  send x GetBlockMsg(hash)
+GETBLOCK: inbound GetBlockMsg(hash) -> SendBlockMsg(hash)
+BLOCK: inbound BlockMsg(block) ->IncomingBlock(block):  add to local blockchain
+VERSION: handshake version
 */
 
 const CreateP2Pmsg = (type, payload) => JSON.stringify({ type, payload })
@@ -182,7 +183,7 @@ class P2P {
 
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (!remotePort) {
         return reject(new Error(CstError.P2PconnectNoIP))
       }
@@ -230,7 +231,7 @@ class P2P {
       // send hash of this blockchain
       this.BlockChain.GetBestHash()
         .then((hash) => {
-          Debug('Sending best hash')
+          Debug(`Sending best own hash: ${hash}`)
           connection.send(CreateP2Pmsg(CstP2P.HASH, hash))
           return resolve(`P2P handshake done with ${remoteIP}:${remotePort}`)
         })

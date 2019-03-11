@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 const Mine = require('../src/blockchain/mining.js')
 const Message = require('../src/blockchain/message.js')
-const Block = require('../src/blockchain/block.js')
+// const Block = require('../src/blockchain/block.js')
 
 const { Cst, CstError } = require('../src/Const')
 
@@ -84,7 +84,6 @@ it('Mining aborted = result is null', async () => {
   // abort after 2sec
   jest.useFakeTimers()
   setTimeout(() => {
-    console.log('ABORT MINING')
     TestBlockchainAbort.SetMining(false)
   }, 1000)
   jest.runAllTimers()

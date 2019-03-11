@@ -164,16 +164,6 @@ class Block {
     }
   }
 
-  // // add BlockHash and MessagesHash
-  // async AddHashes() {
-  //   try {
-  //     const blockhash = await this.GetBlockHash()
-  //     const msgshash = await this.GetMsgsHash()
-  //     const BlockWithHashes = { ...this, Hash: blockhash, MessagesHash: msgshash }
-  //     return BlockWithHashes
-  //   } catch (err) { Debug(err.message); return null }
-  // }
-
   //  is type of Block + header valid + all messages valid
   static async IsValid(checkBlock) {
     if (!(checkBlock instanceof Block)) {
