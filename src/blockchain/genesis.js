@@ -12,7 +12,10 @@ const CreateGenesisBlock = async () => {
     return await Block.Create(null, 0,
       Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg],
       Cst.GenesisTimestamp)
-  } catch (err) { Debug(err.message); return null }
+  } catch (err) {
+    /* istanbul ignore next */
+    Debug(err.message); return null
+  }
 }
 
 
@@ -57,4 +60,4 @@ const ExistInDb = BlockChain => (
   })
 )
 
-module.exports = { ExistInDb, CreateBlockchain }
+module.exports = { ExistInDb }

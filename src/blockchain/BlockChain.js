@@ -9,7 +9,7 @@ const DB = require('./db.js')
 const P2P = require('./p2p.js')
 const API = require('../api/express.js')
 const Genesis = require('./genesis.js')
-const Mining = require('./mining.js')
+const Mine = require('./mining.js')
 const Address = require('./address.js')
 
 
@@ -296,7 +296,7 @@ class BlockChain {
 
   // create new block with all pending messages
   async MineBlock() {
-    const newBlock = await Mining.MineBlock(this)
+    const newBlock = await Mine.MineBlock(this)
     if (newBlock) { Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Hash}`) }
   }
 

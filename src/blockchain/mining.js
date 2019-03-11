@@ -16,8 +16,15 @@ const CreateTarget = (diff) => {
   return target
 }
 
+// check if valid solution: hash begins with same as target
+const CheckPoW = (Diff, Hash) => {
+  const Target = CreateTarget(Diff)
+  const TestTarget = Hash.slice(0, Diff)
+  return TestTarget === Target
+}
+
 // Proof-of-work: find hash that starts with the target
-const Pow = async (Target, prevHash, height, nonce, diff, PendingMessages, Timestamp, cbGetMiningStatus) => {
+const Pow = async (prevHash, height, nonce, diff, PendingMessages, Timestamp, cbGetMiningStatus) => {
   const TestBlock = await Block.Create(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
   // check if still mining
   const MiningStatus = cbGetMiningStatus()
@@ -25,13 +32,11 @@ const Pow = async (Target, prevHash, height, nonce, diff, PendingMessages, Times
     Debug('Need to stop mining')
     return null
   }
-  // check if valid solution: hash begins with same as target
-  const TestTarget = TestBlock.Hash.slice(0, diff)
-  if (TestTarget === Target) {
+  if (CheckPoW(diff, TestBlock.Hash)) {
     Debug(CstTxt.MiningFound)
     return TestBlock
   }
-  return Pow(Target, prevHash, height, nonce + 1, diff, PendingMessages, Timestamp, cbGetMiningStatus)
+  return Pow(prevHash, height, nonce + 1, diff, PendingMessages, Timestamp, cbGetMiningStatus)
 }
 
 
@@ -51,19 +56,17 @@ const MineBlock = async (Blockchain) => {
   const Timestamp = Date.now()
   Debug(`Start finding a block with difficulty ${diff}`)
 
-  // target is amount of consecutive numbers equal to difficulty
-  const Target = CreateTarget(diff)
   // callback to check still mining during PoW
   const GetMiningStatus = () => Blockchain.Mining
 
   // Find Proof-of-Work solution
-  const CreatedBlock = await Pow(Target, prevHash, height + 1,
+  const CreatedBlock = await Pow(prevHash, height + 1,
     0, diff, PendingMessages, Timestamp, GetMiningStatus)
 
   const CreatingTime = (Date.now() - StartMintingTime) / 1000.0
 
   // check if mining was aborted (ex. a new block was received via p2p)
-  if (!Blockchain.Mining) {
+  if (!GetMiningStatus()) {
     Debug(CstTxt.MiningAborted)
     return null
   }
@@ -89,4 +92,4 @@ const MineBlock = async (Blockchain) => {
   return (CreatedBlock)
 }
 
-module.exports = { MineBlock }
+module.exports = { MineBlock, CheckPoW }

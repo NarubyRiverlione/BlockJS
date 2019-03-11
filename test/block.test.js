@@ -4,24 +4,25 @@ const Message = require('../src/blockchain/message')
 const { Cst } = require('../src/Const')
 
 const TestContent = 'Test message'
+const TestContent2 = '2th Test message'
 const TestFromAddress = 'Azerty123456789'
 
 const NotBlock = {
   PrevHash: 12,
   Height: 1556,
-  Nonce: 669880,
-  Diff: 1352,
-  Version: 165,
-  Timestamp: 1550499139,
+  Nonce: 3,
+  Diff: 1,
+  Version: 1,
+  Timestamp: 1552298828282,
   Messages: null,
-
+  Hash: '01a9ea0b176702a3e8b38deb60ae550f6190064dc46150062cc50cd037665c32',
 }
 
 const Init = async () => {
   const TestMsg = await Message.Create(TestFromAddress, TestContent)
-  const TestMsg2 = await Message.Create(TestFromAddress, TestContent)
+  const TestMsg2 = await Message.Create(TestFromAddress, TestContent2)
 
-  const ValidBlock = await Block.Create(123, 0, 0, 2, [TestMsg, TestMsg2], Date.now())
+  const ValidBlock = await Block.Create(123, 456, 22, 1, [TestMsg, TestMsg2], 1552297448266)
   const SavedBlockHash = ValidBlock.Hash
   const SavedMgsHash = ValidBlock.HashMessages
   return {
@@ -36,7 +37,7 @@ it('Valid block creation: block with 2 messages', async () => {
 })
 
 it('Valid block: without messages', async () => {
-  const BlockWithoutMsg = await Block.Create(null, 0, 0, 2, null, Date.now())
+  const BlockWithoutMsg = await Block.Create(123, 456, 15, 1, null, 1552298178587)
   expect(await Block.IsValid(BlockWithoutMsg)).toBeTruthy()
 })
 
@@ -131,7 +132,6 @@ it('Message cannot be changed', async () => {
 
 it('Parse from object, without messages (simulation read from db)', async () => {
   // define Hash inside this test as other test mutates it for there run
-  NotBlock.Hash = 'b3deb664e79820672a23cbf751461dda48b18a95cf000b83ba3c33a9a1bf4d6e'
   const ParsedBlock = await Block.ParseFromDb(NotBlock)
   expect(ParsedBlock).not.toBeNull()
   const Valid = await Block.IsValid(ParsedBlock)
@@ -142,7 +142,9 @@ it('Parse from object, with messages (simulation read from db)', async () => {
   const { TestMsg } = TestData
   const FromDb = { ...NotBlock }
   FromDb.Messages = [TestMsg]
-  FromDb.Hash = 'a0976e258246ba35994ffe0ba1b1cc427701fdf3251a6b6cafa3c03da4f93bbb'
+  FromDb.Nonce = 3
+  FromDb.Timestamp = 1552299236218
+  FromDb.Hash = '00f3bbaf9794d1a7c18113002bd80d1d7bd35589f566d58f93b4a88b3cb4a924'
   const ParsedBlock = await Block.ParseFromDb(FromDb)
   expect(ParsedBlock).not.toBeNull()
   expect(await Block.IsValid(ParsedBlock)).toBeTruthy()
@@ -252,4 +254,12 @@ it('Save block to db failed', async () => {
   const dummyDb = new DummyDbSaveFaild()
   const result = await ValidBlock.Save(dummyDb)
   expect(result).toBeNull()
+})
+
+it('Check valid Pow', async () => {
+  const TestData = await Init()
+  const { ValidBlock } = TestData
+
+  const ValidPow = await ValidBlock.CheckProof()
+  expect(ValidPow).toBeTruthy()
 })

@@ -30,7 +30,10 @@ class Message {
       const MsgWithoutHash = new Message(fromAddress, null, id)
       const MsgHash = await MsgWithoutHash.GetMsgHash(content)
       return new Message(fromAddress, MsgHash, id)
-    } catch (err) { Debug(err.message); return null }
+    } catch (err) {
+      /* istanbul ignore next */
+      Debug(err.message); return null
+    }
   }
 
   async GetMsgHash(content) {

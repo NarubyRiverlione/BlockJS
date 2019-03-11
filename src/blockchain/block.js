@@ -3,10 +3,10 @@
 const cryptoAsync = require('@ronomon/crypto-async')
 
 const Debug = require('debug')('blockjs:block')
+const Message = require('./message.js')
+const Mine = require('./mining.js')
 
 const { CstError, Cst } = require('../Const')
-const Message = require('./message.js')
-
 
 const CalcHash = content => new Promise((resolve, reject) => {
   const source = Buffer.from(content, 'utf8')
@@ -95,6 +95,11 @@ class Block {
     }
   }
 
+  // check if block hash complies with PoW target
+  async CheckProof() {
+    return Mine.CheckPoW(this.Diff, this.Hash)
+  }
+
   // create instance of Block with db data
   // verify saved block hash, hash can only be correct of header is complete
   static async ParseFromDb(blockObj) {
@@ -123,7 +128,10 @@ class Block {
       // TODO verify MsgHash
       // all Block functions are now available
       return ParsedBlock
-    } catch (err) { Debug(err.message); return null }
+    } catch (err) {
+      /* istanbul ignore next */
+      Debug(err.message); return null
+    }
   }
 
   // add block to the Blockchain collection
@@ -174,9 +182,17 @@ class Block {
     }
     // header complete ?
     if (!IsHeaderComplete(checkBlock)) {
-      Debug('ERROR block is not valid: header incomplete')
+      Debug('ERROR block is not valid: header incomplete !')
       return false
     }
+
+    // is the PoW valid ?
+    const ValidPow = await checkBlock.CheckProof()
+    if (!ValidPow) {
+      Debug('ERROR Proof-of-Work solution is not valid !')
+      return false
+    }
+
     // are all Messages valid ?
     if (checkBlock.Messages && checkBlock.Messages.length > 0) {
       const MessagesValid = await checkBlock.Messages.reduce(async (acc, msg) => {
