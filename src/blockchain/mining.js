@@ -1,42 +1,35 @@
 const Debug = require('debug')('blockjs:mine')
-const Block = require('./block.js')
+const { CheckPoW, CreateBlock } = require('./block.js')
 
 const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
 
-// target is string of consecutive numbers equal to the difficulty
-// ex. diff=4 --> target ='0123'
-const CreateTarget = (diff) => {
-  let target = ''
-  for (let digit = 0; digit < diff; digit += 1) {
-    target = target.concat(digit)
-  }
-  return target
-}
-
-// check if valid solution: hash begins with same as target
-const CheckPoW = (Diff, Hash) => {
-  const Target = CreateTarget(Diff)
-  const TestTarget = Hash.slice(0, Diff)
-  return TestTarget === Target
-}
-
 // Proof-of-work: find hash that starts with the target
 const Pow = async (prevHash, height, nonce, diff, PendingMessages, Timestamp, cbGetMiningStatus) => {
-  const TestBlock = await Block.Create(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
-  // check if still mining
-  const MiningStatus = cbGetMiningStatus()
-  if (!MiningStatus) {
-    Debug('Need to stop mining')
+  try {
+    const TestBlock = await CreateBlock(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
+    if (!TestBlock) {
+      Debug('Cannot create block')
+      return null
+    }
+
+    // check if still mining
+    const MiningStatus = cbGetMiningStatus()
+    if (!MiningStatus) {
+      Debug('Need to stop mining')
+      return null
+    }
+    if (CheckPoW(diff, TestBlock.Hash)) {
+      Debug(CstTxt.MiningFound)
+      return TestBlock
+    }
+    return Pow(prevHash, height, nonce + 1, diff, PendingMessages, Timestamp, cbGetMiningStatus)
+  } catch (err) {
+    Debug(err.message)
     return null
   }
-  if (CheckPoW(diff, TestBlock.Hash)) {
-    Debug(CstTxt.MiningFound)
-    return TestBlock
-  }
-  return Pow(prevHash, height, nonce + 1, diff, PendingMessages, Timestamp, cbGetMiningStatus)
 }
 
 

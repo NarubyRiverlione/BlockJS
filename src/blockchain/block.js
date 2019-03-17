@@ -3,8 +3,7 @@
 const cryptoAsync = require('@ronomon/crypto-async')
 
 const Debug = require('debug')('blockjs:block')
-const Message = require('./message.js')
-const Mine = require('./mining.js')
+const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
 
 const { CstError, Cst } = require('../Const')
 
@@ -18,40 +17,33 @@ const CalcHash = content => new Promise((resolve, reject) => {
 })
 
 
+// target is string of consecutive numbers equal to the difficulty
+// ex. diff=4 --> target ='0123'
+const CreateTarget = (diff) => {
+  let target = ''
+  for (let digit = 0; digit < diff; digit += 1) {
+    target = target.concat(digit)
+  }
+  return target
+}
+
+// check if valid solution: hash begins with same as target
+const CheckPoW = (Diff, Hash) => {
+  const Target = CreateTarget(Diff)
+  const TestTarget = Hash.slice(0, Diff)
+  return TestTarget === Target
+}
+
 // PrevHash can be null = Genesis block
 // other header properties must be a Number
-const IsHeaderComplete = (block => block.PrevHash !== undefined
+const IsHeaderComplete = block => block.PrevHash !== undefined
   && Number.isInteger(block.Height)
   && Number.isInteger(block.Nonce)
   && Number.isInteger(block.Diff)
   && Number.isInteger(block.Timestamp)
-)
+
 
 class Block {
-  static async Create(prevHash, height, nonce, diff, messages, timestamp, version = 1) {
-    // PrevHash can be null = Genesis block
-    // other header properties must be a Number
-    if (
-      prevHash === undefined
-      || !Number.isInteger(nonce)
-      || !Number.isInteger(height)
-      || !Number.isInteger(diff)
-      || !Number.isInteger(timestamp)) {
-      Debug(CstError.BlockHeaderIncomplete)
-      return null
-    }
-    // remove database _id property from messages
-    const msgs = messages
-      ? messages.map(msg => Message.ParseFromDb(msg))
-      : null
-
-    const NewBlock = new Block(prevHash, height, nonce, diff, msgs, timestamp, version)
-
-    NewBlock.Hash = await NewBlock.GetBlockHash()
-    NewBlock.MessagesHash = await NewBlock.GetMsgsHash()
-    return NewBlock
-  }
-
   constructor(prevHash, height, nonce, diff, messages, timestamp, version) {
     this.PrevHash = prevHash
     this.Height = height
@@ -95,45 +87,6 @@ class Block {
     }
   }
 
-  // check if block hash complies with PoW target
-  async CheckProof() {
-    return Mine.CheckPoW(this.Diff, this.Hash)
-  }
-
-  // create instance of Block with db data
-  // verify saved block hash, hash can only be correct of header is complete
-  static async ParseFromDb(blockObj) {
-    try {
-      // remove database _id property from messages
-      const messages = blockObj.Messages
-        ? blockObj.Messages.map(msg => Message.ParseFromDb(msg))
-        : null
-
-      const {
-        PrevHash, Height, Nonce, Diff, Timestamp, Version, Hash,
-      } = blockObj
-
-      const ParsedBlock = await Block.Create(PrevHash, Height, Nonce, Diff, messages, Timestamp, Version)
-      if (!ParsedBlock) {
-        Debug(`${CstError.ParseBlock} : ${blockObj}`)
-        // debugger
-        return null
-      }
-      // verify saved block hash with calculated
-      if (Hash !== ParsedBlock.Hash) {
-        Debug(`${CstError.ParseBlockWrongHash}: Saved=${Hash} <-> Calculated=${ParsedBlock.Hash}`)
-        // debugger
-        return null
-      }
-      // TODO verify MsgHash
-      // all Block functions are now available
-      return ParsedBlock
-    } catch (err) {
-      /* istanbul ignore next */
-      Debug(err.message); return null
-    }
-  }
-
   // add block to the Blockchain collection
   async Save(db) {
     try {
@@ -163,37 +116,103 @@ class Block {
       return false
     }
   }
+}
 
-  //  is type of Block + header valid + all messages valid
-  static async IsValid(checkBlock) {
-    if (!(checkBlock instanceof Block)) {
-      Debug('ERROR block is not of type Block (loaded from db without cast?)')
-      return false
-    }
-    // header complete ?
-    if (!IsHeaderComplete(checkBlock)) {
-      Debug('ERROR block is not valid: header incomplete !')
-      return false
-    }
 
-    // is the PoW valid ?
-    const ValidPow = await checkBlock.CheckProof()
-    if (!ValidPow) {
-      Debug('ERROR Proof-of-Work solution is not valid !')
-      return false
-    }
+// Create a block
+const CreateBlock = async (prevHash, height, nonce, diff, messages, timestamp, version = 1) => {
+  try {
+    // PrevHash can be null = Genesis block
+    // other header properties must be a Number
 
-    // are all Messages valid ?
-    if (checkBlock.Messages && checkBlock.Messages.length > 0) {
-      const MessagesValid = await checkBlock.Messages.reduce(async (acc, msg) => {
-        const msgValid = await Message.IsValid(msg)
-        return await acc && msgValid
-      }, true)
-
-      return MessagesValid
+    if (
+      prevHash === undefined
+      || !Number.isInteger(nonce)
+      || !Number.isInteger(height)
+      || !Number.isInteger(diff)
+      || !Number.isInteger(timestamp)) {
+      Debug(CstError.BlockHeaderIncomplete)
+      return null
     }
-    return true
+    // remove database _id property from messages
+    const msgs = messages
+      ? messages.map(msg => ParseMessageFromDb(msg))
+      : null
+
+    const NewBlock = new Block(prevHash, height, nonce, diff, msgs, timestamp, version)
+    NewBlock.Hash = await NewBlock.GetBlockHash()
+    NewBlock.MessagesHash = await NewBlock.GetMsgsHash()
+    return NewBlock
+  } catch (err) {
+    Debug(err.message)
+    return null
+  }
+}
+// create instance of Block with db data
+// verify saved block hash, hash can only be correct of header is complete
+const ParseBlockFromDb = async (blockObj) => {
+  try {
+    // remove database _id property from messages
+    const messages = blockObj.Messages
+      ? blockObj.Messages.map(msg => ParseMessageFromDb(msg))
+      : null
+
+    const {
+      PrevHash, Height, Nonce, Diff, Timestamp, Version, Hash,
+    } = blockObj
+
+    const ParsedBlock = await CreateBlock(PrevHash, Height, Nonce, Diff, messages, Timestamp, Version)
+    if (!ParsedBlock) {
+      Debug(`${CstError.ParseBlock} : ${blockObj}`)
+      // debugger
+      return null
+    }
+    // verify saved block hash with calculated
+    if (Hash !== ParsedBlock.Hash) {
+      Debug(`${CstError.ParseBlockWrongHash}: Saved=${Hash} <-> Calculated=${ParsedBlock.Hash}`)
+      // debugger
+      return null
+    }
+    // TODO verify MsgHash
+    // all Block functions are now available
+    return ParsedBlock
+  } catch (err) {
+    /* istanbul ignore next */
+    // debugger
+    Debug(err.message); return null
   }
 }
 
-module.exports = Block
+//  is type of Block + header valid + all messages valid
+const IsValidBlock = async (checkBlock) => {
+  if (!(checkBlock instanceof Block)) {
+    Debug('ERROR block is not of type Block (loaded from db without cast?)')
+    return false
+  }
+  // header complete ?
+  if (!IsHeaderComplete(checkBlock)) {
+    Debug('ERROR block is not valid: header incomplete !')
+    return false
+  }
+
+  // is the PoW valid ?
+  const ValidPow = await CheckPoW(checkBlock.Diff, checkBlock.Hash)
+  if (!ValidPow) {
+    Debug('ERROR Proof-of-Work solution is not valid !')
+    return false
+  }
+
+  // are all Messages valid ?
+  if (checkBlock.Messages && checkBlock.Messages.length > 0) {
+    const MessagesValid = await checkBlock.Messages.reduce(async (acc, msg) => {
+      const msgValid = await IsMessageValid(msg)
+      return await acc && msgValid
+    }, true)
+
+    return MessagesValid
+  }
+  return true
+}
+module.exports = {
+  CheckPoW, CreateBlock, ParseBlockFromDb, IsValidBlock,
+}

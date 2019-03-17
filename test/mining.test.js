@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 const Mine = require('../src/blockchain/mining.js')
-const Message = require('../src/blockchain/message.js')
+const { CreateMessage } = require('../src/blockchain/message.js')
 // const Block = require('../src/blockchain/block.js')
 
 const { Cst, CstError } = require('../src/Const')
@@ -15,8 +15,8 @@ const TestFromAddress = 'Azerty123456789'
 class DummyDb {
   async Find(doc) {
     if (doc === CstDocs.PendingMessages) {
-      const TestMsg = await Message.Create(TestFromAddress, TestContent)
-      const TestMsg2 = await Message.Create(TestFromAddress, TestContent2)
+      const TestMsg = await CreateMessage(TestFromAddress, TestContent)
+      const TestMsg2 = await CreateMessage(TestFromAddress, TestContent2)
 
       return Promise.resolve(([TestMsg, TestMsg2]))
     }

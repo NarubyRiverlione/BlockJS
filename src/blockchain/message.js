@@ -24,18 +24,6 @@ class Message {
     this.Hash = hash
   }
 
-  static async Create(fromAddress, content, id) {
-    try {
-      // make a dummy message without hash to calculate... the hash
-      const MsgWithoutHash = new Message(fromAddress, null, id)
-      const MsgHash = await MsgWithoutHash.GetMsgHash(content)
-      return new Message(fromAddress, MsgHash, id)
-    } catch (err) {
-      /* istanbul ignore next */
-      Debug(err.message); return null
-    }
-  }
-
   async GetMsgHash(content) {
     try {
       const { Id, From } = this
@@ -48,31 +36,42 @@ class Message {
     }
   }
 
-  static async IsValid(msg, content = null) {
-    if (!(msg instanceof Message)) {
-      Debug(new Error('Not of type Message (loaded from db without cast?)'))
-      return false
-    }
-
-    if (!msg.From) { Debug(CstError.MsgNoFrom); return false }
-
-    if (content) {
-      const checkHash = await msg.GetMsgHash(content)
-      if (msg.Hash !== checkHash) { Debug(CstError.msgHashInvalid); return false }
-    }
-    return true
-  }
-
-
-  // remove database _id property from messages
-  static ParseFromDb(messageObj) {
-    const { From, Hash, Id } = messageObj
-    return new Message(From, Hash, Id)
-  }
-
   Save(db) {
     return db.Add(CstDocs.PendingMessages, this)
   }
 }
 
-module.exports = Message
+const CreateMessage = async (fromAddress, content, id) => {
+  try {
+    // make a dummy message without hash to calculate... the hash
+    const MsgWithoutHash = new Message(fromAddress, null, id)
+    const MsgHash = await MsgWithoutHash.GetMsgHash(content)
+    return new Message(fromAddress, MsgHash, id)
+  } catch (err) {
+    /* istanbul ignore next */
+    Debug(err.message); return null
+  }
+}
+
+// remove database _id property from messages
+const ParseMessageFromDb = (messageObj) => {
+  const { From, Hash, Id } = messageObj
+  return new Message(From, Hash, Id)
+}
+
+const IsMessageValid = async (msg, content = null) => {
+  if (!(msg instanceof Message)) {
+    Debug(new Error('Not of type Message (loaded from db without cast?)'))
+    return false
+  }
+
+  if (!msg.From) { Debug(CstError.MsgNoFrom); return false }
+
+  if (content) {
+    const checkHash = await msg.GetMsgHash(content)
+    if (msg.Hash !== checkHash) { Debug(CstError.msgHashInvalid); return false }
+  }
+  return true
+}
+
+module.exports = { CreateMessage, IsMessageValid, ParseMessageFromDb }

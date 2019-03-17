@@ -1,7 +1,7 @@
 const Debug = require('debug')('blockjs:incoming')
 
-const Message = require('./message.js')
-const Blocks = require('./block.js')
+const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
+const { ParseBlockFromDb, IsValidBlock } = require('./block.js')
 
 const { Cst, CstTxt, CstError } = require('../Const.js')
 
@@ -59,7 +59,7 @@ const BlockIsNewTop = async (newBlock, BlockChain) => {
 */
 const EvaluateBlock = async (inboundBlock, syncing, BlockChain) => {
   try {
-    const newBlock = await Blocks.ParseFromDb(inboundBlock)
+    const newBlock = await ParseBlockFromDb(inboundBlock)
 
     if (!newBlock) return (CstError.ParseBlock)
     const { Db } = BlockChain
@@ -158,8 +158,8 @@ const Hash = async (inboundHash, BlockChain) => {
 
 // store incoming block until all requests are received, the process block(s)
 const Block = async (inboundBlock, BlockChain) => {
-  const newBlock = await Blocks.ParseFromDb(inboundBlock)
-  const Valid = await Blocks.IsValid(newBlock)
+  const newBlock = await ParseBlockFromDb(inboundBlock)
+  const Valid = await IsValidBlock(newBlock)
   if (!newBlock || !Valid) {
     return (new Error(CstTxt.IncomingBlockInvalid))
   }
@@ -201,10 +201,10 @@ const Block = async (inboundBlock, BlockChain) => {
 
 // store incoming message as pending for block if this not already in the PendingMessage local db
 const Msg = async (msg, BlockChain) => {
-  const message = Message.ParseFromDb(msg)
+  const message = ParseMessageFromDb(msg)
 
   // is the Transaction complete ?
-  if (!Message.IsValid(message)) {
+  if (!IsMessageValid(message)) {
     return Promise.reject(new Error(CstError.SendNoValid))
   }
   // check if incoming message is already stored

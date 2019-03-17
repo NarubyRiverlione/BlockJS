@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 const Genesis = require('../src/blockchain/genesis')
-const Block = require('../src/blockchain/block')
-const Message = require('../src/blockchain/message')
+const { CreateBlock } = require('../src/blockchain/block')
+const { CreateMessage } = require('../src/blockchain/message')
 const { Cst, CstError } = require('../src/Const')
 
 const { Db: { Docs: CstDocs } } = Cst
@@ -11,8 +11,8 @@ const TestFromAddress = 'Azerty123456789'
 
 
 const CreateGenesisBlock = async () => {
-  const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg)
-  const GenesisBlock = await Block.Create(null, 0, Cst.GenesisNonce,
+  const GenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg)
+  const GenesisBlock = await CreateBlock(null, 0, Cst.GenesisNonce,
     Cst.GenesisDiff, [GenesisMsg], Cst.GenesisTimestamp)
   return GenesisBlock
 }
@@ -49,8 +49,8 @@ class DummyDbDoubleHeight0 {
 class DummyDbHeight0NotGenessis {
   Find() {
     return new Promise(async (resolve) => {
-      const TestMsg = await Message.Create(TestFromAddress, TestContent)
-      const DbValidBlock = await Block.Create(null, 0, 0, 2, [TestMsg], 1552063321)
+      const TestMsg = await CreateMessage(TestFromAddress, TestContent)
+      const DbValidBlock = await CreateBlock(null, 0, 0, 2, [TestMsg], 1552063321)
       DbValidBlock.Hash = await DbValidBlock.GetBlockHash()
       resolve([DbValidBlock])
     })

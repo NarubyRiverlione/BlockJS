@@ -2,8 +2,8 @@ const Debug = require('debug')('blockjs:BlockChain')
 const https = require('https')
 const fs = require('fs')
 
-const Message = require('./message.js')
-const Block = require('./block.js')
+const { CreateMessage, IsMessageValid, ParseMessageFromDb } = require('./message.js')
+const { ParseBlockFromDb, IsValidBlock } = require('./block.js')
 const { Cst, CstError, CstTxt } = require('../Const.js')
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
@@ -143,7 +143,7 @@ class BlockChain {
       try {
         const maxHeight = await this.GetHeight()
         const foundBlocksAtHeight = await this.Db.Find(CstDocs.Blockchain, { Height: maxHeight })
-        const block = await Block.ParseFromDb(foundBlocksAtHeight[0])
+        const block = await ParseBlockFromDb(foundBlocksAtHeight[0])
         return resolve(block)
       } catch (err) { return reject(err) }
     })
@@ -157,7 +157,7 @@ class BlockChain {
         if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHeigh} ${atHeight}`))
         if (foundBlock.length === 0) return resolve(null)
         Debug(`Loaded block with hash ${foundBlock[0].Hash} for height ${atHeight}`)
-        const block = await Block.ParseFromDb(foundBlock[0])
+        const block = await ParseBlockFromDb(foundBlock[0])
         return resolve(block)
       } catch (err) { return reject(err) }
     })
@@ -170,7 +170,7 @@ class BlockChain {
         const foundBlock = await this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
         if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
         if (foundBlock.length === 0) return resolve(null)
-        const block = await Block.ParseFromDb(foundBlock[0])
+        const block = await ParseBlockFromDb(foundBlock[0])
         return resolve(block)
       } catch (err) { return reject(err) }
     })
@@ -201,13 +201,15 @@ class BlockChain {
   // add a message to the pending Messages
   async SendMsg(Content, Id) {
     try {
-      const msg = await Message.Create(this.Address, Content, Id)
-      // is msg a Message object ?
-      if (msg instanceof Message === false) { return (new Error(CstError.SendNotMsg)) }
-      // is the Message object not empty ?
-      if (Object.keys(msg).length === 0) { return (new Error(CstError.SendNoContent)) }
+      const msg = await CreateMessage(this.Address, Content, Id)
+
+      // // is msg a Message object ?
+      // if (msg instanceof Message === false) { return (new Error(CstError.SendNotMsg)) }
+      // // is the Message object not empty ?
+      // if (Object.keys(msg).length === 0) { return (new Error(CstError.SendNoContent)) }
+
       // is the Message complete ?
-      const valid = await Message.IsValid(msg)
+      const valid = await IsMessageValid(msg)
       if (!valid) { return (new Error(CstError.SendNoValid)) }
       // add message to pending pool
       await msg.Save(this.Db)
@@ -221,7 +223,7 @@ class BlockChain {
   // default search from own address
   async FindMsg(Content, FromAddress = this.Address, Id = null) {
     // create Message to get the message hash
-    const msg = await Message.Create(FromAddress, Content, Id)
+    const msg = await CreateMessage(FromAddress, Content, Id)
     const filter = { 'Messages.Hash': msg.Hash }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
@@ -246,7 +248,7 @@ class BlockChain {
   async GetAllPendingMgs() {
     const pendingDbMsgs = await this.Db.Find(CstDocs.PendingMessages, {})
     // remove database _id property
-    const pendingMsg = pendingDbMsgs.map(msg => Message.ParseFromDb(msg))
+    const pendingMsg = pendingDbMsgs.map(msg => ParseMessageFromDb(msg))
     return pendingMsg
   }
 
@@ -297,13 +299,13 @@ class BlockChain {
       const KnowHashes = new Set()
       let Ok = true
       AllBlocks.forEach(async (block) => {
-        const TestBlock = await Block.ParseFromDb(block)
+        const TestBlock = await ParseBlockFromDb(block)
         if (!TestBlock) {
           Debug(`${CstError.BlockInvalid} : ${block}`)
           Ok = false
         }
 
-        const Valid = await Block.IsValid(TestBlock)
+        const Valid = await IsValidBlock(TestBlock)
         if (!Valid) {
           Debug(`${CstError.BlockInvalid} : ${block}`)
           Ok = false

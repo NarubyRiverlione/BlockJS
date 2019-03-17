@@ -1,6 +1,6 @@
 const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
-const Block = require('./block.js')
+// const { IsValidBlock } = require('./block.js')
 const Incoming = require('./incoming.js')
 
 const { Cst, CstError, CstTxt } = require('../Const.js')
@@ -119,11 +119,7 @@ class P2P {
       case CstP2P.BLOCK:
         Debug(CstTxt.P2PincomingBlock)
         Incoming.Block(msg.payload, this.BlockChain)
-          .then((result) => {
-            if (result instanceof Block) {
-              Debug(CstTxt.P2PincomingBlockDone)
-            } else (Debug(result))
-          })
+          .then(result => Debug(result))
           .catch(err => console.error(err))
         break
 

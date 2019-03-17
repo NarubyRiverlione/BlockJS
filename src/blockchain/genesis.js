@@ -1,15 +1,15 @@
 const Debug = require('debug')('blockjs:genesis')
 
-const Message = require('./message.js')
-const Block = require('./block.js')
+const { CreateMessage } = require('./message.js')
+const { CreateBlock, ParseBlockFromDb } = require('./block.js')
 const { Cst, CstError } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
 const CreateGenesisBlock = async () => {
   try {
-    const GenesisMsg = await Message.Create(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
-    return await Block.Create(null, 0,
+    const GenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
+    return await CreateBlock(null, 0,
       Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg],
       Cst.GenesisTimestamp)
   } catch (err) {
@@ -46,7 +46,7 @@ const ExistInDb = BlockChain => (
 
       // check if first block is genesis block (verify hash = genesis hash)
       const [FirstDbBlock] = FirstBlocks
-      const FirstBlock = await Block.ParseFromDb(FirstDbBlock)
+      const FirstBlock = await ParseBlockFromDb(FirstDbBlock)
       if (!FirstBlock) return reject(new Error(CstError.ParseBlock))
 
       if (FirstBlock.Hash !== Cst.GenesisHashBlock) {
