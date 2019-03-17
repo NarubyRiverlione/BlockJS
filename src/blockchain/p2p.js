@@ -84,12 +84,17 @@ class P2P {
     })
   }
 
-  // send message to all connected peers (incoming) and connections (outgoing)
-  Broadcast(type, payload) {
+  /* send message to all connected peers
+  incoming and outgoing connections
+  except an optional provided peer
+*/
+  Broadcast(type, payload, expectToPeer) {
     Debug(`${CstTxt.P2Pbroadcast} ${type} ${CstTxt.P2Pmsg}`)
+    if (expectToPeer) Debug('Don\'t send to expectToPeer')
+
     const msg = CreateP2Pmsg(type, payload)
     this.Server.clients.forEach((peer) => {
-      peer.send(msg)
+      if (peer !== expectToPeer) peer.send(msg)
     })
     this.OutgoingConnections.forEach((connection) => {
       connection.send(msg)
@@ -118,7 +123,7 @@ class P2P {
        (in the CheckIfBlockIsNewTop function in incoming.js) */
       case CstP2P.BLOCK:
         Debug(CstTxt.P2PincomingBlock)
-        Incoming.Block(msg.payload, this.BlockChain)
+        Incoming.Block(msg.payload, this.BlockChain, peer)
           .then(result => Debug(result))
           .catch(err => console.error(err))
         break

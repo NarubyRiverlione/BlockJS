@@ -33,7 +33,7 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, 
 ==> stop mining as pending messages are in the new block
 ==> forward block to know peers
  */
-const BlockIsNewTop = async (newBlock, BlockChain) => {
+const BlockIsNewTop = async (newBlock, BlockChain, formPeer) => {
   // Debug('--- Check if incoming block is the new top')
   // const amountNeededEvaluation = await BlockChain.Db.CountDocs(CstDocs.IncomingBlocks)
   // // const amountNeededHashes = BlockChain.NeededHashes.length
@@ -48,16 +48,15 @@ const BlockIsNewTop = async (newBlock, BlockChain) => {
   Debug('---- Clear all pending messages')
   await BlockChain.Db.RemoveAllDocs(CstDocs.PendingMessages)
   // forward new block to peers
-  Debug('---- Forward the block to all new peers')
-  BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock)
-  // }
+  Debug('---- Forward the block to all peers, except the peer that send this block')
+  BlockChain.P2P.Broadcast(Cst.P2P.BLOCK, newBlock, formPeer)
 }
 
 /* evaluate a block: is this a needed block during sync or the new top of blockchain
 --> add to blockchain
 --> remove in db collection IncomingBlocks
 */
-const EvaluateBlock = async (inboundBlock, syncing, BlockChain) => {
+const EvaluateBlock = async (inboundBlock, syncing, BlockChain, formPeer) => {
   try {
     const newBlock = await ParseBlockFromDb(inboundBlock)
 
@@ -100,7 +99,7 @@ const EvaluateBlock = async (inboundBlock, syncing, BlockChain) => {
     // not syncing & receiving a block => must be a new top block
     // execute extra actions
     if (!syncing) {
-      await BlockIsNewTop(newBlock, BlockChain)
+      await BlockIsNewTop(newBlock, BlockChain, formPeer)
       // not syncing, no need to change IncomingBlocks collection, stop evaluating
       return true
     }
@@ -115,13 +114,13 @@ const EvaluateBlock = async (inboundBlock, syncing, BlockChain) => {
 
 // all needed block are stored
 // now evaluate them (check prevHash,.., store valid block in local blockchain copy)
-const ProcessReceivedBlocks = async (BlockChain) => {
+const ProcessReceivedBlocks = async (BlockChain, formPeer) => {
   // recursive until all blocks are evaluated
   const processBlocksPromise = []
 
   const inboundBlocks = await BlockChain.Db.Find(CstDocs.IncomingBlocks, {})
   inboundBlocks.forEach((inboundBlock) => {
-    processBlocksPromise.push(EvaluateBlock(inboundBlock, true, BlockChain))
+    processBlocksPromise.push(EvaluateBlock(inboundBlock, true, BlockChain, formPeer))
   })
 
   Promise.all(processBlocksPromise)
@@ -157,7 +156,7 @@ const Hash = async (inboundHash, BlockChain) => {
 }
 
 // store incoming block until all requests are received, the process block(s)
-const Block = async (inboundBlock, BlockChain) => {
+const Block = async (inboundBlock, BlockChain, formPeer) => {
   const newBlock = await ParseBlockFromDb(inboundBlock)
   const Valid = await IsValidBlock(newBlock)
   if (!newBlock || !Valid) {
@@ -176,10 +175,9 @@ const Block = async (inboundBlock, BlockChain) => {
   }
 
   // check if syncing
-
   if (!BlockChain.Syncing()) {
     Debug('Received a block and wasn`t syncing, only need to evaluate this one block')
-    EvaluateBlock(newBlock, false, BlockChain)
+    EvaluateBlock(newBlock, false, BlockChain, formPeer)
     return (CstTxt.IncomingBlocksEvaluatedDone)
   }
 
@@ -194,7 +192,7 @@ const Block = async (inboundBlock, BlockChain) => {
 
   // needed list empty ->  process stored blocks
   Debug(CstTxt.IncomingBlockAllReceived)
-  await ProcessReceivedBlocks(BlockChain)
+  await ProcessReceivedBlocks(BlockChain, formPeer)
 
   return (CstTxt.IncomingBlocksEvaluatedDone)
 }
