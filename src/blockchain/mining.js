@@ -36,7 +36,6 @@ const Pow = async (prevHash, height, nonce, diff, PendingMessages, Timestamp, cb
 // create new block with all pending messages
 const MineBlock = async (Blockchain) => {
   if (Blockchain.Syncing()) return (CstError.MineNotSync)
-  Debug(process.env.UV_THREADPOOL_SIZE)
 
   const { Db } = Blockchain
   const PendingMessages = await Db.Find(CstDocs.PendingMessages, {})
