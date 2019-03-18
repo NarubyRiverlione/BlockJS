@@ -11,8 +11,10 @@ class Routes {
     this.router = express.Router()
 
     this.router.get(['/', Cmd.Help], (req, res) => {
-      const ListCommands = Object.keys(CstHelp).reduce((list, command) => list.concat(`${command} : ${CstHelp[command]}\n`),
-        '')
+      const ListCommands = Object.keys(CstHelp).reduce(
+        (list, command) => list.concat(`${command} : ${CstHelp[command]}\n`),
+        '',
+      )
       const HelpTxt = `
 ${CstTxt.ApiName} - ${CstTxt.Version}: ${blockchain.Version}\n
 ${CstTxt.ListCmds}
@@ -100,12 +102,23 @@ ${ListCommands}
         res.status(400).send({ error: CstError.HashNotString })
       }
     })
-    this.router.get(Cmd.Mine, (req, res) => {
-      const Start = Boolean(JSON.parse(req.params.start))
-      console.log(`Received command to ${Start ? 'start' : 'stop'} mining`)
-      blockchain.SetMining(Start)
-      res.status(200).send(`${CstTxt.Mining} : ${Start}`)
+    this.router.get(Cmd.MinerStart, (req, res) => {
+      try {
+        blockchain.MinerSetStatus(true)
+        res.status(200).send(`${CstTxt.MinerRunning} : ${true}`)
+      } catch (err) {
+        res.status(400).json({ error: err.message })
+      }
     })
+    this.router.get(Cmd.MinerStop, (req, res) => {
+      try {
+        blockchain.MinerSetStatus(false)
+        res.status(200).send(`${CstTxt.MinerRunning} : ${false}`)
+      } catch (err) {
+        res.status(400).json({ error: err.message })
+      }
+    })
+
     this.router.get(Cmd.AmountPeers, (req, res) => {
       const amount = blockchain.ConnectionCount()
       res.status(200).json(amount)

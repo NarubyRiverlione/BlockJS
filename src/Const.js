@@ -15,6 +15,7 @@ const Cst = {
   StartDiff: 4,
   PrivateKeySize: 10,
   AddressPrefix: 'SPICE_',
+  MiningStartEveryMinutes: 15,
 
   Db: {
     DefaultDataDir: './data',
@@ -60,7 +61,8 @@ const Cst = {
       Info: '/Info',
       LastHash: '/LastHash',
       LastBlock: '/LastBlock',
-      Mine: '/Mine/:start',
+      MinerStart: '/MineStart',
+      MinerStop: '/MineStop',
       PendingAmount: '/PendingAmount',
       PendingAll: '/PendingAll',
       PeersDetails: '/PeersDetails',
@@ -90,6 +92,7 @@ const CstTxt = {
   LastHash: 'Last hash',
   Pending: 'Pending messages',
   MiningFound: 'Found a new block !!',
+  MinerRunning: 'Miner running',
   Mining: 'Currently mining',
   Syncing: 'Currently syncing',
   MiningFoundBlock: 'Created a block',
@@ -104,6 +107,7 @@ const CstTxt = {
   IncomingBlockStored: 'Block stored in IncomingBlocks collection',
   IncomingBlocksEvaluatedDone: 'All stored blocks are evaluated',
   IncomingBlockAlreadyKnow: 'Incoming block already in blockchain, don\'t need to evaluate',
+  // eslint-disable-next-line max-len
   IncomingBlockPrevNotKnown: '.', // 'Previous block is not in the blockchain, keep block in stored incoming blocks, will need to evaluate again',
   IncomingBlockNewHeight: 'Height of new incoming block will be',
   IncomingBlockProcessResult: 'Incoming block evaluated:',
@@ -166,6 +170,7 @@ const CstError = {
   CannotFindBlockForHash: 'Cannot find block with hash',
   CannotGetBestHash: 'Cannot find best hash',
   PreviousHashNotInBlockchain: 'Previous hash is found in blockchain',
+  MinerCmdInvalid: 'Cannot start or stop the miner',
 }
 
 const CstHelp = {
@@ -181,7 +186,8 @@ const CstHelp = {
   [Cst.API.Cmd.Info]: 'Information of the blockchain',
   [Cst.API.Cmd.LastHash]: 'Last hash of the blockchain',
   [Cst.API.Cmd.LastBlock]: 'Last block',
-  [Cst.API.Cmd.Mine]: 'Mine one block',
+  [Cst.API.Cmd.MinerStart]: 'Start the miner',
+  [Cst.API.Cmd.MinerStop]: 'Stop the miner',
   [Cst.API.Cmd.PendingAmount]: 'Amount of pending messages to be mined',
   [Cst.API.Cmd.PendingAll]: 'Show all pending messages',
   [Cst.API.Cmd.PeersDetails]: 'Show connected peers',

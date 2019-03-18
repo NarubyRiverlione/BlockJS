@@ -1,4 +1,4 @@
-process.env['UV_THREADPOOL_SIZE'] = 128
+process.env.UV_THREADPOOL_SIZE = 64 // 128
 
 const Debug = require('debug')('blockjs:app')
 const Sentry = require('@sentry/node')

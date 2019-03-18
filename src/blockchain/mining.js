@@ -36,6 +36,7 @@ const Pow = async (prevHash, height, nonce, diff, PendingMessages, Timestamp, cb
 // create new block with all pending messages
 const MineBlock = async (Blockchain) => {
   if (Blockchain.Syncing()) return (CstError.MineNotSync)
+  Debug(process.env.UV_THREADPOOL_SIZE)
 
   const { Db } = Blockchain
   const PendingMessages = await Db.Find(CstDocs.PendingMessages, {})
@@ -50,7 +51,7 @@ const MineBlock = async (Blockchain) => {
   Debug(`Start finding a block with difficulty ${diff}`)
 
   // callback to check still mining during PoW
-  const GetMiningStatus = () => Blockchain.Mining
+  const GetMiningStatus = () => Blockchain.GetCurrentMining()
 
   // Find Proof-of-Work solution
   const CreatedBlock = await Pow(prevHash, height + 1,
@@ -64,11 +65,12 @@ const MineBlock = async (Blockchain) => {
     return null
   }
   // clear flag currently mining
-  Blockchain.SetMining(false)
+  Blockchain.SetCurrentMining(false)
 
   // show time to find solution and hash rate
   const HashSec = CreatedBlock.Nonce / CreatingTime / 1000
-  Debug(`${CstTxt.MiningFoundBlock} after ${CreatedBlock.Nonce} attempts in ${CreatingTime.toFixed(1)} sec = ${HashSec.toFixed(1)} kHash/s`)
+
+  Debug(`${CstTxt.MiningFoundBlock} after ${CreatedBlock.Nonce} attempts in ${CreatingTime.toFixed(1)} sec = ${HashSec.toFixed(1)} kHash/s`)// eslint-disable-line max-len
 
   // broadcast new block to all known peers
   Blockchain.P2P.Broadcast(Cst.P2P.BLOCK, CreatedBlock)

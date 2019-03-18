@@ -198,6 +198,7 @@ class P2P {
 
   // Connect to a peer, send version + best hash
   Connect(remoteIP, remotePort) {
+    // eslint-disable-next-line consistent-return
     return new Promise(async (resolve, reject) => {
       if (!remotePort) {
         return reject(new Error(CstError.P2PconnectNoIP))

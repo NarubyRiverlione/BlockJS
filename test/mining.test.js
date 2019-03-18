@@ -37,7 +37,7 @@ class DummyBlockchain {
     this.Db = new DummyDb()
     this.P2P = new DummyP2P()
     this.syncNeeded = syncNeeded
-    this.Mining = false
+    this.MiningBusy = false
     this.TestDiff = testDiff
   }
 
@@ -51,8 +51,12 @@ class DummyBlockchain {
     return 456
   }
 
-  SetMining(mining) {
-    this.Mining = mining
+  SetCurrentMining(mining) {
+    this.MiningBusy = mining
+  }
+
+  GetCurrentMining() {
+    return this.MiningBusy
   }
 
   GetDiff() {
@@ -60,10 +64,10 @@ class DummyBlockchain {
   }
 }
 
-// disabled test to prevent cpu load as jest runs automatically in Visual Code
+
 it('Mine a block', async () => {
   const TestBlockchain = new DummyBlockchain(false)
-  TestBlockchain.SetMining(true)
+  TestBlockchain.SetCurrentMining(true)
   const NewBlock = await Mine.MineBlock(TestBlockchain)
   expect(NewBlock).not.toBeNull()
   // FIXME: IsValid test interference with the' mining aborted' test
@@ -73,18 +77,18 @@ it('Mine a block', async () => {
 
 it('Cannot mine if not sync', async () => {
   const TestBlockchainNotSync = new DummyBlockchain(true)
-  TestBlockchainNotSync.SetMining(true)
+  TestBlockchainNotSync.SetCurrentMining(true)
   const resultNoSync = await Mine.MineBlock(TestBlockchainNotSync)
   expect(resultNoSync).toBe(CstError.MineNotSync)
 })
 
 it('Mining aborted = result is null', async () => {
   const TestBlockchainAbort = new DummyBlockchain(false, 10)
-  TestBlockchainAbort.SetMining(true)
+  TestBlockchainAbort.SetCurrentMining(true)
   // abort after 2sec
   jest.useFakeTimers()
   setTimeout(() => {
-    TestBlockchainAbort.SetMining(false)
+    TestBlockchainAbort.SetCurrentMining(false)
   }, 1000)
   jest.runAllTimers()
   const resultAbort = await Mine.MineBlock(TestBlockchainAbort)

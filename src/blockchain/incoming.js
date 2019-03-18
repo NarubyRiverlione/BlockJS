@@ -41,8 +41,8 @@ const BlockIsNewTop = async (newBlock, BlockChain, formPeer) => {
   // if (amountNeededEvaluation === 0) { // && amountNeededHashes === 0
   Debug('---- Incoming block is new top of blockchain')
   if (BlockChain.Mining) {
-    Debug('---- Stop mining, an other peer was faster in finding the PoW solution')
-    BlockChain.SetMining(false)
+    Debug('---- Stop if currently mining, an other peer was faster in finding the PoW solution')
+    BlockChain.SetCurrentMining(false)
   }
   // TODO: remove only pending TX that are in this block
   Debug('---- Clear all pending messages')

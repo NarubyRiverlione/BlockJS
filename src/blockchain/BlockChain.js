@@ -71,7 +71,8 @@ class BlockChain {
     this.P2P = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = []
     this.API = API(this)
-    this.Mining = false
+    this.MiningBusy = false // currently mining a block
+    this.MinerRunning = false // will start mining every Cst.MiningStartEveryMinutes
 
     this.SSL_OPTIONS = {
       key: fs.readFileSync('./src/keys/ssl.key'),
@@ -92,8 +93,11 @@ class BlockChain {
           ${CstTxt.Height}: ${height}
           ${CstTxt.Diff}: ${diff}
           ${CstTxt.LastHash}: ${hash}
+
           ${CstTxt.Pending}: ${amountPending}
-          ${CstTxt.Mining}: ${this.Mining}
+          ${CstTxt.MinerRunning}: ${this.MinerRunning}
+          ${CstTxt.Mining}: ${this.MiningBusy}
+
           ${CstTxt.Syncing}: ${this.Syncing()}`
     return Promise.resolve(infoText)
   }
@@ -168,7 +172,7 @@ class BlockChain {
     return new Promise(async (resolve, reject) => {
       try {
         const foundBlock = await this.Db.Find(CstDocs.Blockchain, { Hash: blockhash })
-        if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))
+        if (foundBlock.length > 1) return reject(new Error(`${CstError.MultiBlocks} ${CstError.SameHash}: ${blockhash} `))// eslint-disable-line max-len
         if (foundBlock.length === 0) return resolve(null)
         const block = await ParseBlockFromDb(foundBlock[0])
         return resolve(block)
@@ -280,16 +284,35 @@ class BlockChain {
   }
 
 
-  // Set of clear Mining flag
-  SetMining(mining) {
-    this.Mining = mining
-    if (mining) this.MineBlock()
+  // Starts or stops the continues miner
+  MinerSetStatus(mining) {
+    if (mining && this.MinerRunning) {
+      Debug('Miner is already running')
+      return
+    }
+    this.MinerRunning = mining
+    this.MiningBusy = mining
+    if (mining) this.MinerLoop() // start Miner loop
   }
 
-  // create new block with all pending messages
-  async MineBlock() {
+  // set clear the currently mining flag
+  SetCurrentMining(mining) {
+    this.MiningBusy = mining
+  }
+
+  // get currently mining flag
+  GetCurrentMining() {
+    return this.MiningBusy
+  }
+
+  // create new blocks with all pending messages as long Miner is running
+  async MinerLoop() {
     const newBlock = await Mine.MineBlock(this)
     if (newBlock) { Debug(`${CstTxt.MiningFoundBlock} : ${newBlock.Height} = ${newBlock.Hash}`) }
+    if (this.MinerRunning) {
+      this.MiningBusy = true
+      this.MinerLoop()
+    }
   }
 
   // verify all block in the blockchain
