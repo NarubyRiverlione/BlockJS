@@ -34,11 +34,6 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, 
 ==> forward block to know peers
  */
 const BlockIsNewTop = async (newBlock, BlockChain, formPeer) => {
-  // Debug('--- Check if incoming block is the new top')
-  // const amountNeededEvaluation = await BlockChain.Db.CountDocs(CstDocs.IncomingBlocks)
-  // // const amountNeededHashes = BlockChain.NeededHashes.length
-  // // check if this is a new block in the chain
-  // if (amountNeededEvaluation === 0) { // && amountNeededHashes === 0
   Debug('---- Incoming block is new top of blockchain')
   if (BlockChain.Mining) {
     Debug('---- Stop if currently mining, an other peer was faster in finding the PoW solution')
@@ -181,13 +176,13 @@ const Block = async (inboundBlock, BlockChain, formPeer) => {
     return (CstTxt.IncomingBlocksEvaluatedDone)
   }
 
-  // remove hash of stored block for needed list
-  const updatedNeeded = BlockChain.NeededHashes.filter(needed => needed !== newBlock.Hash)
-  BlockChain.UpdateNeededHashes(updatedNeeded)
+  // remove hash of stored block from needed list
+  const UpdatedNeeded = !BlockChain.NeededHashes.has(newBlock.Hash)
+  BlockChain.RemoveFromNeededHashes(UpdatedNeeded)
 
   // still need other block before they can be evaluated ?
-  if (updatedNeeded.length !== 0) {
-    return (`Still need  ${updatedNeeded.length} blocks, wait for evaluating them`)
+  if (UpdatedNeeded.length !== 0) {
+    return (`Still need  ${UpdatedNeeded.length} blocks, wait for evaluating them`)
   }
 
   // needed list empty ->  process stored blocks

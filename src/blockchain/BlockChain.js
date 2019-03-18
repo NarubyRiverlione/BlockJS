@@ -69,7 +69,7 @@ class BlockChain {
     this.Version = version
     this.Address = address
     this.P2P = null // p2p started when local blockchain is loaded or created
-    this.NeededHashes = []
+    this.NeededHashes = new Set()
     this.API = API(this)
     this.MiningBusy = false // currently mining a block
     this.MinerRunning = false // will start mining every Cst.MiningStartEveryMinutes
@@ -275,12 +275,16 @@ class BlockChain {
     return this.P2P.Amount()
   }
 
-  UpdateNeededHashes(needed) {
-    this.NeededHashes = needed
+  AddToNeededHashes(hash) {
+    this.NeededHashes.add(hash)
+  }
+
+  RemoveFromNeededHashes(hash) {
+    this.NeededHashes.delete(hash)
   }
 
   Syncing() {
-    return this.NeededHashes.length > 0
+    return this.NeededHashes.size > 0
   }
 
 
