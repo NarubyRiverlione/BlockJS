@@ -5,9 +5,9 @@
   "main": "app.js",
   "scripts": {
     "startdb": "mongod --config ./mongod.conf",
-    "2th": "DEBUG=blockjs:* Port=3000 apiPort=3100 node --inspect ./src/app.js",
+    "2th": "DEBUG=blockjs:* Port=3000 apiPort=3100 apiPassword=test node --inspect ./src/app.js",
     "start": "node ./src/app.js",
-    "test": "jest",
+    "test": "apiPassword=test jest",
     "stopdb": "mongo admin --eval 'db.shutdownServer()'",
     "lint": "eslint src/**/*.js --fix"
   },
@@ -26,6 +26,7 @@
     "compression": "^1.7.2",
     "debug": "^4.1.0",
     "express": "^4.16.3",
+    "express-basic-auth": "^1.1.6",
     "express-force-ssl": "^0.3.2",
     "mongodb": "^3.1.13",
     "morgan": "1.9.1",

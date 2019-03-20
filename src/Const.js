@@ -80,6 +80,7 @@ const CstTxt = {
   InfoTitle: 'BLOCKCHAIN INFO',
   PeerInfoTitle: 'PEER INFO',
   Version: 'Version',
+  APIpassword: 'API password is',
   PeersConnectedTitle: 'Connected peers:',
   Started: 'started',
   Stopped: 'Database connection closed, P2P connections closed',

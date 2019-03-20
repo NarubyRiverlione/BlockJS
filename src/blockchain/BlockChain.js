@@ -15,6 +15,15 @@ const Address = require('./address.js')
 
 const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
 
+const CheckApiPass = (ApiPass) => {
+  if (!ApiPass) {
+    const APIpassword = Math.random().toString(36).slice(-8)
+    console.log(`${CstTxt.APIpassword} ${APIpassword}`) // eslint-disable no-console
+    Debug(`${CstTxt.APIpassword} ${APIpassword}`)
+    return APIpassword
+  }
+  return ApiPass
+}
 
 class BlockChain {
   /* start BlockChain :
@@ -28,6 +37,7 @@ class BlockChain {
     DbServer = Cst.Db.DefaultServerIP,
     DbPort = Cst.Db.DefaultPort,
     APIPort = CstAPI.DefaultPort,
+    APIpassword,
   ) {
     const database = new DB()
     await database.Connect(DbServer, DbPort)
@@ -35,8 +45,11 @@ class BlockChain {
     // get own address
     const address = await Address(database)
 
+    // if no api password is provided create a random one
+    const ApiPass = CheckApiPass(APIpassword)
+
     // make BlockChain
-    const blockchain = new BlockChain(database, address)
+    const blockchain = new BlockChain(database, address, ApiPass)
 
     // check if genesis block exists
     await Genesis.ExistInDb(blockchain)
@@ -64,13 +77,13 @@ class BlockChain {
     process.exit()
   }
 
-  constructor(Db, address, version = 1) {
+  constructor(Db, address, APIpass, version = 1) {
     this.Db = Db
     this.Version = version
     this.Address = address
     this.P2P = null // p2p started when local blockchain is loaded or created
     this.NeededHashes = new Set()
-    this.API = API(this)
+    this.API = API(this, APIpass)
     this.MiningBusy = false // currently mining a block
     this.MinerRunning = false // will start mining every Cst.MiningStartEveryMinutes
 
@@ -80,6 +93,7 @@ class BlockChain {
       // ca: fs.readFileSync('./keys/intermediate.crt'),
     }
   }
+
 
   // get info text with Height, Diff, hash, amount pending messages
   async GetInfo() {

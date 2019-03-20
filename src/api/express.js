@@ -4,6 +4,7 @@ const forceSSL = require('express-force-ssl')
 const compression = require('compression')
 const morgan = require('morgan')
 const bodyParser = require('body-parser')
+const basicAuth = require('express-basic-auth')
 
 const queryErrorHandler = require('querymen').errorHandler
 const bodyErrorHandler = require('bodymen').errorHandler
@@ -11,7 +12,7 @@ const bodyErrorHandler = require('bodymen').errorHandler
 const Routes = require('./routes.js')
 const { Cst } = require('../Const.js')
 
-module.exports = (BlockChain) => {
+module.exports = (BlockChain, APIpass) => {
   const app = express()
   const apiRoutes = new Routes(BlockChain)
 
@@ -21,6 +22,10 @@ module.exports = (BlockChain) => {
     trustXFPHeader: true,
   })
   app.use(forceSSL)
+  // basic authentication: username & password
+  app.use(basicAuth({
+    users: { APIuser: APIpass },
+  }))
   // compression
   app.use(compression())
   // logger
