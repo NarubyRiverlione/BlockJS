@@ -17,6 +17,7 @@
     "blockjs",
     "chainlink",
     "coinbased",
+    "eccrypto",
     "lastblock",
     "msghash",
     "ronomon",

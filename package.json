@@ -7,7 +7,7 @@
     "startdb": "mongod --config ./mongod.conf",
     "2th": "DEBUG=blockjs:* Port=3000 apiPort=3100 apiPassword=test node --inspect ./src/app.js",
     "start": "node ./src/app.js",
-    "test": "apiPassword=test jest",
+    "test": "jest",
     "stopdb": "mongo admin --eval 'db.shutdownServer()'",
     "lint": "eslint src/**/*.js --fix"
   },
@@ -18,6 +18,10 @@
   ],
   "author": "Naruby",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NarubyRiverlione/BlockJS.git"
+  },
   "dependencies": {
     "@ronomon/crypto-async": "^4.0.0",
     "@sentry/node": "4.6.1",

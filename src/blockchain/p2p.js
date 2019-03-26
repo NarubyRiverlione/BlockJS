@@ -161,8 +161,8 @@ class P2P {
       // --> ask voor each needed block via sending a GETBLOCK message
       case CstP2P.INVENTORY:
         Debug(`${CstTxt.P2Pinv} ${payload.length} hashes`)
-        // save needed hash
-        BlockChain.AddToNeededHashes(payload)
+        // save all needed hashes
+        BlockChain.AddHashesToNeeded(payload)
         // ask for blocks with  hashes that are available with this connected peer
         AskNeededBlocks(payload, peer)
         break

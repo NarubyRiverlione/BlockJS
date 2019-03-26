@@ -24,7 +24,6 @@ const CheckApiPass = (ApiPass) => {
   }
   return ApiPass
 }
-
 class BlockChain {
   /* start BlockChain :
   - connect to Db
@@ -289,8 +288,8 @@ class BlockChain {
     return this.P2P.Amount()
   }
 
-  AddToNeededHashes(hash) {
-    this.NeededHashes.add(hash)
+  AddHashesToNeeded(hashes) {
+    hashes.forEach(hash => this.NeededHashes.add(hash))
   }
 
   RemoveFromNeededHashes(hash) {

@@ -177,12 +177,12 @@ const Block = async (inboundBlock, BlockChain, formPeer) => {
   }
 
   // remove hash of stored block from needed list
-  const UpdatedNeeded = !BlockChain.NeededHashes.has(newBlock.Hash)
-  BlockChain.RemoveFromNeededHashes(UpdatedNeeded)
-
+  // const UpdatedNeeded = !BlockChain.NeededHashes.has(newBlock.Hash)
+  BlockChain.RemoveFromNeededHashes(newBlock.Hash)
+  const AmountNeeded = BlockChain.NeededHashes.size
   // still need other block before they can be evaluated ?
-  if (UpdatedNeeded.length !== 0) {
-    return (`Still need  ${UpdatedNeeded.length} blocks, wait for evaluating them`)
+  if (AmountNeeded > 0) {
+    return (`Still need  ${AmountNeeded} blocks, wait for evaluating them`)
   }
 
   // needed list empty ->  process stored blocks
