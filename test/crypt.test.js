@@ -1,8 +1,12 @@
 /* eslint-disable class-methods-use-this */
 const rimraf = require('rimraf')
 const crypt = require('../src/blockchain/crypt')
-const { Cst } = require('../src/Const')
 
+const CstTestPriv = 'TestPriv.key'
+const CstTestPub = 'TestPub.pem'
+const CstTestKeyDir = 'test/'
+const PrivKeyPath = CstTestKeyDir.concat(CstTestPriv)
+const PubKeyPath = CstTestKeyDir.concat(CstTestPub)
 const TestMsg = 'Hello World !'
 
 afterAll((done) => {
@@ -31,15 +35,21 @@ it.skip('Save new created keys in new directory', async () => {
 })
 
 it('Read saved Test keys', async () => {
-  const PrivateKey = await crypt.GetKey('TestPriv.key', 'test/')
+  const PrivateKey = await crypt.ReadKey(PrivKeyPath)
   expect(PrivateKey).not.toBeNull()
-
-  const PublicKey = await crypt.GetKey('TestPub.pem', 'test/')
+  const PublicKey = await crypt.ReadKey(PubKeyPath)
   expect(PublicKey).not.toBeNull()
+})
+it('Get no-existing key', async () => {
+  try {
+    await crypt.ReadKey('dummy')
+  } catch (err) {
+    expect(err).not.toBeNull()
+  }
 })
 
 it('Sign message with Test key', async () => {
-  const PrivateKey = await crypt.GetKey('TestPriv.key', 'test/')
+  const PrivateKey = await crypt.ReadKey(PrivKeyPath)
   expect(PrivateKey).not.toBeNull()
 
   const signature = await crypt.CreateSignature(TestMsg, PrivateKey)
@@ -52,13 +62,13 @@ it('Cannot sign message without private key', async () => {
 
 
 it('Verify signed message; OK', async () => {
-  const Priv = await crypt.GetKey('TestPriv.key', 'test/')
+  const Priv = await crypt.ReadKey(PrivKeyPath)
   expect(Priv).not.toBeNull()
 
   const Sig = await crypt.CreateSignature(TestMsg, Priv)
   expect(Sig).not.toBeNull()
 
-  const Pub = await crypt.GetKey('TestPub.pem', 'test/')
+  const Pub = await crypt.ReadKey(PubKeyPath)
   expect(Pub).not.toBeNull()
 
   const result = await crypt.VerifySignature(TestMsg, Sig, Pub)
@@ -66,13 +76,13 @@ it('Verify signed message; OK', async () => {
   expect(result).toBeTruthy()
 })
 it('Verify signed message; not ok', async () => {
-  const Priv = await crypt.GetKey('TestPriv.key', 'test/')
+  const Priv = await crypt.ReadKey(PrivKeyPath)
   expect(Priv).not.toBeNull()
 
-  const Sig = 'DUMMTY SIG'
+  const Sig = 'DUMMY SIG'
   expect(Sig).not.toBeNull()
 
-  const Pub = await crypt.GetKey('TestPub.pem', 'test/')
+  const Pub = await crypt.ReadKey(PubKeyPath)
   expect(Pub).not.toBeNull()
 
   const result = await crypt.VerifySignature(TestMsg, Sig, Pub)

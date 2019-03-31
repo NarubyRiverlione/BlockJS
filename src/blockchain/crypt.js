@@ -20,7 +20,10 @@ const ReadKey = path => (
   new Promise((resolve, reject) => {
     fs.readFile(path, (err, data) => {
       /* istanbul ignore next */
-      if (err) return reject(err)
+      if (err) {
+        Debug(err.message)
+        return reject()
+      }
       return resolve(data)
     })
   })
@@ -83,18 +86,6 @@ const SaveKeys = async (Keys, KeyPath) => {
     return false
   }
 }
-/*
-const ReadKeys = async (KeyPath) => {
-  try {
-    const privateKey = await ReadKey(KeyPath.concat(Cst.PrivFile))
-    const publicKey = await ReadKey(KeyPath.concat(Cst.PubFile))
-    return { privateKey, publicKey }
-  } catch (err) {
-    Debug(err.message)
-    return null
-  }
-}
-*/
 
 const CreateKeys = async () => {
   const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', {
@@ -106,12 +97,16 @@ const CreateKeys = async () => {
   return { privateKey, publicKey }
 }
 
-
+/*
 const GetKey = async (KeyFile, KeyPath) => {
-  const Key = await ReadKey(KeyPath.concat(KeyFile))
-  return Key
+  try {
+    return await ReadKey(KeyPath.concat(KeyFile))
+  } catch (err) {
+    Debug(err.message)
+    return null
+  }
 }
-
+*/
 const CreateSignature = async (payload, Privatekey) => {
   if (!Privatekey) {
     Debug('Cannot sign without the Private Key !!')
@@ -142,5 +137,5 @@ const VerifySignature = (payload, signature, publicKey) => {
 }
 
 module.exports = {
-  CreateSignature, VerifySignature, CalcHash, GetKey, CreateKeys, SaveKeys,
+  CreateSignature, VerifySignature, CalcHash, ReadKey, CreateKeys, SaveKeys,
 }
