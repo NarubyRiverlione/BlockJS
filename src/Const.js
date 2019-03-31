@@ -17,6 +17,12 @@ const Cst = {
   AddressPrefix: 'SPICE_',
   MiningStartEveryMinutes: 15,
 
+  PrivateKey: 'privateKey',
+  PublicKey: 'publicKey',
+  PubFile: 'pub.pem',
+  PrivFile: 'priv.key',
+  KeyDir: './Keys/',
+
   Db: {
     DefaultDataDir: './data',
     DefaultPort: 27017,

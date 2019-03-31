@@ -11,7 +11,7 @@ const API = require('../api/express.js')
 const Genesis = require('./genesis.js')
 const Mine = require('./mining.js')
 const Address = require('./address.js')
-
+const { GetKey, CreateSignature } = require('./crypt')
 
 const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
 
@@ -218,12 +218,11 @@ class BlockChain {
   // add a message to the pending Messages
   async SendMsg(Content, Id) {
     try {
-      const msg = await CreateMessage(this.Address, Content, Id)
+      // get signature and public key
+      const signature = await CreateSignature(this.db, Content)
+      const pubKey = await GetKey(this.db, Cst.PublicKey)
 
-      // // is msg a Message object ?
-      // if (msg instanceof Message === false) { return (new Error(CstError.SendNotMsg)) }
-      // // is the Message object not empty ?
-      // if (Object.keys(msg).length === 0) { return (new Error(CstError.SendNoContent)) }
+      const msg = await CreateMessage(this.Address, Content, signature, pubKey, Id)
 
       // is the Message complete ?
       const valid = await IsMessageValid(msg)
@@ -239,8 +238,11 @@ class BlockChain {
   // find a message in the blockchain, return Block
   // default search from own address
   async FindMsg(Content, FromAddress = this.Address, Id = null) {
+    // get signature and public key
+    const signature = await CreateSignature(this.db, Content)
+    const pubKey = await GetKey(this.db, Cst.PublicKey)
     // create Message to get the message hash
-    const msg = await CreateMessage(FromAddress, Content, Id)
+    const msg = await CreateMessage(FromAddress, Content, signature, pubKey, Id)
     const filter = { 'Messages.Hash': msg.Hash }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)

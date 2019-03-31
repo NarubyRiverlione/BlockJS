@@ -1,20 +1,12 @@
 /* Block: PrevHash, Nonce, Diff, Version, Timestamp, MessagesHash, Messages */
 // const SHA256 = require('crypto-js/sha256')
-const cryptoAsync = require('@ronomon/crypto-async')
+
 
 const Debug = require('debug')('blockjs:block')
 const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
+const { CalcHash } = require('./crypt')
 
 const { CstError, Cst } = require('../Const')
-
-const CalcHash = content => new Promise((resolve, reject) => {
-  const source = Buffer.from(content, 'utf8')
-  cryptoAsync.hash(Cst.HashAlgorithm, source,
-    (error, hash) => {
-      if (error) { return reject(error) }
-      return resolve(hash.toString('hex'))
-    })
-})
 
 
 // target is string of consecutive numbers equal to the difficulty

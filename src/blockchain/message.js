@@ -1,27 +1,19 @@
 /* Message: From, Hash (from+content) */
-// const SHA256 = require('crypto-js/sha256')
 const Debug = require('debug')('blockjs:message')
-const cryptoAsync = require('@ronomon/crypto-async')
+// const cryptoAsync = require('@ronomon/crypto-async')
 
 const { Cst, CstError } = require('../Const.js')
+const { CalcHash } = require('./crypt')
 
 const { Db: { Docs: CstDocs } } = Cst
 
-const CalcHash = content => new Promise((resolve, reject) => {
-  const source = Buffer.from(content, 'utf8')
-  cryptoAsync.hash(Cst.HashAlgorithm, source,
-    (error, hash) => {
-      if (error) { return reject(error) }
-      return resolve(hash.toString('hex'))
-    })
-})
-
-
 class Message {
-  constructor(fromAddress, hash, id = null) {
+  constructor(fromAddress, hash, signature, pubKey, id = null) {
     this.From = fromAddress
     this.Id = id
     this.Hash = hash
+    this.Signature = signature
+    this.PublicKey = pubKey
   }
 
   async GetMsgHash(content) {
@@ -41,12 +33,12 @@ class Message {
   }
 }
 
-const CreateMessage = async (fromAddress, content, id) => {
+const CreateMessage = async (fromAddress, content, signature, pubKey, id) => {
   try {
     // make a dummy message without hash to calculate... the hash
-    const MsgWithoutHash = new Message(fromAddress, null, id)
+    const MsgWithoutHash = new Message(fromAddress, null, signature, pubKey, id)
     const MsgHash = await MsgWithoutHash.GetMsgHash(content)
-    return new Message(fromAddress, MsgHash, id)
+    return new Message(fromAddress, MsgHash, signature, pubKey, id)
   } catch (err) {
     /* istanbul ignore next */
     Debug(err.message); return null

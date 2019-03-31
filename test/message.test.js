@@ -15,6 +15,10 @@ class DummyDb {
     if (collection === CstDocs.PendingMessages && data) return Promise.resolve(true)
     return Promise.reject()
   }
+
+  FindOne() {
+    return { PrivateKey: '123', PublicKey: '' }
+  }
 }
 
 it('Create a message, without Id', async () => {
