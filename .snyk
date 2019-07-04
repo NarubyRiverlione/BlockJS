@@ -1,4 +1,14 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
-version: v1.13.3
+version: v1.13.5
 ignore: {}
-patch: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-450202:
+    - bodymen > lodash:
+        patched: '2019-07-04T06:39:41.966Z'
+    - querymen > lodash:
+        patched: '2019-07-04T06:39:41.966Z'
+    - bodymen > rich-param > lodash:
+        patched: '2019-07-04T06:39:41.966Z'
+    - querymen > rich-param > lodash:
+        patched: '2019-07-04T06:39:41.966Z'
