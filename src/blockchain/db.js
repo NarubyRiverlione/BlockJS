@@ -23,7 +23,7 @@ class Db {
           this.db = (client.db(CstDB.Name))
           resolve()
         })
-        .catch(error => reject(new Error(`${CstError.DbNotConnected} ${DbServer} ${CstTxt.Port} ${DbPort}: ${error}`)))
+        .catch((error) => reject(new Error(`${CstError.DbNotConnected} ${DbServer} ${CstTxt.Port} ${DbPort}: ${error}`)))
     })
   }
 
@@ -69,7 +69,7 @@ class Db {
           const error = new Error(`${CstError.DbNotFind} max "${property}" ${CstError.DbToCollection} "${col}": ${err} " `)
           reject(error)
         })
-        .then(docs => resolve(docs[0]))
+        .then((docs) => resolve(docs[0]))
     })
   }
 
@@ -82,7 +82,7 @@ class Db {
           const error = new Error(`${CstError.DbNotFind} ${CstError.DbFilter} "${filter}" ${CstError.DbToCollection} "${col}": ${err.message}" `)
           reject(error)
         })
-        .then(docs => resolve(docs))
+        .then((docs) => resolve(docs))
     })
   }
 
@@ -94,7 +94,7 @@ class Db {
           const error = new Error(`${CstError.DbNotFind} ${CstError.DbFilter} "${filter}" ${CstError.DbToCollection} "${col}": ${err.message}"`)
           reject(error)
         })
-        .then(docs => resolve(docs))
+        .then((docs) => resolve(docs))
     })
   }
 
@@ -106,7 +106,7 @@ class Db {
           const error = new Error(`${CstError.DbNotFind} ${CstError.DbFilter} "${filter}" ${CstError.DbToCollection} "${col}": ${err.message}" `)
           reject(error)
         })
-        .then(doc => resolve(doc))
+        .then((doc) => resolve(doc))
     })
   }
 
@@ -118,7 +118,7 @@ class Db {
           const error = new Error(`${CstError.DbCounting} ${CstError.DbToCollection} "${col}": ${err}" `)
           reject(error)
         })
-        .then(count => resolve(count))
+        .then((count) => resolve(count))
     })
   }
 
@@ -130,7 +130,7 @@ class Db {
           const error = new Error(`${CstError.DbRemoveAll} ${CstError.DbToCollection} "${col}": ${err}" `)
           reject(error)
         })
-        .then(result => resolve(result))
+        .then((result) => resolve(result))
     })
   }
 
@@ -142,7 +142,7 @@ class Db {
           const error = new Error(`${CstError.DbRemoveOne} ${CstError.DbFilter} "${filter}" ${CstError.DbToCollection} "${col}": ${err}" `)
           reject(error)
         })
-        .then(doc => resolve(doc))
+        .then((doc) => resolve(doc))
     })
   }
 }

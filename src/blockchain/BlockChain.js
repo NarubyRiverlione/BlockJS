@@ -42,7 +42,7 @@ class BlockChain {
     await database.Connect(DbServer, DbPort)
 
     // get own address
-    const address = await Address(database)
+    const address = await Address(database, Cst.KeyDir, Cst.PubFile)
 
     // if no api password is provided create a random one
     const ApiPass = CheckApiPass(APIpassword)
@@ -120,8 +120,8 @@ class BlockChain {
   GetHeight() {
     return new Promise((resolve, reject) => {
       this.Db.FindMax(CstDocs.Blockchain, 'Height')
-        .catch(err => reject(err))
-        .then(BlockWithMaxHeight => resolve(BlockWithMaxHeight.Height))
+        .catch((err) => reject(err))
+        .then((BlockWithMaxHeight) => resolve(BlockWithMaxHeight.Height))
     })
   }
 
@@ -131,8 +131,8 @@ class BlockChain {
     // return Promise.resolve(4)
     return new Promise((resolve, reject) => {
       this.GetLastBlock()
-        .catch(err => reject(err))
-        .then(lastBlock => resolve(lastBlock.Diff))
+        .catch((err) => reject(err))
+        .then((lastBlock) => resolve(lastBlock.Diff))
     })
   }
 
@@ -267,7 +267,7 @@ class BlockChain {
   async GetAllPendingMgs() {
     const pendingDbMsgs = await this.Db.Find(CstDocs.PendingMessages, {})
     // remove database _id property
-    const pendingMsg = pendingDbMsgs.map(msg => ParseMessageFromDb(msg))
+    const pendingMsg = pendingDbMsgs.map((msg) => ParseMessageFromDb(msg))
     return pendingMsg
   }
 
@@ -291,7 +291,7 @@ class BlockChain {
   }
 
   AddHashesToNeeded(hashes) {
-    hashes.forEach(hash => this.NeededHashes.add(hash))
+    hashes.forEach((hash) => this.NeededHashes.add(hash))
   }
 
   RemoveFromNeededHashes(hash) {

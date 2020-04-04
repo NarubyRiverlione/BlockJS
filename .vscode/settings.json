@@ -13,6 +13,7 @@
     "GETBLOCK",
     "Msgs",
     "Pmsg",
+    "THREADPOOL",
     "Xhash",
     "blockjs",
     "chainlink",

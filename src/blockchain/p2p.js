@@ -57,11 +57,11 @@ class P2P {
   }
 
   IncomingDetails() {
-    return this.IncomingConnections.map(peer => peer.url)
+    return this.IncomingConnections.map((peer) => peer.url)
   }
 
   OutgoingDetails() {
-    return this.OutgoingConnections.map(out => out.url)
+    return this.OutgoingConnections.map((out) => out.url)
   }
 
   /* peer connects
@@ -93,7 +93,7 @@ class P2P {
         .then(() => {
           Debug('Done incoming handshake')
         })
-        .catch(err => console.error(err))
+        .catch((err) => console.error(err))
     })
   }
 
@@ -140,8 +140,8 @@ class P2P {
       case CstP2P.BLOCK:
         Debug(CstTxt.P2PincomingBlock)
         Incoming.Block(payload, BlockChain, peer)
-          .then(result => Debug(result))
-          .catch(err => console.error(err))
+          .then((result) => Debug(result))
+          .catch((err) => console.error(err))
         break
 
       // received (best) hash of a peer
@@ -154,7 +154,7 @@ class P2P {
             Debug(`${CstTxt.P2PsendInv} ${peerNeededHashes.length} ${CstTxt.P2PsendInv2}`)
             peer.send(CreateP2Pmsg(CstP2P.INVENTORY, peerNeededHashes))
           })
-          .catch(err => console.error(err))
+          .catch((err) => console.error(err))
         break
 
       // received hashes a peer has and this node not yet
@@ -172,8 +172,8 @@ class P2P {
       case CstP2P.GETBLOCK:
         Debug(`${CstTxt.P2PgetBlock} ${payload}`)
         BlockChain.GetBlockWithHash(payload)
-          .then(block => peer.send(CreateP2Pmsg(CstP2P.BLOCK, block)))
-          .catch(err => console.error(err))
+          .then((block) => peer.send(CreateP2Pmsg(CstP2P.BLOCK, block)))
+          .catch((err) => console.error(err))
         break
 
       // received a pending message
@@ -190,7 +190,7 @@ class P2P {
               this.Broadcast(CstP2P.MESSAGE, pendingMsg)
             }
           })
-          .catch(err => console.error(err))
+          .catch((err) => console.error(err))
         break
 
 
@@ -209,7 +209,7 @@ class P2P {
         return reject(new Error(CstError.P2PconnectNoPort))
       }
       const ConnectionUrl = `ws://${remoteIP}:${remotePort}`
-      const ExistingConnection = this.OutgoingConnections.find(conn => conn.url === ConnectionUrl)
+      const ExistingConnection = this.OutgoingConnections.find((conn) => conn.url === ConnectionUrl)
       if (ExistingConnection) {
         return reject(new Error(`${CstTxt.P2PalreadyConnected} ${remoteIP} on port ${remotePort}`))
       }
@@ -220,18 +220,18 @@ class P2P {
       // handle a connection disconnect
       connection.on('close', () => {
         // remove outgoing connection from saved
-        this.OutgoingConnections = this.OutgoingConnections.filter(conn => conn !== connection)
+        this.OutgoingConnections = this.OutgoingConnections.filter((conn) => conn !== connection)
         Debug('connection has disconnected')
       })
       // handle error
-      connection.on('error', error => new Error(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
+      connection.on('error', (error) => new Error(`P2P connection error to ${remoteIP}:${remotePort} \n ${error}`))
       // setup message handler from this connection
       connection.on('message', (message) => { this.MessageHandle(message, connection) })
       // send handshake with own version and best hash
       connection.on('open', () => {
         this.SendHandshake(connection, remoteIP, remotePort)
-          .then(result => resolve(result))
-          .catch(err => reject(err))
+          .then((result) => resolve(result))
+          .catch((err) => reject(err))
       })
     })
   }
@@ -256,7 +256,7 @@ class P2P {
           return this.SendAllPendingMessages(connection)
         })
         .then(() => resolve(`P2P handshake done with ${remoteIP}:${remotePort}`))
-        .catch(err => reject(new Error(`ERROR sending best hash ${err}`)))
+        .catch((err) => reject(new Error(`ERROR sending best hash ${err}`)))
     })
   }
 

@@ -5,6 +5,25 @@ const Debug = require('debug')('blockjs:cryp')
 
 const { Cst } = require('../Const')
 
+// convert Public DER key to KeyObject
+const ConvertPubKey = (DERkey) => {
+  const Pub = crypto.createPublicKey({ key: DERkey, format: 'der', type: 'spki' })
+  return Pub
+}
+
+// Export public key to PEM
+const ExportPublicPEM = (Pub) => (
+  Pub.export({ format: 'pem', type: 'spki' })
+)
+const ExportPublicDER = (Pub) => (
+  Pub.export({ format: 'der', type: 'spki' })
+)
+// convert Private DER key to KeyObject
+const ConvertPrivKey = (DERkey) => {
+  const Priv = crypto.createPrivateKey({ key: DERkey, format: 'der', type: 'pkcs8' })
+  return Priv
+}
+
 const WriteKey = (path, key) => (
   new Promise((resolve, reject) => {
     fs.writeFile(path, key,
@@ -16,19 +35,32 @@ const WriteKey = (path, key) => (
   })
 )
 
-const ReadKey = path => (
+const ReadKey = (path) => (
   new Promise((resolve, reject) => {
     fs.readFile(path, (err, data) => {
-      /* istanbul ignore next */
       if (err) {
         Debug(err.message)
-        return reject()
+        return reject(err)
       }
-      return resolve(data)
+
+      if (path.includes('.der')) {
+        const Pub = ConvertPubKey(data)
+        return resolve(Pub)
+      }
+      if (path.includes('.key')) {
+        const Priv = ConvertPrivKey(data)
+        return resolve(Priv)
+      }
+      if (path.includes('.pem')) {
+        return resolve(data)
+      }
+      Debug('Unknown key type')
+
+      return reject()
     })
   })
 )
-const CheckPath = path => (
+const CheckPath = (path) => (
   new Promise((resolve, reject) => {
     fs.stat(path, (err) => {
       if (err) {
@@ -41,7 +73,7 @@ const CheckPath = path => (
   })
 )
 
-const CheckAndCreatePath = path => (
+const CheckAndCreatePath = (path) => (
   new Promise((resolve, reject) => {
     CheckPath(path)
       .then(() => resolve(true))
@@ -62,8 +94,7 @@ const CheckAndCreatePath = path => (
   })
 )
 
-
-const CalcHash = content => new Promise((resolve, reject) => {
+const CalcHash = (content) => new Promise((resolve, reject) => {
   const source = Buffer.from(content, 'utf8')
   cryptoAsync.hash(Cst.HashAlgorithm, source,
     (error, hash) => {
@@ -90,24 +121,15 @@ const SaveKeys = async (Keys, KeyPath) => {
 const CreateKeys = async () => {
   const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'sect239k1',
-    publicKeyEncoding: { type: 'spki', format: 'pem' },
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'der' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'der' },
   })
 
   return { privateKey, publicKey }
 }
 
-/*
-const GetKey = async (KeyFile, KeyPath) => {
-  try {
-    return await ReadKey(KeyPath.concat(KeyFile))
-  } catch (err) {
-    Debug(err.message)
-    return null
-  }
-}
-*/
-const CreateSignature = async (payload, Privatekey) => {
+
+const CreateSignature = (payload, Privatekey) => {
   if (!Privatekey) {
     Debug('Cannot sign without the Private Key !!')
     return null
@@ -117,6 +139,7 @@ const CreateSignature = async (payload, Privatekey) => {
   sign.write(payload)
   sign.end()
 
+  // const Priv = crypto.createPrivateKey({ key: Privatekey, format: 'der', type: 'pkcs8' })
   const Signature = sign.sign(Privatekey, 'hex')
   return Signature
 }
@@ -130,6 +153,8 @@ const VerifySignature = (payload, signature, publicKey) => {
     Debug('Cannot verify without the Public key')
     return null
   }
+  //  const PublicPEM = ConvertPubKey(publicKey)
+
   const verify = crypto.createVerify('SHA256')
   verify.write(payload)
   verify.end()
@@ -137,5 +162,14 @@ const VerifySignature = (payload, signature, publicKey) => {
 }
 
 module.exports = {
-  CreateSignature, VerifySignature, CalcHash, ReadKey, CreateKeys, SaveKeys,
+  CreateSignature,
+  VerifySignature,
+  CalcHash,
+  ReadKey,
+  CreateKeys,
+  SaveKeys,
+  ExportPublicPEM,
+  ExportPublicDER,
+  ConvertPubKey,
+
 }

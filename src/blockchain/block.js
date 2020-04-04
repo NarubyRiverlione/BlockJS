@@ -4,7 +4,7 @@
 
 const Debug = require('debug')('blockjs:block')
 const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
-const { CalcHash } = require('./crypt')
+const { CalcHash, ExportPublicDER } = require('./crypt')
 
 const { CstError, Cst } = require('../Const')
 
@@ -28,7 +28,7 @@ const CheckPoW = (Diff, Hash) => {
 
 // PrevHash can be null = Genesis block
 // other header properties must be a Number
-const IsHeaderComplete = block => block.PrevHash !== undefined
+const IsHeaderComplete = (block) => block.PrevHash !== undefined
   && Number.isInteger(block.Height)
   && Number.isInteger(block.Nonce)
   && Number.isInteger(block.Diff)
@@ -85,6 +85,14 @@ class Block {
       // const Hash = await this.GetBlockHash()
       // const HashMessages = await this.GetMsgsHash()
       // const DbBlock = { ...this, Hash, HashMessages }
+      debugger
+      // save Public key in each message in DER format
+      const ParsedMsg = this.Messages.map((msg) => {
+        const ParsedPub = ExportPublicDER(msg.PublicKey)
+        return { msg, PublicKey: ParsedPub }
+      })
+      this.Messages = ParsedMsg
+      debugger
       const result = await db.Add(Cst.Db.Docs.Blockchain, this)
       return result
     } catch (err) {
@@ -126,12 +134,12 @@ const CreateBlock = async (prevHash, height, nonce, diff, messages, timestamp, v
       Debug(CstError.BlockHeaderIncomplete)
       return null
     }
-    // remove database _id property from messages
-    const msgs = messages
-      ? messages.map(msg => ParseMessageFromDb(msg))
-      : null
+    // // remove database _id property from messages
+    // const msgs = messages
+    //   ? messages.map(msg => ParseMessageFromDb(msg))
+    //   : null
 
-    const NewBlock = new Block(prevHash, height, nonce, diff, msgs, timestamp, version)
+    const NewBlock = new Block(prevHash, height, nonce, diff, messages, timestamp, version)
     NewBlock.Hash = await NewBlock.GetBlockHash()
     NewBlock.MessagesHash = await NewBlock.GetMsgsHash()
     return NewBlock
@@ -146,7 +154,7 @@ const ParseBlockFromDb = async (blockObj) => {
   try {
     // remove database _id property from messages
     const messages = blockObj.Messages
-      ? blockObj.Messages.map(msg => ParseMessageFromDb(msg))
+      ? blockObj.Messages.map((msg) => ParseMessageFromDb(msg))
       : null
 
     const {

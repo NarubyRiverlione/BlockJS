@@ -1,13 +1,13 @@
 
 const Cst = {
   HashAlgorithm: 'sha256',
+
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
-  GenesisAddress: 'SPICE_707d6653b0b81d679313',
-  GenesisHashBlock: 'fb03bf74b2098bebf80b8a0d56db4797cc759675143fef7976fbcb581370c557',
-  // 'b56b73b6b14995683fc30e18dc86c40d1f371a9cd05f0f3aa056bc3426597597',
-  GenesisHashMessages: '275b33385206d579b0fd185db9bfae1ffc3f844e452235db212e9de2d262b66f',
-  GenesisHashMsg: '256100c3eaa459e608ffd425bab68e08b66a649b8da8c86306caef2da482e58d',
+  GenesisAddress: 'SPICE_90578a62de4a4ca9ee16ac33c359ce88b8549054c37d1a7523b9218abed7325c',
+  GenesisHashBlock: '27828e15142022d19baddaecaf0b2ba5cb89975cd40ca02ed3589319cb3ff80d',
+  GenesisSignature: '', // '3040021e1711a6e87012949729cab8f129c9adb006d129315d34ba9fb227824a70a7021e060abbb7934d20e8a8f784a2b668d005987d439b2eee2e2c07cc366a6f72',
+  GenesisPubKey: '',
   GenesisMsgId: null,
   GenesisNonce: 0,
   GenesisDiff: 2,
@@ -19,7 +19,7 @@ const Cst = {
 
   PrivateKey: 'privateKey',
   PublicKey: 'publicKey',
-  PubFile: 'pub.pem',
+  PubFile: 'pub.der',
   PrivFile: 'priv.key',
   KeyDir: './Keys/',
 

@@ -32,7 +32,7 @@ ${ListCommands}
         .then((height) => {
           res.status(200).json({ height })
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.Address, (req, res) => {
       res.status(200).json({ address: blockchain.Address })
@@ -55,39 +55,39 @@ ${ListCommands}
 
           res.status(200).send(showInfo)
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.Diff, (req, res) => {
       blockchain.GetDiff()
         .then((diff) => { res.status(200).send({ diff }) })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.LastHash, (req, res) => {
       blockchain.GetBestHash()
         .then((hash) => { res.status(200).send({ hash }) })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.PendingAmount, (req, res) => {
       blockchain.GetAmountOfPendingMsgs()
         .then((amount) => { res.status(200).send({ PendingAmount: amount }) })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.PendingAll, (req, res) => {
       blockchain.GetAllPendingMgs()
         .then((pending) => { res.status(200).send({ pending }) })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.LastBlock, (req, res) => {
       blockchain.GetLastBlock()
         .then((block) => { res.status(200).send({ block }) })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.BlockAtHeight, (req, res) => {
       const height = Number(req.params.height)
       if (Number.isInteger(height)) {
         blockchain.GetBlockAtHeight(height)
           .then((block) => { res.status(200).send({ block }) })
-          .catch(error => res.status(400).json({ error: error.message }))
+          .catch((error) => res.status(400).json({ error: error.message }))
       } else {
         res.status(400).send({ error: CstError.HeightNotNumber })
       }
@@ -97,7 +97,7 @@ ${ListCommands}
       if (hash && typeof (hash) === 'string') {
         blockchain.GetBlockWithHash(hash)
           .then((block) => { res.status(200).send({ block }) })
-          .catch(error => res.status(400).json({ error: error.message }))
+          .catch((error) => res.status(400).json({ error: error.message }))
       } else {
         res.status(400).send({ error: CstError.HashNotString })
       }
@@ -133,7 +133,7 @@ ${ListCommands}
         .then((result) => {
           res.status(200).json({ result })
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     this.router.get(Cmd.Stop, (req, res) => {
       blockchain.End()
@@ -144,7 +144,7 @@ ${ListCommands}
         .then((result) => {
           res.status(200).json({ result })
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     // body: {Content : messageText, Id: messageID}
     this.router.post(Cmd.SendMsg, (req, res) => {
@@ -155,7 +155,7 @@ ${ListCommands}
             res.status(200).json({ msg })
           } else { res.status(400).send('error') }
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
     // body: {Content : messageText, From: address, Id: messageId}
     this.router.post(Cmd.CheckMsgExist, (req, res) => {
@@ -164,7 +164,7 @@ ${ListCommands}
         .then((result) => {
           res.status(200).json({ result })
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
 
     // body: {remoteIP: ipv4, remotePort: port}
@@ -174,7 +174,7 @@ ${ListCommands}
         .then((connectionResult) => {
           res.status(200).json({ connectionResult })
         })
-        .catch(error => res.status(400).json({ error: error.message }))
+        .catch((error) => res.status(400).json({ error: error.message }))
     })
   }
 }

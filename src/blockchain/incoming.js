@@ -11,7 +11,7 @@ const { Db: { Docs: CstDocs } } = Cst
 const GetHeightOfBlock = (hash, db) => new Promise(async (resolve, reject) => {
   // const hash = await block.GetBlockHash()
   db.Find(CstDocs.Blockchain, { Hash: hash })
-    .catch(err => reject(err))
+    .catch((err) => reject(err))
     .then((foundLink) => {
       if (foundLink.length > 1) return reject(new Error(`Multiple blocks found with hash ${hash}`))
       if (foundLink.length === 0) return resolve(null)
@@ -24,7 +24,7 @@ const RemoveIncomingBlock = (prevHash, db, resolveMsg) => new Promise((resolve, 
   const filter = { PrevHash: prevHash }
   db.RemoveOne(CstDocs.IncomingBlocks, filter)
     .then(() => resolve(resolveMsg))
-    .catch(err => reject(err))
+    .catch((err) => reject(err))
 })
 
 /* New top block :
@@ -130,7 +130,7 @@ const ProcessReceivedBlocks = async (BlockChain, formPeer) => {
         Debug(`- ${CstTxt.IncomingBlockAllProcessed}`)
       }
     })
-    .catch(err => console.error(err))
+    .catch((err) => console.error(err))
 }
 
 /* evaluate incoming best hash from peer

@@ -1,4 +1,4 @@
-/* eslint-disable class-methods-use-this */
+p/* eslint-disable class-methods-use-this */
 const Mining = require('./blockchain/mining')
 const Message = require('./blockchain/message')
 const { Cst, CstError } = require('../src/Const')
