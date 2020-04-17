@@ -15,6 +15,7 @@ const ConvertPubKey = (DERkey) => {
 const ExportPublicPEM = (Pub) => (
   Pub.export({ format: 'pem', type: 'spki' })
 )
+// Export public key to PER
 const ExportPublicDER = (Pub) => (
   Pub.export({ format: 'der', type: 'spki' })
 )

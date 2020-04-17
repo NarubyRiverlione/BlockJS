@@ -16,4 +16,4 @@ const APIpassword = process.env.apiPassword
 
 BlockChain.Start(ServerPort, DbServer, DbPort, APIPort, APIpassword)
   .then((blockchain) => { Debug(`${CstTxt.BlockchainVersion} ${blockchain.Version} ${CstTxt.Started} !`) })
-  .catch(err => console.error(err))
+  .catch((err) => console.error(err.message))

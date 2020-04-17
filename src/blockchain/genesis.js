@@ -59,43 +59,42 @@ const CreateBlockchain = async (BlockChain) => {
   }
 }
 
-const ExistInDb = (BlockChain) => (
-  new Promise(async (resolve, reject) => {
-    try {
-      const FirstBlocks = await BlockChain.Db.Find(CstDocs.Blockchain, { Height: 0 })
+const ExistInDb = async (BlockChain) => {
+  try {
+    const FirstBlocks = await BlockChain.Db.Find(CstDocs.Blockchain, { Height: 0 })
 
-      if (FirstBlocks.length > 1) {
-        return reject(new Error(`${CstError.MultiBlocks}`))
-      }
-      // no blocks in database = no genesis block (first run?)
-      if (FirstBlocks.length === 0) {
-        Debug('- No blockchain found')
-        const result = await CreateBlockchain(BlockChain)
-        return resolve(result)
-      }
-
-      // check if first block is genesis block: verify hash === genesis hash
-      const [FirstDbBlock] = FirstBlocks
-      const FirstBlock = await ParseBlockFromDb(FirstDbBlock)
-      if (!FirstBlock) return reject(new Error(CstError.ParseBlock))
-
-      if (FirstBlock.Hash !== Cst.GenesisHashBlock) {
-        return reject(new Error(CstError.GenessisNotFirst))
-      }
-      // verify first message is signed with genesis signature
-      const [GenesisMsg] = FirstBlock.Messages
-      const verified = GenesisMsg.Verify()
-      if (!verified || GenesisMsg.Signature !== Cst.GenesisSignature) {
-        return reject(new Error(CstError.GenessisNotFirst))
-      }
-      console.log(GenesisMsg.PublicKey.buffer)
-
-      return resolve(true)
-    } catch (err) {
-      Debug(err.message)
-      return reject(new Error(`${CstError.GenessisNotAdded}`))
+    if (FirstBlocks.length > 1) {
+      return Promise.reject(new Error(`${CstError.MultiBlocks}`))
     }
-  })
-)
+    // no blocks in database = no genesis block (first run?)
+    if (FirstBlocks.length === 0) {
+      Debug('- No blockchain found')
+      const result = await CreateBlockchain(BlockChain)
+      return Promise.resolve(result)
+    }
+
+    // check if first block is genesis block: verify hash === genesis hash
+    const [FirstDbBlock] = FirstBlocks
+    const FirstBlock = await ParseBlockFromDb(FirstDbBlock)
+    if (!FirstBlock) return Promise.reject(new Error(CstError.ParseBlock))
+
+    if (FirstBlock.Hash !== Cst.GenesisHashBlock) {
+      return Promise.reject(new Error(CstError.GenessisNotFirst))
+    }
+    // verify first message is signed with genesis signature
+    const [GenesisMsg] = FirstBlock.Messages
+    const verified = GenesisMsg.Verify()
+    if (!verified || GenesisMsg.Signature !== Cst.GenesisSignature) {
+      return Promise.reject(new Error(CstError.GenessisNotFirst))
+    }
+    console.log(GenesisMsg.PublicKey.buffer)
+
+    return Promise.resolve(true)
+  } catch (err) {
+    Debug(err.message)
+    return Promise.reject(new Error(`${CstError.GenessisNotAdded}`))
+  }
+}
+
 
 module.exports = { ExistInDb }

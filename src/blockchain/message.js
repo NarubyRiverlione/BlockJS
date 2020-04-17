@@ -41,8 +41,9 @@ class Message {
   }
 
   Verify() {
-    const Pub = ExportPublicPEM(this.PublicKey)
-    return VerifySignature(this.Hash, this.Signature, Pub)
+    //  verify signature works with public key in KeyObject format, not in DER , no conversion needed
+    //   const Pub = ExportPublicPEM(this.PublicKey)
+    return VerifySignature(this.Hash, this.Signature, this.PublicKey)
   }
 }
 

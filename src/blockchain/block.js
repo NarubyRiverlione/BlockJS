@@ -85,14 +85,14 @@ class Block {
       // const Hash = await this.GetBlockHash()
       // const HashMessages = await this.GetMsgsHash()
       // const DbBlock = { ...this, Hash, HashMessages }
-      debugger
+
       // save Public key in each message in DER format
       const ParsedMsg = this.Messages.map((msg) => {
         const ParsedPub = ExportPublicDER(msg.PublicKey)
-        return { msg, PublicKey: ParsedPub }
+        return { ...msg, PublicKey: ParsedPub }
       })
       this.Messages = ParsedMsg
-      debugger
+      //  debugger
       const result = await db.Add(Cst.Db.Docs.Blockchain, this)
       return result
     } catch (err) {

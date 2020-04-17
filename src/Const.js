@@ -6,7 +6,7 @@ const Cst = {
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_90578a62de4a4ca9ee16ac33c359ce88b8549054c37d1a7523b9218abed7325c',
   GenesisHashBlock: '27828e15142022d19baddaecaf0b2ba5cb89975cd40ca02ed3589319cb3ff80d',
-  GenesisSignature: '', // '3040021e1711a6e87012949729cab8f129c9adb006d129315d34ba9fb227824a70a7021e060abbb7934d20e8a8f784a2b668d005987d439b2eee2e2c07cc366a6f72',
+  GenesisSignature: '3040021e027bcfd3b4b1ab01858d7f47df2b709e136c33a11b1280beb9ac56ebc5be021e0da567075fc8c7416e20c652ec252229eb707f03d077bfbbd46940294d8e',
   GenesisPubKey: '',
   GenesisMsgId: null,
   GenesisNonce: 0,
