@@ -1,7 +1,9 @@
 const Debug = require('debug')('blockjs:genesis')
 
 const { CreateMessage, IsMessageValid } = require('./message.js')
-const { CreateBlock, ParseBlockFromDb } = require('./block.js')
+const { ParseBlockFromDb } = require('./block.js')
+const { Pow } = require('./mining')
+
 const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
@@ -12,9 +14,15 @@ const CreateGenesisBlock = async (db) => {
     const SignedGenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg, db)
     Debug(`-- Genesis message signature ${SignedGenesisMsg.Signature}`)
 
-    const GenesisBlock = await CreateBlock(null, 0,
-      Cst.GenesisNonce, Cst.GenesisDiff, [SignedGenesisMsg],
-      Cst.GenesisTimestamp)
+    // const GenesisBlock = await CreateBlock(null, 0,
+    //   Cst.GenesisNonce, Cst.GenesisDiff, [SignedGenesisMsg],
+    //   Cst.GenesisTimestamp)
+
+    // stop mining after the genesis block is found
+    const onlyMineTheGenesisBlock = (stopNow) => (!stopNow)
+
+    const GenesisBlock = await Pow(null, 0, 0, Cst.GenesisDiff, [SignedGenesisMsg], Cst.GenesisTimestamp, onlyMineTheGenesisBlock)
+    onlyMineTheGenesisBlock(true)
     Debug(`-- Genesis block created with hash ${GenesisBlock.Hash}`)
     return GenesisBlock
   } catch (err) {
@@ -61,6 +69,7 @@ const ExistInDb = async (BlockChain) => {
     const [GenesisMsg] = FirstBlock.Messages
     await IsMessageValid(GenesisMsg)
     if (GenesisMsg.Signature !== Cst.GenesisSignature) {
+      Debug(`Saved genesis msg signature $(Cst.GenesisSignature} <- ->  actual signature ${GenesisMsg.Signature})`)
       return Promise.reject(new Error(CstError.GenessisNotFirst))
     }
 

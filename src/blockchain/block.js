@@ -1,5 +1,6 @@
 /* Block: PrevHash, Nonce, Diff, Version, Timestamp, MessagesHash, Messages */
 const Debug = require('debug')('blockjs:block')
+
 const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
 const { CalcHash } = require('./crypt')
 
@@ -47,9 +48,10 @@ class Block {
 
   async GetMsgsHash() {
     try {
-      const AllMsgHashes = this.Messages ? this.Messages.reduce((acc, msg) => acc.concat(msg.Hash), '') : ''
-      // const AllMsgAsString = JSON.stringify(this.Messages)
-      // debugger
+      const AllMsgHashes = this.Messages.reduce((acc, msg) => acc.concat(msg.Hash), '')
+      // (this.Messages && this.Messages.length > 0)
+      // ?
+      // : ''
       return await CalcHash(AllMsgHashes)
     } catch (err) {
       /* istanbul ignore next */
@@ -65,7 +67,7 @@ class Block {
         PrevHash, Nonce, Diff, Timestamp, Version,
       } = this
       const Header = PrevHash + Nonce + Diff + Timestamp + Version
-      const hashContent = Header + (await this.GetMsgsHash())
+      const hashContent = Header + this.MessagesHash
 
       return await CalcHash(hashContent)
     } catch (err) {
@@ -138,8 +140,8 @@ const CreateBlock = async (prevHash, height, nonce, diff, messages, timestamp, v
 
     const NewBlock = new Block(prevHash, height, nonce, diff, messages, timestamp, version)
 
-    NewBlock.Hash = await NewBlock.GetBlockHash()
     NewBlock.MessagesHash = await NewBlock.GetMsgsHash()
+    NewBlock.Hash = await NewBlock.GetBlockHash()
     return NewBlock
   } catch (err) {
     Debug(err.message)

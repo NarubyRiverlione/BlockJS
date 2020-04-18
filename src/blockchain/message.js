@@ -31,18 +31,6 @@ class Message {
     }
   }
 
-  /*
-  async GetMsgHash(content) {
-    try {
-      const MsgHash = await CalcHash(content)
-      return MsgHash
-    } catch (err) {
-
-      return null
-    }
-  }
-*/
-
   Save(db) {
     return db.Add(CstDocs.PendingMessages, this)
   }

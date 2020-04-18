@@ -9,32 +9,27 @@ const { Db: { Docs: CstDocs } } = Cst
 // Proof-of-work: find hash that starts with the target
 const Pow = async (prevHash, height, nonce, diff, PendingMessages, Timestamp, cbGetMiningStatus) => {
   try {
-    debugger
     const TestBlock = await CreateBlock(prevHash, height, nonce, diff, PendingMessages, Timestamp) // eslint-disable-line max-len
-    debugger
+
     if (!TestBlock) {
       Debug('Cannot create block')
-      debugger
       return null
     }
 
     // check if still mining
     const MiningStatus = cbGetMiningStatus()
-    debugger
+
     if (!MiningStatus) {
       Debug('Need to stop mining')
-      debugger
       return null
     }
     if (CheckPoW(diff, TestBlock.Hash)) {
       Debug(CstTxt.MiningFound)
-      debugger
       return TestBlock
     }
     return Pow(prevHash, height, nonce + 1, diff, PendingMessages, Timestamp, cbGetMiningStatus)
   } catch (err) {
     Debug(err.message)
-    debugger
     return null
   }
 }
@@ -93,4 +88,4 @@ const MineBlock = async (Blockchain) => {
   return (CreatedBlock)
 }
 
-module.exports = { MineBlock }
+module.exports = { MineBlock, Pow }

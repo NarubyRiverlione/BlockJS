@@ -64,6 +64,7 @@ const ReadPrivateKey = async (address, db) => {
 
 const CalcHash = (content) => (
   new Promise((resolve, reject) => {
+    if (!content) return resolve(null)
     const source = Buffer.from(content, 'utf8')
     cryptoAsync.hash(Cst.HashAlgorithm, source,
       (error, hash) => {
