@@ -9,7 +9,9 @@
   ],
   "extends": [
     "airbnb-base",
-    "plugin:jest/recommended"
+    "plugin:jest/recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings"
   ],
   "rules": {
     "no-underscore-dangle": "off",
@@ -51,6 +53,9 @@
           "error"
         ]
       }
+    ],
+    "no-debugger": [
+      "warn"
     ]
   }
 }

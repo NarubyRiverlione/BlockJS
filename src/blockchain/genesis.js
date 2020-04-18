@@ -1,43 +1,19 @@
 const Debug = require('debug')('blockjs:genesis')
 
-const { ReadKey, ExportPublicPEM } = require('./crypt')
-const { CreateMessage } = require('./message.js')
+const { CreateMessage, IsMessageValid } = require('./message.js')
 const { CreateBlock, ParseBlockFromDb } = require('./block.js')
-const { Cst, CstError } = require('../Const.js')
+const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
-const CreateGenesisBlock = async () => {
+
+const CreateGenesisBlock = async (db) => {
   try {
-    const GenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg, Cst.GenesisMsgId)
-
-    if (Cst.GenesisPubKey) {
-      // Genesis Public key is already know
-      GenesisMsg.PublicKey = Cst.GenesisPubKey
-    } else {
-      /* brand new blockchain, no public key for signing available:
-        use public key form this node to bootstrap the blockchain      */
-      const GenesisPubKey = await ReadKey(Cst.KeyDir.concat(Cst.PubFile))
-      GenesisMsg.PublicKey = GenesisPubKey
-      const GenPubPEM = ExportPublicPEM(GenesisPubKey)
-      Debug(`-- Genesis public key: \n ${GenPubPEM}`)
-    }
-
-
-    if (Cst.GenesisSignature) {
-      // Genesis signature is already know
-      GenesisMsg.Signature = Cst.GenesisSignature
-    } else {
-      /* brand new blockchain, no private key for signing available:
-        use private key form this node to bootstrap the blockchain      */
-      const GenesisPrivKey = await ReadKey(Cst.KeyDir.concat(Cst.PrivFile))
-
-      GenesisMsg.Sign(GenesisPrivKey, GenesisMsg.PublicKey)
-      Debug(`-- Genesis signature: ${GenesisMsg.Signature}`)
-    }
+    const SignedGenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg, db)
+    Debug(`-- Genesis message signature ${SignedGenesisMsg.Signature}`)
 
     const GenesisBlock = await CreateBlock(null, 0,
-      Cst.GenesisNonce, Cst.GenesisDiff, [GenesisMsg],
+      Cst.GenesisNonce, Cst.GenesisDiff, [SignedGenesisMsg],
       Cst.GenesisTimestamp)
     Debug(`-- Genesis block created with hash ${GenesisBlock.Hash}`)
     return GenesisBlock
@@ -51,7 +27,7 @@ const CreateGenesisBlock = async () => {
 const CreateBlockchain = async (BlockChain) => {
   try {
     Debug('- Create blockchain by adding genesis block')
-    const GenesisBlock = await CreateGenesisBlock()
+    const GenesisBlock = await CreateGenesisBlock(BlockChain.Db)
     Debug('-- Save genesis block in Db')
     return await GenesisBlock.Save(BlockChain.Db)
   } catch (err) {
@@ -68,9 +44,9 @@ const ExistInDb = async (BlockChain) => {
     }
     // no blocks in database = no genesis block (first run?)
     if (FirstBlocks.length === 0) {
-      Debug('- No blockchain found')
-      const result = await CreateBlockchain(BlockChain)
-      return Promise.resolve(result)
+      Debug('- No blockchain found, start new one by creating the Genesis block now')
+      await CreateBlockchain(BlockChain)
+      return Promise.resolve()
     }
 
     // check if first block is genesis block: verify hash === genesis hash
@@ -81,15 +57,15 @@ const ExistInDb = async (BlockChain) => {
     if (FirstBlock.Hash !== Cst.GenesisHashBlock) {
       return Promise.reject(new Error(CstError.GenessisNotFirst))
     }
-    // verify first message is signed with genesis signature
+    // verify first message is valid and signed with genesis signature
     const [GenesisMsg] = FirstBlock.Messages
-    const verified = GenesisMsg.Verify()
-    if (!verified || GenesisMsg.Signature !== Cst.GenesisSignature) {
+    await IsMessageValid(GenesisMsg)
+    if (GenesisMsg.Signature !== Cst.GenesisSignature) {
       return Promise.reject(new Error(CstError.GenessisNotFirst))
     }
-    console.log(GenesisMsg.PublicKey.buffer)
 
-    return Promise.resolve(true)
+    Debug(CstTxt.GenesisVerified)
+    return Promise.resolve()
   } catch (err) {
     Debug(err.message)
     return Promise.reject(new Error(`${CstError.GenessisNotAdded}`))

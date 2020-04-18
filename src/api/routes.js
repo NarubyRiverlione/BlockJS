@@ -146,21 +146,23 @@ ${ListCommands}
         })
         .catch((error) => res.status(400).json({ error: error.message }))
     })
-    // body: {Content : messageText, Id: messageID}
+    // body: {Content : messageText}
     this.router.post(Cmd.SendMsg, (req, res) => {
-      const { Content, Id } = req.body
-      blockchain.SendMsg(Content, Id)
+      const { Content } = req.body
+      blockchain.SendMsg(Content)
         .then((msg) => {
           if (msg) {
             res.status(200).json({ msg })
-          } else { res.status(400).send('error') }
+          } else {
+            res.status(400).send('error')
+          }
         })
         .catch((error) => res.status(400).json({ error: error.message }))
     })
-    // body: {Content : messageText, From: address, Id: messageId}
+    // body: {Content : messageText, From: address}
     this.router.post(Cmd.CheckMsgExist, (req, res) => {
-      const { Content, From, Id } = req.body
-      blockchain.FindMsg(Content, From, Id)
+      const { Content, From } = req.body
+      blockchain.FindMsg(Content, From)
         .then((result) => {
           res.status(200).json({ result })
         })

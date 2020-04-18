@@ -1,8 +1,7 @@
 /* Message: From, Hash (from+content) */
 const Debug = require('debug')('blockjs:message')
 const {
-  CreateSignature, VerifySignature, ConvertPubKey, CalcHash,
-  ExportPublicDER, ExportPublicPEM,
+  CreateSignature, VerifySignature, ConvertPubKey, CalcHash, ExportPublicDER, ReadPrivateKey, ReadPublicKey,
 } = require('./crypt')
 
 const { Cst, CstError } = require('../Const.js')
@@ -10,68 +9,77 @@ const { Cst, CstError } = require('../Const.js')
 const { Db: { Docs: CstDocs } } = Cst
 
 class Message {
-  constructor(fromAddress, hash, id = null, signature = null, pubKey = null) {
+  /*
+   Public key is stored in DER format
+   Constructor converts if needed
+  */
+  constructor(fromAddress, msghash, pub, signature = null) {
     this.From = fromAddress
-    this.Id = id
-    this.Hash = hash
+    this.Hash = msghash
     this.Signature = signature
-    this.PublicKey = pubKey
+    if (pub) this.AddPublicDER(pub)
   }
 
+  AddPublicDER(pub) {
+    if (pub.buffer) {
+      // already in DER
+      this.PublicKey = pub
+    } else {
+      // pub is a KeyObject, convert it now to DER before adding it to the message
+      const PublicDER = ExportPublicDER(pub)
+      this.PublicKey = PublicDER
+    }
+  }
+
+  /*
   async GetMsgHash(content) {
     try {
-      const { Id, From } = this
-      const hashContent = Id ? From + content + Id : From + content
-      const MsgHash = await CalcHash(hashContent)
+      const MsgHash = await CalcHash(content)
       return MsgHash
     } catch (err) {
-      /* istanbul ignore next */
+
       return null
     }
   }
+*/
 
   Save(db) {
     return db.Add(CstDocs.PendingMessages, this)
   }
 
-  Sign(PrivateKey, PublicKey) {
-    const Sig = CreateSignature(this.Hash, PrivateKey)
+  // sign this message with the private KeyObj for a specific address
+  async Sign(address, db) {
+    // read private key for this address
+    const PrivateKeyObj = await ReadPrivateKey(address, db)
+
+    const Sig = CreateSignature(this.Hash, PrivateKeyObj)
     this.Signature = Sig
-    this.PublicKey = PublicKey
   }
 
   Verify() {
-    //  verify signature works with public key in KeyObject format, not in DER , no conversion needed
-    //   const Pub = ExportPublicPEM(this.PublicKey)
-    return VerifySignature(this.Hash, this.Signature, this.PublicKey)
+    //  verify signature works with public key in KeyObject format,
+    // convert it now from  DER
+    const PublicKeyObj = ConvertPubKey(this.PublicKey)
+    return VerifySignature(this.Hash, this.Signature, PublicKeyObj)
   }
 }
 
-const CreateMessage = async (fromAddress, content, id) => {
-  try {
-    // make a dummy message without hash to calculate... the hash
-    const MsgWithoutHash = new Message(fromAddress, null, id)
-    const MsgHash = await MsgWithoutHash.GetMsgHash(content)
-    // unsigned message
-    const UnsignedMsg = new Message(fromAddress, MsgHash, id)
-    return UnsignedMsg
-  } catch (err) {
-    /* istanbul ignore next */
-    Debug(err.message); return null
-  }
-}
 
+const CreateMessage = async (fromAddress, content, db) => {
+  const pubKey = await ReadPublicKey(fromAddress, db)
+  const msgHash = await CalcHash(content)
+  const message = new Message(fromAddress, msgHash, pubKey)
+  await message.Sign(fromAddress, db)
+  return message
+}
 
 // remove database _id property from messages
 const ParseMessageFromDb = (messageObj) => {
   const {
-    From, Hash, Id, Signature, PublicKey,
+    From, Hash, Signature, PublicKey,
   } = messageObj
-
-  if (PublicKey.buffer) {
-    const Pub = ConvertPubKey(PublicKey.buffer)
-    return new Message(From, Hash, Id, Signature, Pub)
-  }
+  // Public key is stored in DER
+  return new Message(From, Hash, PublicKey, Signature)
 }
 
 const IsMessageValid = async (msg, content = null) => {
@@ -83,8 +91,12 @@ const IsMessageValid = async (msg, content = null) => {
   if (!msg.From) { Debug(CstError.MsgNoFrom); return false }
 
   if (content) {
+    // check message hash
     const checkHash = await msg.GetMsgHash(content)
     if (msg.Hash !== checkHash) { Debug(CstError.msgHashInvalid); return false }
+    // check message signature
+    const verified = await this.Verify()
+    if (!verified) { Debug(CstError.MsgSignatureInvalid); return false }
   }
   return true
 }

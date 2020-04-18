@@ -1,124 +1,81 @@
-const fs = require('fs')
 const cryptoAsync = require('@ronomon/crypto-async')
 const crypto = require('crypto')
 const Debug = require('debug')('blockjs:cryp')
 
 const { Cst } = require('../Const')
 
+const { Db: { Docs: CstDocs } } = Cst
+
 // convert Public DER key to KeyObject
 const ConvertPubKey = (DERkey) => {
-  const Pub = crypto.createPublicKey({ key: DERkey, format: 'der', type: 'spki' })
-  return Pub
+  const PublicKeyObj = crypto.createPublicKey({
+    key: DERkey.buffer ? DERkey.buffer : DERkey,
+    format: 'der',
+    type: 'spki',
+  })
+  return PublicKeyObj
 }
-
-// Export public key to PEM
-const ExportPublicPEM = (Pub) => (
-  Pub.export({ format: 'pem', type: 'spki' })
-)
-// Export public key to PER
-const ExportPublicDER = (Pub) => (
-  Pub.export({ format: 'der', type: 'spki' })
-)
 // convert Private DER key to KeyObject
 const ConvertPrivKey = (DERkey) => {
-  const Priv = crypto.createPrivateKey({ key: DERkey, format: 'der', type: 'pkcs8' })
-  return Priv
+  const PrivateKeyObj = crypto.createPrivateKey({
+    key: DERkey.buffer ? DERkey.buffer : DERkey,
+    format: 'der',
+    type: 'pkcs8',
+  })
+  return PrivateKeyObj
 }
 
-const WriteKey = (path, key) => (
-  new Promise((resolve, reject) => {
-    fs.writeFile(path, key,
-      (err) => {
-        /* istanbul ignore next */
-        if (err) return reject(err)
-        return resolve()
-      })
-  })
+// Export public KeyObj to DER
+const ExportPublicDER = (PublicKeyObj) => (
+  PublicKeyObj.export({ format: 'der', type: 'spki' })
 )
 
-const ReadKey = (path) => (
-  new Promise((resolve, reject) => {
-    fs.readFile(path, (err, data) => {
-      if (err) {
-        Debug(err.message)
-        return reject(err)
-      }
-
-      if (path.includes('.der')) {
-        const Pub = ConvertPubKey(data)
-        return resolve(Pub)
-      }
-      if (path.includes('.key')) {
-        const Priv = ConvertPrivKey(data)
-        return resolve(Priv)
-      }
-      if (path.includes('.pem')) {
-        return resolve(data)
-      }
-      Debug('Unknown key type')
-
-      return reject()
-    })
-  })
-)
-const CheckPath = (path) => (
-  new Promise((resolve, reject) => {
-    fs.stat(path, (err) => {
-      if (err) {
-        Debug(err.message)
-        return reject(err)
-      }
-      /* istanbul ignore next */
-      return resolve(true)
-    })
-  })
+// Export private KeyObj to DER
+const ExportPrivateDER = (PrivateKeyObj) => (
+  PrivateKeyObj.export({ format: 'der', type: 'pkcs8' })
 )
 
-const CheckAndCreatePath = (path) => (
-  new Promise((resolve, reject) => {
-    CheckPath(path)
-      .then(() => resolve(true))
-
-      .catch((err) => {
-        if (err && err.code === 'ENOENT') {
-          // Create dir in case not found
-          fs.mkdir(path, { recursive: true },
-            (errMkDir) => {
-              if (errMkDir) return reject(errMkDir)
-              return resolve(true)
-            })
-        } else {
-          /* istanbul ignore next */
-          return reject(err)
-        }
-      })
-  })
-)
-
-const CalcHash = (content) => new Promise((resolve, reject) => {
-  const source = Buffer.from(content, 'utf8')
-  cryptoAsync.hash(Cst.HashAlgorithm, source,
-    (error, hash) => {
-      if (error) { return reject(error) }
-      return resolve(hash.toString('hex'))
-    })
-})
-
-const SaveKeys = async (Keys, KeyPath) => {
+const ReadPublicKey = async (address, db) => {
   try {
-    const PathOk = await CheckAndCreatePath(KeyPath)
-    if (!PathOk) return false
-
-    const { privateKey, publicKey } = Keys
-    if (privateKey) { await WriteKey(KeyPath.concat(Cst.PrivFile), privateKey) }
-    if (publicKey) { await WriteKey(KeyPath.concat(Cst.PubFile), publicKey) }
-    return true
+    const foundDbAddresses = await db.Find(CstDocs.Address, { Address: address })
+    if (foundDbAddresses && foundDbAddresses.length !== 0) {
+      const pubDER = foundDbAddresses[0].PublicKey
+      const PublicKeyObj = ConvertPubKey(pubDER)
+      return Promise.resolve(PublicKeyObj)
+    }
+    return Promise.reject(new Error(`Cannot find public key in database for address ${address}`))
   } catch (err) {
-    /* istanbul ignore next */
-    return false
+    return Promise.reject(err)
   }
 }
 
+const ReadPrivateKey = async (address, db) => {
+  try {
+    const foundDbAddresses = await db.Find(CstDocs.Address, { Address: address })
+    if (foundDbAddresses && foundDbAddresses.length !== 0) {
+      const privDER = foundDbAddresses[0].PrivateKey
+      const privateKeyObj = ConvertPrivKey(privDER)
+      return Promise.resolve(privateKeyObj)
+    }
+    return Promise.reject(new Error(`Cannot find private key in database for address ${address}`))
+  } catch (err) { return Promise.reject(err) }
+}
+
+
+const CalcHash = (content) => (
+  new Promise((resolve, reject) => {
+    const source = Buffer.from(content, 'utf8')
+    cryptoAsync.hash(Cst.HashAlgorithm, source,
+      (error, hash) => {
+        if (error) {
+          return reject(error)
+        }
+        return resolve(hash.toString('hex'))
+      })
+  })
+)
+
+// create private & public keypair, returns KeyObjects
 const CreateKeys = async () => {
   const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'sect239k1',
@@ -130,8 +87,8 @@ const CreateKeys = async () => {
 }
 
 
-const CreateSignature = (payload, Privatekey) => {
-  if (!Privatekey) {
+const CreateSignature = (payload, PrivateKeyObj) => {
+  if (!PrivateKeyObj) {
     Debug('Cannot sign without the Private Key !!')
     return null
   }
@@ -141,16 +98,16 @@ const CreateSignature = (payload, Privatekey) => {
   sign.end()
 
   // const Priv = crypto.createPrivateKey({ key: Privatekey, format: 'der', type: 'pkcs8' })
-  const Signature = sign.sign(Privatekey, 'hex')
+  const Signature = sign.sign(PrivateKeyObj, 'hex')
   return Signature
 }
 
-const VerifySignature = (payload, signature, publicKey) => {
+const VerifySignature = (payload, signature, publicKeyObj) => {
   if (!signature) {
     Debug('Cannot verify without the signature')
     return null
   }
-  if (!publicKey) {
+  if (!publicKeyObj) {
     Debug('Cannot verify without the Public key')
     return null
   }
@@ -159,18 +116,17 @@ const VerifySignature = (payload, signature, publicKey) => {
   const verify = crypto.createVerify('SHA256')
   verify.write(payload)
   verify.end()
-  return verify.verify(publicKey, signature, 'hex')
+  return verify.verify(publicKeyObj, signature, 'hex')
 }
 
 module.exports = {
   CreateSignature,
   VerifySignature,
   CalcHash,
-  ReadKey,
+  ReadPublicKey,
+  ReadPrivateKey,
   CreateKeys,
-  SaveKeys,
-  ExportPublicPEM,
   ExportPublicDER,
+  ExportPrivateDER,
   ConvertPubKey,
-
 }

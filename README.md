@@ -53,12 +53,20 @@ You can use a stand alone mongoDb. Docker-compose with will spool up beside the 
 Exchanging blocks via p2p, I’ve opted to use the websocket ws implementation. Again I was in sought between socket.io or websocket 
 The default p2p port in 2000
 
-### Rest API ###
+## Rest API ##
 Client - server communication is via a rest api, default on port 2100.
-See postman documenation https://web.postman.co/collections/4469958-26c7ab12-04ae-4c46-8388-33f58d30c53e?workspace=2b5e76a5-39ed-4a74-a8b4-30b375d7d318
+See postman documentation https://web.postman.co/collections/4469958-26c7ab12-04ae-4c46-8388-33f58d30c53e?workspace=2b5e76a5-39ed-4a74-a8b4-30b375d7d318
 
-### Config ###
-Changing ports can be done via the environment vaiables
+### API connection ###
+Basic authentication is used : 
+
+user = 'APIuser'
+
+password is set via environment varible _apiPassword_ or a random password is created and show when a node is starting.
+
+
+## Config ##
+Changing ports can be done via the environment variables
 
 `dbServer`  ip address if the mongoDb server
 

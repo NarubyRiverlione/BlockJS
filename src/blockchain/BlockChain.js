@@ -4,14 +4,16 @@ const fs = require('fs')
 
 const { CreateMessage, IsMessageValid, ParseMessageFromDb } = require('./message.js')
 const { ParseBlockFromDb, IsValidBlock } = require('./block.js')
+
 const { Cst, CstError, CstTxt } = require('../Const.js')
+
 const DB = require('./db.js')
 const P2P = require('./p2p.js')
 const API = require('../api/express.js')
 const Genesis = require('./genesis.js')
 const Mine = require('./mining.js')
 const Address = require('./address.js')
-const { GetKey, CreateSignature } = require('./crypt')
+
 
 const { Db: { Docs: CstDocs }, API: CstAPI } = Cst
 
@@ -38,30 +40,37 @@ class BlockChain {
     APIPort = CstAPI.DefaultPort,
     APIpassword,
   ) {
-    const database = new DB()
-    await database.Connect(DbServer, DbPort)
+    try {
+      const database = new DB()
+      await database.Connect(DbServer, DbPort)
 
-    // get own address
-    const address = await Address(database, Cst.KeyDir, Cst.PubFile)
+      // get own address
+      const address = await Address(database)
+      if (!address) { return new Error('Cannot read own address, startup node failed') }
+      // if no api password is provided create a random one
+      const ApiPass = CheckApiPass(APIpassword)
 
-    // if no api password is provided create a random one
-    const ApiPass = CheckApiPass(APIpassword)
+      // make BlockChain
+      const blockchain = new BlockChain(database, address, ApiPass)
+      if (!blockchain) { return new Error('Cannot read local stored blockchain data from database, startup node failed') }
 
-    // make BlockChain
-    const blockchain = new BlockChain(database, address, ApiPass)
+      // check if genesis block exists
+      await Genesis.ExistInDb(blockchain)
 
-    // check if genesis block exists
-    await Genesis.ExistInDb(blockchain)
+      // start P2P
+      blockchain.P2P = new P2P(serverPort, blockchain, this.version)
+      if (!blockchain.P2P) { return new Error('Cannot start P2P network, startup node failed') }
 
-    // start P2P
-    blockchain.P2P = new P2P(serverPort, blockchain, this.version)
-
-    // start API server
-    const secureServer = https.createServer(blockchain.SSL_OPTIONS, blockchain.API)
-    secureServer.listen(APIPort, CstAPI.IP, () => {
-      Debug(`API server listening on https:/${CstAPI.IP}:${APIPort}`)
-    })
-    return (blockchain)
+      // start API server
+      const secureServer = https.createServer(blockchain.SSL_OPTIONS, blockchain.API)
+      if (!secureServer) { return new Error('Cannot start API service, startup node failed') }
+      secureServer.listen(APIPort, CstAPI.IP, () => {
+        Debug(`API server listening on https:/${CstAPI.IP}:${APIPort}`)
+      })
+      return Promise.resolve(blockchain)
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   /*
@@ -216,13 +225,9 @@ class BlockChain {
   }
 
   // add a message to the pending Messages
-  async SendMsg(Content, Id) {
+  async SendMsg(Content) {
     try {
-      // get signature and public key
-      const signature = await CreateSignature(this.db, Content)
-      const pubKey = await GetKey(this.db, Cst.PublicKey)
-
-      const msg = await CreateMessage(this.Address, Content, signature, pubKey, Id)
+      const msg = await CreateMessage(this.Address, Content, this.Db)
 
       // is the Message complete ?
       const valid = await IsMessageValid(msg)
@@ -232,17 +237,18 @@ class BlockChain {
       // broadcast new pending message to peers
       this.P2P.Broadcast(Cst.P2P.MESSAGE, msg)
       return msg
-    } catch (err) { Debug(err.message); return null }
+    } catch (err) {
+      Debug(err.message); return null
+    }
   }
 
   // find a message in the blockchain, return Block
   // default search from own address
-  async FindMsg(Content, FromAddress = this.Address, Id = null) {
-    // get signature and public key
-    const signature = await CreateSignature(this.db, Content)
-    const pubKey = await GetKey(this.db, Cst.PublicKey)
+  async FindMsg(Content, FromAddress = this.Address) {
+    // FIXME: how finding the public ket for an address that isn't owned by this node ?
+
     // create Message to get the message hash
-    const msg = await CreateMessage(FromAddress, Content, signature, pubKey, Id)
+    const msg = await CreateMessage(FromAddress, Content, this.Db)
     const filter = { 'Messages.Hash': msg.Hash }
     // find Block that contains the message hash
     const foundBlock = await this.Db.FindOne(CstDocs.Blockchain, filter)
@@ -252,6 +258,7 @@ class BlockChain {
     return BlockWithoutID
   }
 
+  /*
   // default search from own address
   async FindMsgById(MsgId) {
     const filter = { 'Block.Messages.Id': MsgId }
@@ -262,7 +269,7 @@ class BlockChain {
     const { _id, ...BlockWithoutID } = foundBlock
     return BlockWithoutID
   }
-
+*/
   // return all pending messages in json format
   async GetAllPendingMgs() {
     const pendingDbMsgs = await this.Db.Find(CstDocs.PendingMessages, {})

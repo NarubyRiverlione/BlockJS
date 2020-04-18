@@ -1,10 +1,7 @@
 /* Block: PrevHash, Nonce, Diff, Version, Timestamp, MessagesHash, Messages */
-// const SHA256 = require('crypto-js/sha256')
-
-
 const Debug = require('debug')('blockjs:block')
 const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
-const { CalcHash, ExportPublicDER } = require('./crypt')
+const { CalcHash } = require('./crypt')
 
 const { CstError, Cst } = require('../Const')
 
@@ -73,7 +70,7 @@ class Block {
       return await CalcHash(hashContent)
     } catch (err) {
       /* istanbul ignore next */
-      Debug(err.messages)
+      Debug(err.message)
       /* istanbul ignore next */
       return null
     }
@@ -86,13 +83,13 @@ class Block {
       // const HashMessages = await this.GetMsgsHash()
       // const DbBlock = { ...this, Hash, HashMessages }
 
-      // save Public key in each message in DER format
-      const ParsedMsg = this.Messages.map((msg) => {
-        const ParsedPub = ExportPublicDER(msg.PublicKey)
-        return { ...msg, PublicKey: ParsedPub }
-      })
-      this.Messages = ParsedMsg
-      //  debugger
+      // // save Public key in each message in DER format
+      // const ParsedMsg = this.Messages.map((msg) => {
+      //   const ParsedPub = ExportPublicPEM(msg.PublicKey)
+      //   return { ...msg, PublicKey: ParsedPub }
+      // })
+      // this.Messages = ParsedMsg
+
       const result = await db.Add(Cst.Db.Docs.Blockchain, this)
       return result
     } catch (err) {
@@ -140,6 +137,7 @@ const CreateBlock = async (prevHash, height, nonce, diff, messages, timestamp, v
     //   : null
 
     const NewBlock = new Block(prevHash, height, nonce, diff, messages, timestamp, version)
+
     NewBlock.Hash = await NewBlock.GetBlockHash()
     NewBlock.MessagesHash = await NewBlock.GetMsgsHash()
     return NewBlock

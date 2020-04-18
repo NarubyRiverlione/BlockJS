@@ -4,9 +4,9 @@ const Cst = {
 
   GenesisTimestamp: 1525962288078,
   GenesisMsg: 'Genesis Message',
-  GenesisAddress: 'SPICE_90578a62de4a4ca9ee16ac33c359ce88b8549054c37d1a7523b9218abed7325c',
-  GenesisHashBlock: '27828e15142022d19baddaecaf0b2ba5cb89975cd40ca02ed3589319cb3ff80d',
-  GenesisSignature: '3040021e027bcfd3b4b1ab01858d7f47df2b709e136c33a11b1280beb9ac56ebc5be021e0da567075fc8c7416e20c652ec252229eb707f03d077bfbbd46940294d8e',
+  GenesisAddress: 'SPICE_2c636e6da0fd9cb9a7d8467d7248138e91d228d58a6bfbf29b1ea5e29280fbfc',
+  GenesisHashBlock: '76ce64625fcf91ccd5c5d7e3394a4f3923c512975e20788bae45d73a75dcbeff',
+  GenesisSignature: '3040021e02269d4d38c8af83429e627f348edd85e3db1b7a9a3457f2d719f0212e40021e1686772821a2681b3a4e5e7a7d0b40fd3a8c7223797a0e603467e8e13e60',
   GenesisPubKey: '',
   GenesisMsgId: null,
   GenesisNonce: 0,
@@ -19,8 +19,8 @@ const Cst = {
 
   PrivateKey: 'privateKey',
   PublicKey: 'publicKey',
-  PubFile: 'pub.der',
-  PrivFile: 'priv.key',
+  PubFile: 'pub.pem', // pub.der
+  PrivFile: 'priv.pem', // priv.key
   KeyDir: './Keys/',
 
   Db: {
@@ -106,6 +106,7 @@ const CstTxt = {
   MiningAfter: 'after ',
   MiningAborted: 'Mining was aborted, ignore result',
   ListCmds: 'API commands:',
+  GenesisVerified: 'Genesis block is verified',
   // IncomingBlockNeedMore: 'Waiting for more needed blocks before evaluating them',
   IncomingBlockInvalid: 'Incoming p2p block is not valid',
   IncomingBlockNotNext: 'Incoming block is not next block in non-sync mode --> ignore block',
@@ -143,6 +144,9 @@ const CstTxt = {
 }
 
 const CstError = {
+  NoPrivateKey: 'Cannot retrieve private key',
+  NoPublicKey: 'Cannot retrieve public key',
+  SignatureFailed: 'Cannot sign',
   HeightNotNumber: 'Height is not a number.',
   HashNotString: 'Hash is not a string',
   SendNotMsg: 'SendMsg: argument is not a message',
@@ -171,6 +175,7 @@ const CstError = {
   DbFilter: 'filter:',
   MsgNoFrom: 'ERROR message is not valid: no from address',
   msgHashInvalid: 'ERROR message hash is not valid for content',
+  MsgSignatureInvalid: 'ERROR message signature is not valid',
   MineNotSync: 'Cannot mine a block, BlockChain node needs syncing',
   P2PconnectNoIP: 'No remote IP address provided',
   P2PconnectNoPort: 'No remote port provide',

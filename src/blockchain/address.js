@@ -1,11 +1,10 @@
 const Debug = require('debug')('blockjs:address')
-const {
-  ReadKey, CalcHash, CreateKeys, SaveKeys, ExportPublicPEM,
-} = require('./crypt')
+const { CalcHash, CreateKeys } = require('./crypt')
 const { Cst } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
+/*
 // Load Public key, if not found: create new key pair
 const GetPubPEMKey = async (KeyPath, KeyFile) => {
   try {
@@ -17,7 +16,7 @@ const GetPubPEMKey = async (KeyPath, KeyFile) => {
       Debug('Public key not found, creating (new) key pair')
       const NewKeys = await CreateKeys()
       const resultSave = await SaveKeys(NewKeys, KeyPath)
-      /* istanbul ignore next */
+
       if (!resultSave) {
         Debug('Cannot save new keys')
         return null
@@ -25,18 +24,25 @@ const GetPubPEMKey = async (KeyPath, KeyFile) => {
       const key = await GetPubPEMKey(KeyPath, KeyFile)
       return key
     }
-    /* istanbul ignore next */
+
     return (err)
   }
 }
+*/
 
-// Load address from db, if not found create from Public key
-const CreateAddress = async (db, KeyPath, KeyFile) => {
+// Create new address from Public key, first make new key pair
+const CreateAddress = async (db) => {
   try {
-    const PublicKey = await GetPubPEMKey(KeyPath, KeyFile)
-    const PublicKeyHashed = await CalcHash(PublicKey)
+    const NewKeys = await CreateKeys()
+    const { privateKey, publicKey } = NewKeys
+    const PublicKeyHashed = await CalcHash(publicKey)
     const NewAddress = Cst.AddressPrefix.concat(PublicKeyHashed)
-    await db.Add(CstDocs.Address, { Address: NewAddress })
+    // save address, public and private key in db as DER
+    await db.Add(CstDocs.Address, {
+      Address: NewAddress,
+      PublicKey: (publicKey),
+      PrivateKey: (privateKey),
+    })
     return NewAddress
   } catch (error) {
     /* istanbul ignore next */
@@ -45,11 +51,11 @@ const CreateAddress = async (db, KeyPath, KeyFile) => {
 }
 
 // Get existing address or create new one
-const Address = async (db, KeyPath, PubKeyFile) => {
+const Address = async (db) => {
   const address = await db.Find(CstDocs.Address, {})
   if (address && address.length !== 0) return address[0].Address
   // make new key's and an address
-  const NewAddress = await CreateAddress(db, KeyPath, PubKeyFile)
+  const NewAddress = await CreateAddress(db)
   return NewAddress
 }
 
