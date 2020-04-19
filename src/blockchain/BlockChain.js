@@ -55,6 +55,7 @@ class BlockChain {
       if (!blockchain) { return new Error('Cannot read local stored blockchain data from database, startup node failed') }
 
       // check if genesis block exists
+      // FIXME toggle to create genesis or wait for downloads via P2P ?
       await Genesis.ExistInDb(blockchain)
 
       // start P2P

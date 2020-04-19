@@ -76,4 +76,8 @@ Changing ports can be done via the environment variables
 
 `apiPort`   api port
 
+## Mine the Genesis block to start a new blockchain ##
+Set in Const.js the _GenesisNonce : null_ to mine a new Genesis block. The hash, nonce, signature & public key will be outputted.
+
+Add the new nonce to the Cst.js file in _GenesisNonce_ 
 

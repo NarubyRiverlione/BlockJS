@@ -1,29 +1,42 @@
 const Debug = require('debug')('blockjs:genesis')
 
-const { CreateMessage, IsMessageValid } = require('./message.js')
-const { ParseBlockFromDb } = require('./block.js')
+const { CreateGenesisMsg, CreateMessage, IsMessageValid } = require('./message.js')
+const { ParseBlockFromDb, CreateBlock } = require('./block.js')
 const { Pow } = require('./mining')
 
 const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst
 
+const MineNewGenesisBlock = async (SignedGenesisMsg) => {
+  // callback to stop mining after the genesis block is found
+  const onlyMineTheGenesisBlock = (stopNow) => (!stopNow)
+
+  const GenesisBlock = await Pow(null, 0, 0, Cst.GenesisDiff,
+    [SignedGenesisMsg], Cst.GenesisTimestamp, onlyMineTheGenesisBlock)
+
+  onlyMineTheGenesisBlock(true)
+  Debug(`-- Genesis block mined with hash ${GenesisBlock.Hash}`)
+  Debug(`-- Genesis block mined with nonce ${GenesisBlock.Nonce}`)
+  return GenesisBlock
+}
 
 const CreateGenesisBlock = async (db) => {
   try {
-    const SignedGenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg, db)
-    Debug(`-- Genesis message signature ${SignedGenesisMsg.Signature}`)
+    if (!Cst.GenesisNonce) {
+      // Genesis Nonce is not know, mine a new genesis block now
+      const SignedGenesisMsg = await CreateMessage(Cst.GenesisAddress, Cst.GenesisMsg, db)
+      Debug(`-- Genesis message signature ${SignedGenesisMsg.Signature}`)
+      Debug(`-- Genesis message public key ${SignedGenesisMsg.PublicKey.toString('hex')}`)
+      return await MineNewGenesisBlock(SignedGenesisMsg)
+    }
 
-    // const GenesisBlock = await CreateBlock(null, 0,
-    //   Cst.GenesisNonce, Cst.GenesisDiff, [SignedGenesisMsg],
-    //   Cst.GenesisTimestamp)
+    // Genesis Nonce is know, recreated previous mined genesis block
+    const GenesisMsg = await CreateGenesisMsg()
+    const GenesisBlock = CreateBlock(null, 0, Cst.GenesisNonce, Cst.GenesisDiff,
+      [GenesisMsg], Cst.GenesisTimestamp, 1)
 
-    // stop mining after the genesis block is found
-    const onlyMineTheGenesisBlock = (stopNow) => (!stopNow)
 
-    const GenesisBlock = await Pow(null, 0, 0, Cst.GenesisDiff, [SignedGenesisMsg], Cst.GenesisTimestamp, onlyMineTheGenesisBlock)
-    onlyMineTheGenesisBlock(true)
-    Debug(`-- Genesis block created with hash ${GenesisBlock.Hash}`)
     return GenesisBlock
   } catch (err) {
     /* istanbul ignore next */
@@ -63,6 +76,7 @@ const ExistInDb = async (BlockChain) => {
     if (!FirstBlock) return Promise.reject(new Error(CstError.ParseBlock))
 
     if (FirstBlock.Hash !== Cst.GenesisHashBlock) {
+      Debug('Saved Genesis Hash <- -> has in database')
       return Promise.reject(new Error(CstError.GenessisNotFirst))
     }
     // verify first message is valid and signed with genesis signature

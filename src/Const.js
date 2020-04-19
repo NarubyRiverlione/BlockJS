@@ -6,10 +6,10 @@ const Cst = {
   GenesisMsg: 'Genesis Message',
   GenesisAddress: 'SPICE_2c636e6da0fd9cb9a7d8467d7248138e91d228d58a6bfbf29b1ea5e29280fbfc',
   GenesisHashBlock: '01235c1d555894273f03e985bda5282235834717c96802098c5b3bea6aed69ac',
-  GenesisSignature: '3040021e0219d4bc5116dab6a5b285c96f2019517642a4b47aa138b0c505b1a511c0021e147ce382c007cab2ae524d66a21c9d0e445c3b99b13e6b84610c51082106',
-  GenesisPubKey: '',
-  GenesisMsgId: null,
-  GenesisNonce: 0,
+  GenesisSignature: '3040021e0abcd6e842c76840a01f14439f301d42cbcf12822689db0416af31242e1d021e0edb5365a73b49706ae21cb63f9c870a3951034c34184bd67746cbab5222',
+  GenesisPubKey: '3052301006072a8648ce3d020106052b81040003033e000431e7ada1fd4657414b4d0243cd5c3f37165168f702aae25d7ad8097937e61159b5ae6228909de15134919811054967397eee547a5fafec3fcf800098',
+  GenesisNonce: 3807, // set this to  null to mine a new Genesis block.
+  // The hash, nonce, signature & public key will be outputted.  Add the new nonce here.
   GenesisDiff: 4,
 
   StartDiff: 4,

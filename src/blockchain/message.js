@@ -17,10 +17,7 @@ class Message {
     this.From = fromAddress
     this.Hash = msghash
     this.Signature = signature
-    if (pub) this.AddPublicDER(pub)
-  }
 
-  AddPublicDER(pub) {
     if (pub.buffer) {
       // already in DER
       this.PublicKey = pub
@@ -88,5 +85,12 @@ const IsMessageValid = async (msg, content = null) => {
   }
   return true
 }
+const CreateGenesisMsg = async () => {
+  const GenesisPubKey = Buffer.from(Cst.GenesisPubKey, 'utf8')
+  const msgHash = await CalcHash(Cst.GenesisMsg)
+  return new Message(Cst.GenesisAddress, msgHash, GenesisPubKey, Cst.GenesisSignature)
+}
 
-module.exports = { CreateMessage, IsMessageValid, ParseMessageFromDb }
+module.exports = {
+  CreateMessage, IsMessageValid, ParseMessageFromDb, CreateGenesisMsg,
+}

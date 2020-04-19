@@ -133,10 +133,6 @@ const CreateBlock = async (prevHash, height, nonce, diff, messages, timestamp, v
       Debug(CstError.BlockHeaderIncomplete)
       return null
     }
-    // // remove database _id property from messages
-    // const msgs = messages
-    //   ? messages.map(msg => ParseMessageFromDb(msg))
-    //   : null
 
     const NewBlock = new Block(prevHash, height, nonce, diff, messages, timestamp, version)
 

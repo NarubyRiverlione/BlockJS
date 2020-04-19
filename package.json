@@ -9,7 +9,8 @@
     "start": "node ./src/app.js",
     "test": "jest",
     "stopdb": "mongo admin --eval 'db.shutdownServer()'",
-    "lint": "eslint src/**/*.js --fix"
+    "lint": "eslint src/**/*.js --fix",
+    "build" : "npm install --production"
   },
   "keywords": [
     "blockchain",
