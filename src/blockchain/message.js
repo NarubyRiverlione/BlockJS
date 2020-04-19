@@ -21,6 +21,10 @@ class Message {
     if (pub.buffer) {
       // already in DER
       this.PublicKey = pub
+    } else if (typeof pub === 'string' || pub instanceof String) {
+      // in string (hex) format, convert to DER
+      const pubKey = Buffer.from(pub, 'utf8')
+      this.PublicKey = pubKey
     } else {
       // pub is a KeyObject, convert it now to DER before adding it to the message
       const PublicDER = ExportPublicDER(pub)
@@ -85,6 +89,7 @@ const IsMessageValid = async (msg, content = null) => {
   }
   return true
 }
+
 const CreateGenesisMsg = async () => {
   const GenesisPubKey = Buffer.from(Cst.GenesisPubKey, 'utf8')
   const msgHash = await CalcHash(Cst.GenesisMsg)
