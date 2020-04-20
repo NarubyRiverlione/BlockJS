@@ -2,7 +2,7 @@ const Debug = require('debug')('blockjs:incoming')
 
 const { ParseMessageFromDb, IsMessageValid } = require('./message.js')
 const { ParseBlockFromDb, IsValidBlock } = require('./block.js')
-
+const { ConvertPubKey } = require('./crypt')
 const { Cst, CstTxt, CstError } = require('../Const.js')
 
 const { Db: { Docs: CstDocs } } = Cst

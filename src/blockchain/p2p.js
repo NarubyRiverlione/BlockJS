@@ -2,7 +2,7 @@ const WebSocket = require('ws')
 const Debug = require('debug')('blockjs:p2p')
 // const { IsValidBlock } = require('./block.js')
 const Incoming = require('./incoming.js')
-
+const { ExportPublicDER } = require('./crypt')
 const { Cst, CstError, CstTxt } = require('../Const.js')
 
 const { P2P: CstP2P } = Cst

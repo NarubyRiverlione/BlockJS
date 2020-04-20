@@ -152,7 +152,9 @@ ${ListCommands}
       blockchain.SendMsg(Content)
         .then((msg) => {
           if (msg) {
-            res.status(200).json({ msg })
+            // show pub key as string
+            const showMsg = { ...msg, PublicKey: msg.PublicKey.toString('hex') }
+            res.status(200).json({ showMsg })
           } else {
             res.status(400).send('error')
           }

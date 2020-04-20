@@ -12,7 +12,8 @@ COPY src/ /app/src
 
 EXPOSE 2100 2000
 
-ENV NODE_ENV production
+ENV NODE_ENV development
 ENV DEBUG blockjs:*
+ENV apiPassword test
 
 CMD ["npm" ,"start"]

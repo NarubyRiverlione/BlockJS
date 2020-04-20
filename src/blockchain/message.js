@@ -25,6 +25,10 @@ class Message {
       // in string (hex) format, convert to DER
       const pubKey = Buffer.from(pub, 'utf8')
       this.PublicKey = pubKey
+    } else if (pub.data) {
+      // P2P send pub as DER but in json format
+      const PublicDER = Buffer.from(pub.data)
+      this.PublicKey = PublicDER
     } else {
       // pub is a KeyObject, convert it now to DER before adding it to the message
       const PublicDER = ExportPublicDER(pub)
